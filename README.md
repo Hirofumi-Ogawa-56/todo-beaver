@@ -1,3 +1,6 @@
+### 画面遷移図
+Figma：https://www.figma.com/design/EVLuBoACdpHLi5ev8e1MHU/todo-baever?node-id=0-1&t=kPF4wyMVRnUT3cnb-1
+
 ## サービス概要
 仕事・趣味・転職後など、複数の人格（プロファイル）を切り替えて使えるツール群のうちのToDo管理アプリ。
 プライベートでは組織・グループ、仕事では本業／副業・組織ごとにプロファイルを切り替えながら、一貫した操作と情報整理が可能。
