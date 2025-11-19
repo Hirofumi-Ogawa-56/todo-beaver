@@ -1,4 +1,7 @@
-### 画面遷移図
+## ER図
+<img width="1381" height="752" alt="スクリーンショット 2025-11-19 0 46 38" src="https://github.com/user-attachments/assets/9e47e6f3-b4a4-4423-91c6-475ae3fc647b" />
+
+## 画面遷移図
 Figma：https://www.figma.com/design/EVLuBoACdpHLi5ev8e1MHU/todo-baever?node-id=0-1&t=kPF4wyMVRnUT3cnb-1
 
 ## サービス概要
