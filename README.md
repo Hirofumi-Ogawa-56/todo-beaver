@@ -13,7 +13,7 @@ https://www.figma.com/design/EVLuBoACdpHLi5ev8e1MHU/todo-baever?node-id=0-1&t=kP
 さらにプライベート／ジョブのカレンダー・ToDOも統合的に使うことができず、アカウントを切り替える必要があります。
 加えて昨今は業務の一部分ずつを担うWebアプリケーションが乱立しており、しかしながらアプリケーション間の連携には限界があります。
 この経験から、一貫したユーザーと切り替え可能なプロファイルの二重構造、かつ一つのサービス内にさまざまな機能があるツールが必要だと考えました。
-今回はMVPとして、上記の①User／Profile／Teamanization構造と、②（様々な機能の中から）Task管理機能を用意したいと思います。
+今回はMVPとして、上記の①User／Profile／Team構造と、②（様々な機能の中から）Task管理機能を用意したいと思います。
 
 ## データ構造の考え方
 本サービスでは、主に3つのレイヤーを作ります。
@@ -22,7 +22,7 @@ https://www.figma.com/design/EVLuBoACdpHLi5ev8e1MHU/todo-baever?node-id=0-1&t=kP
 - Profile(Prof)：Userが持つ複数の社会的「人格」「役割」を表現（例：会社A／副業B／趣味コミュニティ／家庭私用）。
   User : Prof = 1 : N で、ユーザーは複数のProfを持ち、TaskはProfを介してUserに紐づきます。
   ログアウト・ログインをせずとも、Profを切り替えて作業したり、全Profを横断して管理できます。
-- Teamanization(Team)：会社・学校・サークルなどの所属先。
+- Team(Team)：会社・学校・サークルなどの所属先。
   Prof : Team = N : N で、所属を表現します。
 
 全てのProfを統合して管理もでき、むしろ二重管理を回避する構造を目指しています。
