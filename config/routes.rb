@@ -1,10 +1,17 @@
 # config/routes.rb
+
+#ルーティング定義
 Rails.application.routes.draw do
+  # トップページ/にアクセスが来たら、HomeControllerのindexを呼び出す
   root "home#index"
 
+  # deviseにUserモデル用の認証ルートをまとめて生成する
   devise_for :users
 
+  # Profile用のルートをRESTfulにまとめて生成する
+  resources :profiles
+
+  # /up というパスに GET が来たら、Rails::HealthController の show アクションを呼ぶ。
   get "up" => "rails/health#show", as: :rails_health_check
-  get "service-worker" => "rails/pwa#service_worker", as: :pwa_service_worker
-  get "manifest" => "rails/pwa#manifest", as: :pwa_manifest
 end
+
