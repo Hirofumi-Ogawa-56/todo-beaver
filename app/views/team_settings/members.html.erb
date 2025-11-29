@@ -1,4 +1,96 @@
-<div>
-  <h1 class="font-bold text-4xl">TeamSettings#members</h1>
-  <p>Find me in app/views/team_settings/members.html.erb</p>
-</div>
+<!-- app/views/team_settings/members.html.erb -->
+<% content_for :sidebar do %>
+  <%= render "team_settings/sidebar" %>
+<% end %>
+
+<h1 class="text-xl font-bold mb-4">メンバー管理</h1>
+
+<% if @teams.any? %>
+  <!-- チーム選択 -->
+  <div class="mb-4">
+    <%= form_with url: members_team_settings_path, method: :get, local: true, class: "inline-block" do |f| %>
+      <label class="text-sm mr-2">チームを選択：</label>
+      <%= f.select :team_id,
+                   options_from_collection_for_select(@teams, :id, :name, @selected_team&.id),
+                   {},
+                   class: "border rounded px-2 py-1 text-sm",
+                   onchange: "this.form.submit();" %>
+    <% end %>
+  </div>
+
+  <% if @selected_team %>
+    <h2 class="text-lg font-semibold mb-2"><%= @selected_team.name %> のメンバー</h2>
+
+    <!-- メンバー一覧 -->
+    <% if @memberships.any? %>
+      <table class="w-full text-sm mb-4">
+        <thead>
+          <tr class="border-b">
+            <th class="text-left py-2">プロフィール名</th>
+            <th class="text-left py-2">役割</th>
+            <th class="text-left py-2"></th>
+          </tr>
+        </thead>
+        <tbody>
+          <% @memberships.each do |membership| %>
+            <tr class="border-b">
+              <td class="py-2"><%= membership.display_name %></td>
+              <td class="py-2"><%= membership.role.presence || "メンバー" %></td>
+              <td class="py-2 text-right">
+                <%= button_to "削除",
+                              team_membership_path(membership),
+                              method: :delete,
+                              data: { turbo_confirm: "このメンバーを削除しますか？" },
+                              class: "text-xs px-3 py-1 bg-red-50 text-red-700 rounded border border-red-200 hover:bg-red-100" %>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    <% else %>
+      <p class="text-sm text-gray-500 mb-4">
+        まだこのチームにはメンバーがいません。
+      </p>
+    <% end %>
+
+    <!-- メンバー追加フォーム -->
+    <% if @candidate_profiles.any? %>
+      <div class="mt-4 border-t pt-4">
+        <h3 class="text-sm font-semibold mb-2">メンバーを追加</h3>
+
+        <%= form_with url: team_memberships_path, method: :post, local: true, class: "flex flex-wrap items-end gap-2" do |f| %>
+          <%= hidden_field_tag :team_id, @selected_team.id %>
+
+          <div>
+            <label class="block text-xs mb-1">プロフィール</label>
+            <%= select_tag :profile_id,
+                           options_from_collection_for_select(@candidate_profiles, :id, :name),
+                           include_blank: "選択してください",
+                           class: "border rounded px-2 py-1 text-sm" %>
+          </div>
+
+          <div>
+            <label class="block text-xs mb-1">役割（任意）</label>
+            <%= text_field_tag :role,
+                               "",
+                               class: "border rounded px-2 py-1 text-sm",
+                               placeholder: "owner / member など" %>
+          </div>
+
+          <div class="mb-1">
+            <%= f.submit "メンバーを追加",
+                         class: "px-4 py-2 bg-blue-100 text-blue-700 text-xs rounded border border-blue-300 hover:bg-blue-200" %>
+          </div>
+        <% end %>
+      </div>
+    <% else %>
+      <p class="text-xs text-gray-500 mt-4">
+        追加できるプロフィールがありません（すでに全プロフィールがこのチームに参加済みです）。
+      </p>
+    <% end %>
+  <% end %>
+<% else %>
+  <p class="text-sm text-gray-500">
+    まだチームがありません。「チームを作成する」から追加してください。
+  </p>
+<% end %>

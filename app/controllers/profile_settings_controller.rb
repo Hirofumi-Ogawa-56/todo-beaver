@@ -1,24 +1,19 @@
 # app/controllers/profile_settings_controller.rb
 class ProfileSettingsController < ApplicationController
   before_action :authenticate_user!
-  before_action :set_profile
 
   def home
-    # プロフィール設定ホーム
   end
 
   def edit
-    # プロフィール編集
+    @profile = current_profile
+
+    # current_profile が無い場合のガード
+    unless @profile
+      redirect_to profile_settings_home_path, alert: "編集中のプロフィールが選択されていません。"
+    end
   end
 
   def theme
-    # プロフィールカラー設定
-    @themes = %w[default blue green red]
-  end
-
-  private
-
-  def set_profile
-    @profile = current_profile
   end
 end

@@ -14,7 +14,14 @@
     <%= f.label :name, "プロフィール名", class: "block mb-1" %>
     <%= f.text_field :name,
                      class: "border rounded px-2 py-1 w-full",
-                     placeholder: "本業 / 副業 / プライベート など" %>
+                     placeholder: "株式会社〇〇 / 副業 / プライベート など" %>
+  </div>
+
+  <div class="mb-4">
+    <%= f.label :display_name, "表示名（他のユーザーに表示される名前）", class: "block mb-1 text-sm" %>
+    <%= f.text_field :display_name,
+                    class: "border rounded px-2 py-1 w-full",
+                    placeholder: "例）田中太郎 / Tanaka Taro など" %>
   </div>
 
   <div class="mb-4">

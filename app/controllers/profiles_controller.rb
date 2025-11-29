@@ -81,6 +81,6 @@ class ProfilesController < ApplicationController
   def profile_params
     # params[:profile] を必須とし、その中の name と theme だけを許可する。
     # それ以外の値は無視され、マスアサインメント脆弱性を防ぐ。
-    params.require(:profile).permit(:name, :theme)
+    params.require(:profile).permit(:name, :display_name, :theme)
   end
 end
