@@ -1,0 +1,28 @@
+<%= form_with model: @profile, local: true do |f| %>
+  <% if @profile.errors.any? %>
+    <div class="mb-4 p-3 bg-red-50 text-red-700 rounded">
+      <p><%= @profile.errors.count %>件のエラーがあります：</p>
+      <ul class="list-disc list-inside">
+        <% @profile.errors.full_messages.each do |msg| %>
+          <li><%= msg %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <div class="mb-4">
+    <%= f.label :name, "プロフィール名", class: "block mb-1" %>
+    <%= f.text_field :name,
+                     class: "border rounded px-2 py-1 w-full",
+                     placeholder: "本業 / 副業 / プライベート など" %>
+  </div>
+
+  <div class="mb-4">
+    <%= f.label :theme, "テーマ（任意）", class: "block mb-1" %>
+    <%= f.text_field :theme,
+                     class: "border rounded px-2 py-1 w-full",
+                     placeholder: "dark / blue / work など" %>
+  </div>
+
+  <%= f.submit class: "px-4 py-2 bg-blue-600 text-white rounded" %>
+<% end %>
