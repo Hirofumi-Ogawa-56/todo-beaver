@@ -1,0 +1,33 @@
+<!-- app/views/tasks/_sidebar.html.erb -->
+
+<h2 class="font-semibold text-sm mb-3">タスク</h2>
+
+<nav class="space-y-1">
+  <!-- 全体 -->
+  <%= link_to "すべてのタスク",
+              tasks_path,
+              class: nav_class(tasks_path) %>
+
+  <!-- よくある絞り込み（あとで実装予定でもOK） -->
+  <%= link_to "今日のタスク",
+              tasks_path(filter: :today),
+              class: nav_class(tasks_path(filter: :today)) %>
+
+  <%= link_to "今週のタスク",
+              tasks_path(filter: :this_week),
+              class: nav_class(tasks_path(filter: :this_week)) %>
+
+  <%= link_to "未完了タスク",
+              tasks_path(filter: :incomplete),
+              class: nav_class(tasks_path(filter: :incomplete)) %>
+
+  <%= link_to "完了タスク",
+              tasks_path(filter: :done),
+              class: nav_class(tasks_path(filter: :done)) %>
+
+  <hr class="my-3">
+
+  <%= link_to "新規タスク作成",
+              new_task_path,
+              class: nav_class(new_task_path) %>
+</nav>

@@ -1,0 +1,27 @@
+<!-- app/views/profile_settings/home.html.erb -->
+
+<% content_for :sidebar do %>
+  <%= render "profile_settings/sidebar" %>
+<% end %>
+
+<h1 class="text-xl font-bold mb-4">プロフィール設定ホーム</h1>
+
+<% if @profile %>
+  <p class="text-sm text-gray-600 mb-4">
+    現在のプロフィールの概要です。
+  </p>
+
+  <dl class="text-sm space-y-3">
+    <div>
+      <dt class="text-gray-500">プロフィール名</dt>
+      <dd class="font-semibold"><%= @profile.name %></dd>
+    </div>
+
+    <div>
+      <dt class="text-gray-500">テーマカラー</dt>
+      <dd><%= @profile.theme.presence || "未設定" %></dd>
+    </div>
+  </dl>
+<% else %>
+  <p>現在のプロフィールが選択されていません。</p>
+<% end %>
