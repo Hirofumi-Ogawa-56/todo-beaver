@@ -1,6 +1,10 @@
 # config/routes.rb
 
 Rails.application.routes.draw do
+  get "teams/index"
+  get "teams/show"
+  get "teams/new"
+  get "teams/edit"
   # トップページ/にアクセスが来たら、HomeControllerのindexを呼び出す
   root "tasks#index"
 
