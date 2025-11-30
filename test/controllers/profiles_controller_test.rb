@@ -1,23 +1,30 @@
+# test/controllers/profiles_controller_test.rb
 require "test_helper"
 
 class ProfilesControllerTest < ActionDispatch::IntegrationTest
+  setup do
+    @user = users(:one)
+    sign_in @user
+    @profile = profiles(:one)
+  end
+
   test "should get index" do
-    get profiles_index_url
+    get profiles_url
     assert_response :success
   end
 
   test "should get new" do
-    get profiles_new_url
+    get new_profile_url
+    assert_response :success
+  end
+
+  test "should show profile" do
+    get profile_url(@profile)
     assert_response :success
   end
 
   test "should get edit" do
-    get profiles_edit_url
-    assert_response :success
-  end
-
-  test "should get show" do
-    get profiles_show_url
+    get edit_profile_url(@profile)
     assert_response :success
   end
 end

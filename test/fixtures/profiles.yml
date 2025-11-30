@@ -1,11 +1,18 @@
+# test/fixtures/profiles.yml
 # Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
 
 one:
+  id: 980190962
   user: one
-  name: MyString
-  theme: MyString
+  label: "本業"
+  display_name: "小川（本業）"
+  theme: "work"
 
 two:
+  id: 298486374
   user: two
-  name: MyString
-  theme: MyString
+  label: "副業"
+  display_name: "小川（副業）"
+  theme: "side"
+
+# 必要なら3つ目、4つ目も自由に追加OK

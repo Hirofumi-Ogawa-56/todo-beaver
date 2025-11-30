@@ -1,10 +1,5 @@
 # config/routes.rb
-
 Rails.application.routes.draw do
-  get "teams/index"
-  get "teams/show"
-  get "teams/new"
-  get "teams/edit"
   # トップページ/にアクセスが来たら、HomeControllerのindexを呼び出す
   root "tasks#index"
 
@@ -41,6 +36,6 @@ Rails.application.routes.draw do
   # tasksのCRUD
   resources :tasks
 
+  # team_membershipsのCRUD
+  resources :team_memberships, only: [ :create, :destroy ]
 end
-
-

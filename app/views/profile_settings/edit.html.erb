@@ -1,4 +1,30 @@
-<div>
-  <h1 class="font-bold text-4xl">ProfileSettings#edit</h1>
-  <p>Find me in app/views/profile_settings/edit.html.erb</p>
-</div>
+<!-- app/views/profiles/edit.html.erb -->
+<% content_for :sidebar do %>
+  <%= render "profile_settings/sidebar" %>
+<% end %>
+
+<h1 class="text-xl font-bold mb-4">プロフィール編集</h1>
+
+<p class="text-sm text-gray-600 mb-4">
+  現在選択中のプロフィールの情報を編集できます。
+</p>
+
+<% if @profile %>
+  <div class="mb-4 p-3 bg-white border rounded">
+    <p class="text-sm text-gray-700">
+      現在のプロフィール：
+      <span class="font-semibold"><%= @profile.label %></span>
+      <% if @profile.display_name.present? %>
+        <span class="text-xs text-gray-500 ml-2">
+          （表示名: <%= @profile.display_name %>）
+        </span>
+      <% end %>
+    </p>
+  </div>
+
+  <%= render "profiles/form", profile: @profile %>
+<% else %>
+  <p class="text-sm text-red-600">
+    編集対象のプロフィールが見つかりませんでした。
+  </p>
+<% end %>

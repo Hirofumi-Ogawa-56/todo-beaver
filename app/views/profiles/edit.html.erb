@@ -1,5 +1,8 @@
 <!-- app/views/profiles/edit.html.erb -->
-<div class="p-8">
-  <h1 class="text-2xl font-bold mb-4">プロフィール編集</h1>
-  <%= render "form", profile: @profile %>
-</div>
+<% content_for :sidebar do %>
+  <%= render "profile_settings/sidebar" %>
+<% end %>
+
+<h1 class="text-xl font-bold mb-4">プロフィール編集</h1>
+
+<%= render "form", profile: @profile %>
