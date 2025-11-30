@@ -1,6 +1,6 @@
 # app/controllers/profiles_controller.rb
 class ProfilesController < ApplicationController
-  #　全アクションの前に行うログインチェック。
+  # 　全アクションの前に行うログインチェック。
   # 未ログインなら Devise がログイン画面へリダイレクトする。
   before_action :authenticate_user!
 
@@ -11,20 +11,20 @@ class ProfilesController < ApplicationController
   # switchだけCSRFチェックをスキップ
   skip_before_action :verify_authenticity_token, only: :switch
 
-  def index #一覧画面
+  def index # 一覧画面
     # ログイン中のユーザーが持つ全プロフィールを、作成日時の昇順で取り出して @profiles に格納。
     @profiles = current_user.profiles.order(created_at: :asc)
   end
 
-  def show #詳細表示
+  def show # 詳細表示
   end
 
-  def new #新規作成フォーム表示用
+  def new # 新規作成フォーム表示用
     # ログイン中ユーザーに紐づく新しい Profile オブジェクトを生成し、@profile に代入。
     @profile = current_user.profiles.build
   end
 
-  def create #新規プロファイルの保存処理を行う
+  def create # 新規プロファイルの保存処理を行う
     # 送信されたパラメータ（profile_params）を使い、ログイン中ユーザーに紐づく Profile オブジェクトを生成。
     @profile = current_user.profiles.build(profile_params)
     if @profile.save
@@ -49,7 +49,7 @@ class ProfilesController < ApplicationController
     end
   end
 
-  def destroy #プロファイル削除
+  def destroy # プロファイル削除
     # ログイン中ユーザーが持つプロフィール数が 1件以下（=最後の1つ）かどうか
     if current_user.profiles.count <= 1
       redirect_to profiles_path, alert: "最後のプロフィールは削除できません"
@@ -59,7 +59,7 @@ class ProfilesController < ApplicationController
     end
   end
 
-  def switch #プロファイル切替
+  def switch # プロファイル切替
     # URLの :id から、そのユーザーが持つ profiles の中から対象を検索。
     profile = current_user.profiles.find(params[:profile_id])
     # セッションに current_profile_id を保存し、「今後はこのプロフィールを current_profile として扱う」 ことを記憶させる。

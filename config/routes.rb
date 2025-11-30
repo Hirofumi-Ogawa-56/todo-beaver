@@ -37,6 +37,5 @@ Rails.application.routes.draw do
   resources :tasks
 
   # team_membershipsのCRUD
-  resources :team_memberships, only: [:create, :destroy]
-
+  resources :team_memberships, only: [ :create, :destroy ]
 end

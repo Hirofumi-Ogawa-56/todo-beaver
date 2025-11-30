@@ -1,5 +1,5 @@
 # app/models/profile.rb
-#Profileクラスの定義
+# Profileクラスの定義
 class Profile < ApplicationRecord
   belongs_to :user
 

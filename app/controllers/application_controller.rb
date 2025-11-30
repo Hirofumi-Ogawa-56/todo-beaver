@@ -44,4 +44,3 @@ class ApplicationController < ActionController::Base
     @current_profile = profile
   end
 end
-

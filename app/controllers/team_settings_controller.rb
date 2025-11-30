@@ -2,14 +2,14 @@
 class TeamSettingsController < ApplicationController
   before_action :authenticate_user!
 
-  def home; 
+  def home
   end
 
-  def edit; 
+  def edit
     @teams = Team.order(created_at: :desc)
   end
 
-  def members; 
+  def members
     # とりあえず全チームを選択肢に出す（あとで「自分のチームだけ」に絞ってもOK）
     @teams = Team.order(:name)
 

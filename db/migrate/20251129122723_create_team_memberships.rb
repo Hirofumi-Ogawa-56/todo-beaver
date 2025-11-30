@@ -10,6 +10,6 @@ class CreateTeamMemberships < ActiveRecord::Migration[7.2]
     end
 
     # 同じ profile が同じ team に二重登録されないようにする
-    add_index :team_memberships, [:profile_id, :team_id], unique: true
+    add_index :team_memberships, [ :profile_id, :team_id ], unique: true
   end
 end
