@@ -23,30 +23,39 @@
 
     <!-- メンバー一覧 -->
     <% if @memberships.any? %>
-      <table class="w-full text-sm mb-4">
-        <thead>
-          <tr class="border-b">
-            <th class="text-left py-2">プロフィール名</th>
-            <th class="text-left py-2">役割</th>
-            <th class="text-left py-2"></th>
-          </tr>
-        </thead>
-        <tbody>
-          <% @memberships.each do |membership| %>
-            <tr class="border-b">
-              <td class="py-2"><%= membership.profile.display_name %></td>
-              <td class="py-2"><%= membership.role.presence || "メンバー" %></td>
-              <td class="py-2 text-right">
-                <%= button_to "削除",
-                              team_membership_path(membership),
-                              method: :delete,
-                              data: { turbo_confirm: "このメンバーを削除しますか？" },
-                              class: "text-xs px-3 py-1 bg-red-50 text-red-700 rounded border border-red-200 hover:bg-red-100" %>
-              </td>
-            </tr>
-          <% end %>
-        </tbody>
-      </table>
+  <table class="w-full text-sm mb-4">
+    <thead>
+      <tr class="border-b">
+        <th class="text-left py-2">プロフィール名</th>
+        <th class="text-left py-2">役割</th>
+        <th class="text-left py-2"></th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @memberships.each do |membership| %>
+        <tr class="border-b">
+          <td class="py-2"><%= membership.profile.display_name %></td>
+
+          <td class="py-2">
+            <% if membership.admin? %>
+              管理者
+            <% else %>
+              メンバー
+            <% end %>
+          </td>
+
+          <td class="py-2 text-right">
+            <!-- ここに「管理者にする/外す」「削除」ボタンをこのあと足していく -->
+            <%= button_to "削除",
+                          team_membership_path(membership),
+                          method: :delete,
+                          data: { turbo_confirm: "このメンバーを削除しますか？" },
+                          class: "text-xs px-3 py-1 bg-red-50 text-red-700 rounded border border-red-200 hover:bg-red-100" %>
+          </td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
     <% else %>
       <p class="text-sm text-gray-500 mb-4">
         まだこのチームにはメンバーがいません。
