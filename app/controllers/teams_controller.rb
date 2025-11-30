@@ -19,6 +19,14 @@ class TeamsController < ApplicationController
     @team = Team.new(team_params)
 
     if @team.save
+      # 作成した人を自動的に管理者にする
+      if current_profile
+        TeamMembership.create!(
+          team: @team,
+          profile: current_profile,
+          role: TeamMembership::ADMIN_ROLE
+        )
+      end
       redirect_to @team, notice: "チームを作成しました"
     else
       render :new, status: :unprocessable_entity
