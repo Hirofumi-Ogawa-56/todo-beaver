@@ -1,3 +1,4 @@
+<!-- app/views/profiles/_form.html.erb -->
 <%= form_with model: @profile, local: true do |f| %>
   <% if @profile.errors.any? %>
     <div class="mb-4 p-3 bg-red-50 text-red-700 rounded">
@@ -23,6 +24,23 @@
                     class: "border rounded px-2 py-1 w-full",
                     placeholder: "例）田中太郎 / Tanaka Taro など" %>
   </div>
+
+  <% if @profile.persisted? && @profile.join_token.present? %>
+    <div class="mb-4">
+      <label class="block text-xs mb-1 text-gray-500">
+        承認許可ID
+      </label>
+
+      <input type="text"
+             value="<%= @profile.join_token %>"
+             readonly
+             class="border rounded px-2 py-1 w-full bg-gray-50 text-gray-600 text-sm" />
+
+      <p class="text-[11px] text-gray-400 mt-1">
+        このIDは編集できません。プロフィール参加申請に使います。
+      </p>
+    </div>
+  <% end %>
 
   <div class="mb-4">
     <%= f.label :theme, "テーマ（任意）", class: "block mb-1" %>

@@ -16,6 +16,7 @@
     <thead>
       <tr class="border-b">
         <th class="text-left py-2">チーム名</th>
+        <th class="text-left py-2">承認許可ID</th> <!-- ★ 追加 -->
         <th class="text-left py-2">作成日</th>
         <th class="text-left py-2"></th>
       </tr>
@@ -24,6 +25,9 @@
       <% @teams.each do |team| %>
         <tr class="border-b">
           <td class="py-2"><%= team.name %></td>
+          <td class="py-2 font-mono text-xs text-gray-600">
+            <%= team.join_token.presence || "-" %>
+          </td>
           <td class="py-2"><%= l(team.created_at.to_date) %></td>
           <td class="py-2 text-right">
             <%= link_to "編集",
