@@ -22,4 +22,3 @@ class ProfileSettingsControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
   end
 end
-
