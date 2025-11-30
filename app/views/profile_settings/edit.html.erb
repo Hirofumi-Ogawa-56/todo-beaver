@@ -13,7 +13,7 @@
   <div class="mb-4 p-3 bg-white border rounded">
     <p class="text-sm text-gray-700">
       現在のプロフィール：
-      <span class="font-semibold"><%= @profile.name %></span>
+      <span class="font-semibold"><%= @profile.label %></span>
       <% if @profile.display_name.present? %>
         <span class="text-xs text-gray-500 ml-2">
           （表示名: <%= @profile.display_name %>）

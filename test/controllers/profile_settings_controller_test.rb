@@ -1,18 +1,25 @@
+# test/controllers/profile_settings_controller_test.rb
 require "test_helper"
 
 class ProfileSettingsControllerTest < ActionDispatch::IntegrationTest
+  setup do
+    @user = users(:one)
+    sign_in @user
+  end
+
   test "should get home" do
-    get profile_settings_home_url
+    get home_profile_settings_url
     assert_response :success
   end
 
   test "should get edit" do
-    get profile_settings_edit_url
+    get edit_profile_settings_url
     assert_response :success
   end
 
   test "should get theme" do
-    get profile_settings_theme_url
+    get theme_profile_settings_url
     assert_response :success
   end
 end
+

@@ -34,7 +34,7 @@
         <tbody>
           <% @memberships.each do |membership| %>
             <tr class="border-b">
-              <td class="py-2"><%= membership.display_name %></td>
+              <td class="py-2"><%= membership.profile.display_name %></td>
               <td class="py-2"><%= membership.role.presence || "メンバー" %></td>
               <td class="py-2 text-right">
                 <%= button_to "削除",
@@ -64,7 +64,7 @@
           <div>
             <label class="block text-xs mb-1">プロフィール</label>
             <%= select_tag :profile_id,
-                           options_from_collection_for_select(@candidate_profiles, :id, :name),
+                           options_from_collection_for_select(@candidate_profiles, :id, :display_name),
                            include_blank: "選択してください",
                            class: "border rounded px-2 py-1 text-sm" %>
           </div>

@@ -1,18 +1,24 @@
+# test/controllers/team_settings_controller_test.rb
 require "test_helper"
 
 class TeamSettingsControllerTest < ActionDispatch::IntegrationTest
+  setup do
+    @user = users(:one)
+    sign_in @user
+  end
+
   test "should get home" do
-    get team_settings_home_url
+    get home_team_settings_url
     assert_response :success
   end
 
   test "should get edit" do
-    get team_settings_edit_url
+    get edit_team_settings_url
     assert_response :success
   end
 
   test "should get members" do
-    get team_settings_members_url
+    get members_team_settings_url
     assert_response :success
   end
 end

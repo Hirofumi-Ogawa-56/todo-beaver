@@ -3,7 +3,7 @@
 class Profile < ApplicationRecord
   belongs_to :user
 
-  validates :name, presence: true, length: { maximum: 25 }
+  validates :label, presence: true, length: { maximum: 25 }
   validates :theme, length: { maximum: 50 }, allow_blank: true
 
   # ★ 追加：表示名（他ユーザーに見せる用）
