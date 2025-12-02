@@ -13,6 +13,16 @@ class Profile < ApplicationRecord
   has_many :team_memberships, dependent: :destroy
   has_many :teams, through: :team_memberships
 
+  has_many :sent_membership_requests,
+           class_name: "MembershipRequest",
+           foreign_key: :requester_profile_id,
+           dependent: :destroy
+
+  has_many :received_membership_requests,
+           class_name: "MembershipRequest",
+           foreign_key: :target_profile_id,
+           dependent: :destroy
+
   before_create :set_join_token
 
   private
