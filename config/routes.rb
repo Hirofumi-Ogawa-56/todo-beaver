@@ -37,5 +37,13 @@ Rails.application.routes.draw do
   resources :tasks
 
   # team_membershipsのCRUD
-  resources :team_memberships, only: [ :create, :destroy ]
+  resources :team_memberships, only: [ :create, :destroy, :update ]
+
+  # team_membershipsの依頼
+  resources :membership_requests, only: [ :create ] do
+    member do
+      patch :approve  # 招待の承認
+      # reject / cancel もあとで欲しくなったらここに足す
+    end
+  end
 end

@@ -2,6 +2,7 @@
 class Team < ApplicationRecord
   has_many :team_memberships, dependent: :destroy
   has_many :profiles, through: :team_memberships
+  has_many :membership_requests, dependent: :destroy
 
   validates :name, presence: true, length: { maximum: 30 }
   validates :join_token, uniqueness: true, allow_nil: true

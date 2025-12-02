@@ -37,21 +37,44 @@
           <td class="py-2"><%= membership.profile.display_name %></td>
 
           <td class="py-2">
-            <% if membership.admin? %>
-              管理者
+            <% if @can_manage_members %>
+              <!-- ✅ 管理者の場合だけ、プルダウンで変更できる -->
+              <%= form_with model: membership,
+                            url: team_membership_path(membership),
+                            method: :patch,
+                            local: true,
+                            class: "inline-block" do |f| %>
+                <%= f.select :role,
+                            options_for_select(
+                              [
+                                ["管理者", TeamMembership::ADMIN_ROLE],
+                                ["メンバー", ""]
+                              ],
+                              membership.admin? ? TeamMembership::ADMIN_ROLE : ""
+                            ),
+                            {},
+                            class: "border rounded px-2 py-1 text-xs",
+                            onchange: "this.form.submit();" %>
+              <% end %>
             <% else %>
-              メンバー
+              <!-- ✅ メンバーは「表示だけ」 -->
+              <% if membership.admin? %>
+                管理者
+              <% else %>
+                メンバー
+              <% end %>
             <% end %>
           </td>
 
-          <td class="py-2 text-right">
-            <!-- ここに「管理者にする/外す」「削除」ボタンをこのあと足していく -->
-            <%= button_to "削除",
-                          team_membership_path(membership),
-                          method: :delete,
-                          data: { turbo_confirm: "このメンバーを削除しますか？" },
-                          class: "text-xs px-3 py-1 bg-red-50 text-red-700 rounded border border-red-200 hover:bg-red-100" %>
-          </td>
+<td class="py-2 text-right">
+  <% if @can_manage_members %>
+    <%= button_to "削除",
+                  team_membership_path(membership),
+                  method: :delete,
+                  data: { turbo_confirm: "このメンバーを削除しますか？" },
+                  class: "text-xs px-3 py-1 bg-red-50 text-red-700 rounded border border-red-200 hover:bg-red-100" %>
+  <% end %>
+</td>
         </tr>
       <% end %>
     </tbody>
@@ -62,41 +85,64 @@
       </p>
     <% end %>
 
-    <!-- メンバー追加フォーム -->
-    <% if @candidate_profiles.any? %>
-      <div class="mt-4 border-t pt-4">
-        <h3 class="text-sm font-semibold mb-2">メンバーを追加</h3>
+    <!-- ▼ 申請IDでプロフィールを招待するセクション ▼ -->
+    <div class="mt-6 border-t pt-4">
+      <h3 class="text-sm font-semibold mb-2">チーム招待IDでプロフィールを招待</h3>
 
-        <%= form_with url: team_memberships_path, method: :post, local: true, class: "flex flex-wrap items-end gap-2" do |f| %>
-          <%= hidden_field_tag :team_id, @selected_team.id %>
+      <!-- 1. チーム招待IDでプロフィールを検索するフォーム（GET） -->
+      <%= form_with url: members_team_settings_path, method: :get, local: true, class: "flex flex-wrap items-end gap-2 mb-3" do |f| %>
+        <%= hidden_field_tag :team_id, @selected_team.id %>
 
-          <div>
-            <label class="block text-xs mb-1">プロフィール</label>
-            <%= select_tag :profile_id,
-                           options_from_collection_for_select(@candidate_profiles, :id, :display_name),
-                           include_blank: "選択してください",
-                           class: "border rounded px-2 py-1 text-sm" %>
+        <div>
+          <label class="block text-xs mb-1">申請ID</label>
+          <%= text_field_tag :invite_token,
+                             @invite_token,
+                             class: "border rounded px-2 py-1 text-sm",
+                             placeholder: "例）AB12CD34" %>
+        </div>
+
+        <div class="mb-1">
+          <%= f.submit "プロフィールを検索",
+                       class: "px-3 py-2 text-xs bg-gray-100 rounded border hover:bg-gray-200" %>
+        </div>
+      <% end %>
+
+      <% if @invite_token.present? %>
+        <% if @invite_profiles.any? %>
+          <!-- 2. 検索結果から招待を送るフォーム（POST） -->
+          <div class="mt-2">
+            <%= form_with url: membership_requests_path, method: :post, local: true, class: "flex flex-wrap items-end gap-2" do |f| %>
+              <%= hidden_field_tag :direction, "team_to_profile" %>
+              <%= hidden_field_tag :team_id, @selected_team.id %>
+
+              <div>
+                <label class="block text-xs mb-1">招待するプロフィール</label>
+                <%= select_tag :target_profile_id,
+                               options_from_collection_for_select(@invite_profiles, :id, :display_name),
+                               class: "border rounded px-2 py-1 text-sm" %>
+              </div>
+
+              <div>
+                <label class="block text-xs mb-1">管理者として招待</label>
+                <%= check_box_tag :admin, "1", false, class: "mr-1" %>
+                <span class="text-xs">このプロフィールを管理者として追加する</span>
+              </div>
+
+              <div class="mb-1">
+                <%= f.submit "招待を送る",
+                             class: "px-4 py-2 text-xs bg-blue-100 text-blue-700 rounded border border-blue-300 hover:bg-blue-200" %>
+              </div>
+            <% end %>
           </div>
-
-          <div>
-            <label class="block text-xs mb-1">役割（任意）</label>
-            <%= text_field_tag :role,
-                               "",
-                               class: "border rounded px-2 py-1 text-sm",
-                               placeholder: "owner / member など" %>
-          </div>
-
-          <div class="mb-1">
-            <%= f.submit "メンバーを追加",
-                         class: "px-4 py-2 bg-blue-100 text-blue-700 text-xs rounded border border-blue-300 hover:bg-blue-200" %>
-          </div>
+        <% else %>
+          <p class="text-xs text-red-500 mt-2">
+            入力されたチーム招待IDに該当するプロフィールが見つかりませんでした。
+          </p>
         <% end %>
-      </div>
-    <% else %>
-      <p class="text-xs text-gray-500 mt-4">
-        追加できるプロフィールがありません（すでに全プロフィールがこのチームに参加済みです）。
-      </p>
-    <% end %>
+      <% end %>
+    </div>
+    <!-- ▲ チーム招待IDでプロフィールを招待するセクション ここまで ▲ -->
+
   <% end %>
 <% else %>
   <p class="text-sm text-gray-500">
