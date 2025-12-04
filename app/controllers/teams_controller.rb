@@ -1,3 +1,4 @@
+# app/controllers/teams_controller.rb
 class TeamsController < ApplicationController
   before_action :authenticate_user!
   before_action :set_team, only: %i[show edit update destroy]

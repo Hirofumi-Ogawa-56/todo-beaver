@@ -21,64 +21,74 @@
 
   <body class="bg-gray-100">
     <!-- ヘッダー -->
-    <header class="fixed top-0 inset-x-0 bg-white border-b shadow-sm z-10">
-      <div class="max-w-5xl mx-auto px-4 py-2">
-        <!-- 1段目：ロゴ + プロフィール切替 -->
-        <div class="flex items-center justify-between mb-3">
-          <!-- 左側：ロゴ -->
-          <div class="flex items-center gap-4">
-            <%= link_to "Todo Beaver", root_path, class: "font-bold text-xl whitespace-nowrap" %>
+      <header class="fixed top-0 inset-x-0 bg-white border-b shadow-sm z-10">
+        <!-- ✅ max-w-5xl mx-auto をやめて、全幅に -->
+        <div class="w-full px-4 py-2">
+          <!-- 1段目：ロゴ + プロフィール切替 -->
+          <div class="flex items-center justify-between mb-3">
+            <!-- 左側：ロゴ -->
+            <div class="flex items-center gap-4">
+              <%= link_to "Todo Beaver", root_path, class: "font-bold text-xl whitespace-nowrap" %>
 
-            <% if user_signed_in? && current_user.profiles.empty? %>
-              <%= link_to "プロフィールを作成",
-                          new_profile_path,
-                          class: "text-sm text-blue-600 underline" %>
-            <% end %>
-          </div>
+              <% if user_signed_in? && current_user.profiles.empty? %>
+                <%= link_to "プロフィールを作成",
+                            new_profile_path,
+                            class: "text-sm text-blue-600 underline" %>
+              <% end %>
+            </div>
 
-          <!-- 右側：プロフィール選択 -->
-          <div class="flex items-center gap-4">
-            <% if user_signed_in? && current_user.profiles.any? %>
-              <div>
-                <%= form_with url: switch_profiles_path, method: :post, local: true do |f| %>
-                  <%= f.select :profile_id,
-                              options_from_collection_for_select(
-                                current_user.profiles,
-                                :id,
-                                :label,
-                                current_profile&.id
-                              ),
-                              {},
-                              class: "border rounded px-3 py-1 text-sm bg-white",
-                              onchange: "this.form.submit();" %>
+            <!-- 右側：プロフィール表示 + 選択 -->
+            <div class="flex items-center gap-4">
+              <% if user_signed_in? && current_user.profiles.any? %>
+                <% if current_profile %>
+                  <div class="text-sm text-gray-700">
+                    <span class="font-semibold">
+                      <%= current_profile.display_name.presence || current_profile.label %>
+                    </span>
+                  </div>
                 <% end %>
-              </div>
-            <% end %>
+
+                <div>
+                  <%= form_with url: switch_profiles_path, method: :post, local: true do |f| %>
+                    <%= f.select :profile_id,
+                                options_from_collection_for_select(
+                                  current_user.profiles,
+                                  :id,
+                                  :label,
+                                  current_profile&.id
+                                ),
+                                {},
+                                class: "border rounded px-3 py-1 text-sm bg-white",
+                                onchange: "this.form.submit();" %>
+                  <% end %>
+                </div>
+              <% end %>
+            </div>
           </div>
+
+          <!-- 2段目：ボタン行 -->
+          <% if user_signed_in? %>
+            <div class="flex justify-end gap-3">
+              <%= link_to "プロフィール設定",
+                          home_profile_settings_path,
+                          class: "text-xs px-3 py-1 bg-gray-100 rounded border hover:bg-gray-200" %>
+
+              <%= link_to "チーム設定",
+                          home_team_settings_path,
+                          class: "text-xs px-3 py-1 bg-gray-100 rounded border hover:bg-gray-200" %>
+
+              <%= link_to "ログアウト",
+                          destroy_user_session_path,
+                          data: { turbo_method: :delete },
+                          class: "text-xs px-3 py-1 bg-red-100 text-red-700 rounded border border-red-300 hover:bg-red-200" %>
+            </div>
+          <% end %>
         </div>
-
-        <!-- 2段目：ボタン行 -->
-        <% if user_signed_in? %>
-          <div class="flex justify-end gap-3">
-            <%= link_to "プロフィール設定",
-                        home_profile_settings_path,
-                        class: "text-xs px-3 py-1 bg-gray-100 rounded border hover:bg-gray-200" %>
-
-            <%= link_to "チーム設定",
-                        home_team_settings_path,
-                        class: "text-xs px-3 py-1 bg-gray-100 rounded border hover:bg-gray-200" %>
-
-            <%= link_to "ログアウト",
-                        destroy_user_session_path,
-                        data: { turbo_method: :delete },
-                        class: "text-xs px-3 py-1 bg-red-100 text-red-700 rounded border border-red-300 hover:bg-red-200" %>
-          </div>
-        <% end %>
-      </div>
-    </header>
+      </header>
 
     <!-- メインコンテンツ -->
-    <main class="max-w-5xl mx-auto px-4 pt-20 pb-8">
+    <!-- ✅ 横幅いっぱい使う＆下まで伸ばす -->
+    <main class="pt-20 pb-0">
       <!-- フラッシュメッセージ -->
       <% if notice %>
         <div class="mb-4 bg-green-100 text-green-800 px-4 py-2 rounded">
@@ -92,27 +102,24 @@
       <% end %>
 
       <!-- 共通レイアウト：左ナビ＋右メイン -->
-      <div class="flex gap-6">
+      <!-- ✅ 画面全幅を使い、高さもヘッダーを除いた分だけ確保 -->
+      <div class="flex gap-0 min-h-[calc(100vh-5rem)]">
         <% if content_for?(:sidebar) %>
           <!-- レフトナビ -->
-          <aside class="w-60 shrink-0">
-            <div class="bg-white rounded shadow px-4 pt-4 pb-4">
-              <%= yield :sidebar %>
-            </div>
+          <!-- ✅ 左端にぴったり／背景は透明 -->
+          <aside class="w-60 shrink-0 border-r border-gray-200 px-4 pt-6 pb-6 bg-transparent">
+            <%= yield :sidebar %>
           </aside>
 
           <!-- メインスクリーン -->
-          <section class="flex-1">
-            <div class="bg-white rounded shadow px-6 pt-6 pb-6">
-              <%= yield %>
-            </div>
+          <!-- ✅ 残り全部を使う・背景を白にして下まで -->
+          <section class="flex-1 bg-white px-6 pt-6 pb-6 overflow-auto">
+            <%= yield %>
           </section>
         <% else %>
-          <!-- レフトナビなしの画面 -->
-          <section class="flex-1">
-            <div class="bg-white rounded shadow px-6 pt-6 pb-6">
-              <%= yield %>
-            </div>
+          <!-- レフトナビなしの画面も、全幅＋下まで白 -->
+          <section class="flex-1 bg-white px-6 pt-6 pb-6">
+            <%= yield %>
           </section>
         <% end %>
       </div>

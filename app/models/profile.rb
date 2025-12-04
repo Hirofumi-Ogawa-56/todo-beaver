@@ -13,6 +13,10 @@ class Profile < ApplicationRecord
   has_many :team_memberships, dependent: :destroy
   has_many :teams, through: :team_memberships
 
+  has_many :task_assignments, dependent: :destroy
+  has_many :assigned_tasks, through: :task_assignments, source: :task
+
+
   has_many :sent_membership_requests,
            class_name: "MembershipRequest",
            foreign_key: :requester_profile_id,
