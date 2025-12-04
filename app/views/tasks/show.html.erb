@@ -1,79 +1,84 @@
 <!-- app/views/tasks/show.html.erb -->
-<% content_for :sidebar do %>
-  <%= render "tasks/sidebar" %>
-<% end %>
 
-<h1 class="text-xl font-bold mb-4"><%= @task.title %></h1>
+<turbo-frame id="side-panel-frame">
+  <% unless turbo_frame_request? %>
+    <% content_for :sidebar do %>
+      <%= render "tasks/sidebar" %>
+    <% end %>
+  <% end %>
 
-<div class="space-y-3 text-sm">
-  <div>
-    <span class="text-gray-500">チーム：</span>
-    <span class="font-semibold"><%= @task.team.name %></span>
-  </div>
+  <h1 class="text-xl font-bold mb-4"><%= @task.title %></h1>
 
-  <div>
-    <span class="text-gray-500">ステータス：</span>
-    <span><%= @task.status %></span>
-  </div>
+  <div class="space-y-3 text-sm">
+    <div>
+      <span class="text-gray-500">チーム：</span>
+      <span class="font-semibold"><%= @task.team.name %></span>
+    </div>
 
-  <div>
-    <span class="text-gray-500">期限：</span>
-    <span>
-      <% if @task.due_at.present? %>
-        <%= l @task.due_at, format: :short %>
+    <div>
+      <span class="text-gray-500">ステータス：</span>
+      <span><%= @task.status %></span>
+    </div>
+
+    <div>
+      <span class="text-gray-500">期限：</span>
+      <span>
+        <% if @task.due_at.present? %>
+          <%= l @task.due_at, format: :short %>
+        <% else %>
+          未設定
+        <% end %>
+      </span>
+    </div>
+
+    <!-- 担当者（複数） -->
+    <div>
+      <span class="text-gray-500">担当：</span>
+      <% if @task.assignees.any? %>
+        <% @task.assignees.each do |profile| %>
+          <span class="inline-flex items-center px-2 py-1 mr-1 mb-1 rounded-full bg-gray-100 text-xs">
+            <%= profile.display_name %>
+          </span>
+        <% end %>
       <% else %>
-        未設定
+        <span class="text-xs text-gray-400">未設定</span>
       <% end %>
-    </span>
-  </div>
+    </div>
 
-  <!-- 担当者（複数） -->
-  <div>
-    <span class="text-gray-500">担当：</span>
-    <% if @task.assignees.any? %>
-      <% @task.assignees.each do |profile| %>
-        <span class="inline-flex items-center px-2 py-1 mr-1 mb-1 rounded-full bg-gray-100 text-xs">
-          <%= profile.display_name %>
-        </span>
+    <div>
+      <span class="text-gray-500">作成者：</span>
+      <span><%= @task.owner_profile.display_name %></span>
+    </div>
+
+    <!-- タグ表示 -->
+    <div>
+      <span class="text-gray-500">タグ：</span>
+      <% if @task.tags.any? %>
+        <% @task.tags.each do |tag| %>
+          <span class="inline-flex items-center px-2 py-1 mr-1 mb-1 rounded-full bg-blue-50 text-xs text-blue-700 border border-blue-200">
+            <%= tag.name %>
+          </span>
+        <% end %>
+      <% else %>
+        <span class="text-xs text-gray-400">なし</span>
       <% end %>
-    <% else %>
-      <span class="text-xs text-gray-400">未設定</span>
-    <% end %>
-  </div>
+    </div>
 
-  <div>
-    <span class="text-gray-500">作成者：</span>
-    <span><%= @task.owner_profile.display_name %></span>
-  </div>
+    <div class="pt-3 border-t">
+      <span class="block text-gray-500 mb-1">詳細</span>
+      <p class="whitespace-pre-wrap"><%= @task.description.presence || "（なし）" %></p>
+    </div>
 
-  <!-- タグ表示 -->
-  <div>
-    <span class="text-gray-500">タグ：</span>
-    <% if @task.tags.any? %>
-      <% @task.tags.each do |tag| %>
-        <span class="inline-flex items-center px-2 py-1 mr-1 mb-1 rounded-full bg-blue-50 text-xs text-blue-700 border border-blue-200">
-          <%= tag.name %>
-        </span>
-      <% end %>
-    <% else %>
-      <span class="text-xs text-gray-400">なし</span>
-    <% end %>
-  </div>
+    <div class="pt-4 flex gap-3">
+      <%= link_to "編集", edit_task_path(@task),
+                  class: "px-3 py-1 bg-gray-100 rounded hover:bg-gray-200" %>
+      <%= link_to "一覧に戻る", tasks_path,
+                  class: "px-3 py-1 bg-gray-100 rounded hover:bg-gray-200" %>
 
-  <div class="pt-3 border-t">
-    <span class="block text-gray-500 mb-1">詳細</span>
-    <p class="whitespace-pre-wrap"><%= @task.description.presence || "（なし）" %></p>
+      <%= link_to "削除",
+                  task_path(@task),
+                  data: { turbo_method: :delete, turbo_confirm: "このタスクを削除しますか？" },
+                  class: "ml-auto px-3 py-1 bg-red-50 text-red-700 rounded border border-red-200 hover:bg-red-100 text-xs" %>
+    </div>
   </div>
-
-  <div class="pt-4 flex gap-3">
-    <%= link_to "編集", edit_task_path(@task),
-                class: "px-3 py-1 bg-gray-100 rounded hover:bg-gray-200" %>
-    <%= link_to "一覧に戻る", tasks_path,
-                class: "px-3 py-1 bg-gray-100 rounded hover:bg-gray-200" %>
-
-    <%= link_to "削除",
-                task_path(@task),
-                data: { turbo_method: :delete, turbo_confirm: "このタスクを削除しますか？" },
-                class: "ml-auto px-3 py-1 bg-red-50 text-red-700 rounded border border-red-200 hover:bg-red-100 text-xs" %>
-  </div>
-</div>
+</turbo-frame>

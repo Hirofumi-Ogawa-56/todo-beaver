@@ -1,8 +1,11 @@
 <!-- app/views/tasks/edit.html.erb -->
-<% content_for :sidebar do %>
-  <%= render "tasks/sidebar" %>
-<% end %>
+<turbo-frame id="side-panel-frame">
+  <% unless turbo_frame_request? %>
+    <% content_for :sidebar do %>
+      <%= render "tasks/sidebar" %>
+    <% end %>
+    <h1 class="text-xl font-bold mb-4">タスク編集</h1>
+  <% end %>
 
-<h1 class="text-xl font-bold mb-4">タスク編集</h1>
-
-<%= render "form", task: @task %>
+  <%= render "form", task: @task %>
+</turbo-frame>

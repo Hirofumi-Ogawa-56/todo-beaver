@@ -69,27 +69,33 @@ class TasksController < ApplicationController
 
   def update
     @task.assign_attributes(task_params)
-    build_due_at_from_virtual_fields(@task)
 
-    if @task.errors.any?
-      set_collections
-      render :edit, status: :unprocessable_entity
-      return
+    # 👇 期限系のフィールドが送られてきたときだけ due_at を組み立てる
+    if task_params.key?(:due_date) || task_params.key?(:due_time)
+      build_due_at_from_virtual_fields(@task)
+
+      if @task.errors.any?
+        set_collections
+        render :edit, status: :unprocessable_entity
+        return
+      end
     end
 
     Task.transaction do
       if @task.save
-        @task.update_tags_from_list!
+        # tag_list が送られてきたときだけタグ再作成（一覧からの status 更新では呼ばれない）
+        @task.update_tags_from_list! if task_params.key?(:tag_list)
       end
     end
 
     if @task.errors.empty?
-      redirect_to @task, notice: "タスクを更新しました。"
+      redirect_to tasks_path, notice: "ステータスを更新しました。"
     else
       set_collections
       render :edit, status: :unprocessable_entity
     end
   end
+
 
   def destroy
     unless current_profile.teams.exists?(id: @task.team_id)
