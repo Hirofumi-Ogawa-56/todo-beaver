@@ -3,71 +3,155 @@
   <%= render "tasks/sidebar" %>
 <% end %>
 
-<h1 class="text-xl font-bold mb-4">タスク一覧</h1>
+<div
+  data-controller="side-panel"
+  data-side-panel-initial-width-value="480"
+>
+  <h1 class="text-xl font-bold mb-4">タスク一覧</h1>
 
-<div class="mb-4 flex justify-between items-center text-sm">
-  <div class="text-gray-600">
-    現在のプロフィール：
-    <span class="font-semibold"><%= current_profile&.label || "未選択" %></span>
+  <div class="mb-4 flex justify-between items-center text-sm">
+    <div class="text-gray-600">
+      現在のプロフィール：
+      <span class="font-semibold"><%= current_profile&.label || "未選択" %></span>
+    </div>
+
+    <%= link_to "新規タスク作成",
+                new_task_path,
+                class: "text-sm px-3 py-2 bg-blue-600 text-white rounded hover:bg-blue-700",
+                data: {
+                  turbo_frame: "side-panel-frame",
+                  action: "click->side-panel#open",
+                  side_panel_title_param: "新規タスク"
+                } %>
   </div>
 
-  <%= link_to "新規タスク作成",
-              new_task_path,
-              class: "px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 text-xs" %>
-</div>
-
-<% if @tasks.any? %>
-  <table class="w-full text-sm">
-    <thead>
-      <tr class="border-b bg-gray-50">
-        <th class="text-left py-2 px-2">タイトル</th>
-        <th class="text-left py-2 px-2">チーム</th>
-        <th class="text-left py-2 px-2">ステータス</th>
-        <th class="text-left py-2 px-2">期限</th>
-        <th class="text-left py-2 px-2">担当</th>
-        <th class="text-left py-2 px-2"></th>
-      </tr>
-    </thead>
-    <tbody>
-      <% @tasks.each do |task| %>
-        <tr class="border-b">
-          <td class="py-2 px-2">
-            <%= link_to task.title, task_path(task), class: "text-blue-600 underline" %>
-          </td>
-          <td class="py-2 px-2"><%= task.team.name %></td>
-          <td class="py-2 px-2"><%= task.status %></td>
-          <td class="py-2 px-2">
-            <% if task.due_at.present? %>
-              <%= l task.due_at, format: :short %>
-            <% else %>
-              -
-            <% end %>
-          </td>
-          <td class="py-2">
-            <% if task.assignees.any? %>
-              <% task.assignees.each do |profile| %>
-                <span class="inline-flex items-center px-2 py-1 mr-1 mb-1 rounded-full bg-gray-100 text-xs">
-                  <%= profile.display_name %>
-                </span>
-              <% end %>
-            <% else %>
-              <span class="text-xs text-gray-400">未設定</span>
-            <% end %>
-          </td>
-          <td class="py-2 px-2 text-right">
-            <%= link_to "編集", edit_task_path(task),
-                        class: "text-xs text-gray-600 underline mr-2" %>
-            <%= link_to "削除",
-                        task_path(task),
-                        data: { turbo_method: :delete, turbo_confirm: "このタスクを削除しますか？" },
-                        class: "text-xs text-red-600 underline" %>
-          </td>
+  <% if @tasks.any? %>
+    <table class="w-full text-sm">
+      <thead>
+        <tr class="border-b bg-gray-50">
+          <th class="text-left py-2 px-2">タイトル</th>
+          <th class="text-left py-2 px-2">期限</th>
+          <th class="text-left py-2 px-2">ステータス</th>
+          <th class="text-left py-2 px-2">チーム</th>
+          <th class="text-left py-2 px-2">担当</th>
+          <th class="text-left py-2 px-2"></th>
         </tr>
-      <% end %>
-    </tbody>
-  </table>
-<% else %>
-  <p class="text-sm text-gray-500">
-    まだタスクがありません。「新規タスク作成」から追加してください。
-  </p>
-<% end %>
+      </thead>
+      <tbody>
+        <% @tasks.each do |task| %>
+          <tr class="border-b">
+            <!-- Taskのタイトル -->
+            <td class="py-2 px-2">
+              <%= link_to task.title,
+                task_path(task),
+                class: "text-blue-600 underline",
+                data: {
+                turbo_frame: "side-panel-frame",
+                action: "click->side-panel#open",
+                side_panel_title_param: task.title
+                } %>
+            </td>
+
+            <!-- Taskの期限 -->
+            <td class="py-2 px-2">
+              <% if task.due_at.present? %>
+                <%= task.due_at.strftime("%m/%d %H:%M") %>
+              <% else %>
+                -
+              <% end %>
+            </td>
+
+            <!-- Taskのステータス -->
+            <td class="py-2 px-2">
+              <%= form_with model: task,
+                            url: task_path(task),
+                            method: :patch,
+                            local: true do |f| %>
+                <%= f.select :status,
+                             Task.statuses.keys.map { |k| [k, k] },
+                             {},
+                             class: "border rounded px-2 py-1 text-xs",
+                             onchange: "this.form.submit();" %>
+              <% end %>
+            </td>
+
+            <!-- Taskのチーム名 -->
+            <td class="py-2 px-2"><%= task.team.name %></td>
+
+            <!-- Taskの担当者 -->
+            <td class="py-2">
+              <% if task.assignees.any? %>
+                <% task.assignees.each do |profile| %>
+                  <span class="inline-flex items-center px-2 py-1 mr-1 mb-1 rounded-full bg-gray-100 text-xs">
+                    <%= profile.display_name %>
+                  </span>
+                <% end %>
+              <% else %>
+                <span class="text-xs text-gray-400">未設定</span>
+              <% end %>
+            </td>
+
+            <!-- Taskの編集・削除 -->
+            <td class="py-2 px-2 text-right">
+              <%= link_to "編集",
+                edit_task_path(task),
+                class: "text-xs text-gray-600 underline mr-2",
+                data: {
+                turbo_frame: "side-panel-frame",
+                action: "click->side-panel#open",
+                side_panel_title_param: "タスク編集"
+                } %>
+              <%= link_to "削除",
+                          task_path(task),
+                          data: { turbo_method: :delete, turbo_confirm: "このタスクを削除しますか？" },
+                          class: "text-xs text-red-600 underline" %>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  <% else %>
+    <p class="text-sm text-gray-500">
+      まだタスクがありません。「新規タスク作成」から追加してください。
+    </p>
+  <% end %>
+
+  <!-- 右側スライドパネル（汎用） -->
+  <div
+    data-side-panel-target="panel"
+    class="fixed top-0 right-0 h-full bg-white shadow-lg border-l border-gray-200
+           translate-x-full transition-transform duration-200 ease-out
+           flex flex-col z-40"
+    style="width: 480px;"
+  >
+    <!-- 左端リサイズ用ハンドル -->
+    <div
+      data-side-panel-target="resizeHandle"
+      data-action="mousedown->side-panel#startResize"
+      class="absolute left-0 top-0 h-full w-1 cursor-col-resize bg-transparent"
+    ></div>
+
+    <!-- ヘッダー -->
+    <div class="flex items-center justify-between px-3 py-2 border-b border-gray-200">
+      <h2 class="text-sm font-semibold" data-side-panel-target="title">
+        <!-- タイトルはリンク側から渡す -->
+      </h2>
+      <button
+        type="button"
+        class="text-xs text-gray-500 hover:text-gray-800"
+        data-action="click->side-panel#close"
+      >
+        ✕
+      </button>
+    </div>
+
+    <!-- 中身：Turbo Frame で差し替わる -->
+    <div class="flex-1 overflow-y-auto p-3">
+      <turbo-frame id="side-panel-frame">
+        <p class="text-xs text-gray-400">
+          ここに、新規タスク作成フォームなどが表示されます。
+        </p>
+      </turbo-frame>
+    </div>
+  </div>
+</div>
