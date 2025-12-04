@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2025_12_01_151350) do
+ActiveRecord::Schema[7.2].define(version: 2025_12_03_152911) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -40,6 +40,48 @@ ActiveRecord::Schema[7.2].define(version: 2025_12_01_151350) do
     t.string "join_token"
     t.index ["join_token"], name: "index_profiles_on_join_token", unique: true
     t.index ["user_id"], name: "index_profiles_on_user_id"
+  end
+
+  create_table "tags", force: :cascade do |t|
+    t.string "name", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["name"], name: "index_tags_on_name", unique: true
+  end
+
+  create_table "task_assignments", force: :cascade do |t|
+    t.bigint "task_id", null: false
+    t.bigint "profile_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["profile_id"], name: "index_task_assignments_on_profile_id"
+    t.index ["task_id", "profile_id"], name: "index_task_assignments_on_task_id_and_profile_id", unique: true
+    t.index ["task_id"], name: "index_task_assignments_on_task_id"
+  end
+
+  create_table "task_tags", force: :cascade do |t|
+    t.bigint "task_id", null: false
+    t.bigint "tag_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["tag_id"], name: "index_task_tags_on_tag_id"
+    t.index ["task_id", "tag_id"], name: "index_task_tags_on_task_id_and_tag_id", unique: true
+    t.index ["task_id"], name: "index_task_tags_on_task_id"
+  end
+
+  create_table "tasks", force: :cascade do |t|
+    t.bigint "owner_profile_id", null: false
+    t.bigint "assignee_profile_id"
+    t.bigint "team_id", null: false
+    t.string "title", null: false
+    t.text "description"
+    t.datetime "due_at"
+    t.integer "status", default: 0, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["assignee_profile_id"], name: "index_tasks_on_assignee_profile_id"
+    t.index ["owner_profile_id"], name: "index_tasks_on_owner_profile_id"
+    t.index ["team_id"], name: "index_tasks_on_team_id"
   end
 
   create_table "team_memberships", force: :cascade do |t|
@@ -77,6 +119,13 @@ ActiveRecord::Schema[7.2].define(version: 2025_12_01_151350) do
   add_foreign_key "membership_requests", "profiles", column: "target_profile_id"
   add_foreign_key "membership_requests", "teams"
   add_foreign_key "profiles", "users"
+  add_foreign_key "task_assignments", "profiles"
+  add_foreign_key "task_assignments", "tasks"
+  add_foreign_key "task_tags", "tags"
+  add_foreign_key "task_tags", "tasks"
+  add_foreign_key "tasks", "profiles", column: "assignee_profile_id"
+  add_foreign_key "tasks", "profiles", column: "owner_profile_id"
+  add_foreign_key "tasks", "teams"
   add_foreign_key "team_memberships", "profiles"
   add_foreign_key "team_memberships", "teams"
 end

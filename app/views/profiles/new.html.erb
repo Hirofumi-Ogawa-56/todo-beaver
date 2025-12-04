@@ -1,5 +1,11 @@
 <!-- app/views/profiles/new.html.erb -->
-<div class="p-8">
-  <h1 class="text-2xl font-bold mb-4">プロフィール作成</h1>
-  <%= render "form", profile: @profile %>
-</div>
+
+<% if user_signed_in? && current_user.profiles.any? %>
+  <% content_for :sidebar do %>
+    <%= render "profile_settings/sidebar" %>
+  <% end %>
+<% end %>
+
+<h1 class="text-xl font-bold mb-4">プロフィール作成</h1>
+
+<%= render "form", profile: @profile %>

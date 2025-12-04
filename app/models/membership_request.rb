@@ -1,3 +1,4 @@
+# app/models/membership_request.rb
 class MembershipRequest < ApplicationRecord
   # 関連
   belongs_to :requester_profile, class_name: "Profile"

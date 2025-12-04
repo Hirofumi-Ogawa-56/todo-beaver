@@ -43,4 +43,12 @@ class ApplicationController < ActionController::Base
     session[:current_profile_id] = profile.id
     @current_profile = profile
   end
+
+  # プロフィール必須チェックを共通化
+  def require_current_profile!
+    return if current_profile
+
+    redirect_to profiles_path,
+                alert: "タスクを利用するにはプロフィールを選択してください。"
+  end
 end
