@@ -10,9 +10,98 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2025_11_23_061232) do
+ActiveRecord::Schema[7.2].define(version: 2025_12_03_152911) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
+
+  create_table "membership_requests", force: :cascade do |t|
+    t.bigint "requester_profile_id", null: false
+    t.bigint "target_profile_id"
+    t.bigint "team_id"
+    t.integer "direction", default: 0, null: false
+    t.integer "status", default: 0, null: false
+    t.text "message"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.boolean "admin"
+    t.index ["requester_profile_id", "target_profile_id", "team_id", "direction"], name: "idx_membership_requests_uniqueness"
+    t.index ["requester_profile_id"], name: "index_membership_requests_on_requester_profile_id"
+    t.index ["target_profile_id"], name: "index_membership_requests_on_target_profile_id"
+    t.index ["team_id"], name: "index_membership_requests_on_team_id"
+  end
+
+  create_table "profiles", force: :cascade do |t|
+    t.bigint "user_id", null: false
+    t.string "label"
+    t.string "theme"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.string "display_name"
+    t.string "join_token"
+    t.index ["join_token"], name: "index_profiles_on_join_token", unique: true
+    t.index ["user_id"], name: "index_profiles_on_user_id"
+  end
+
+  create_table "tags", force: :cascade do |t|
+    t.string "name", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["name"], name: "index_tags_on_name", unique: true
+  end
+
+  create_table "task_assignments", force: :cascade do |t|
+    t.bigint "task_id", null: false
+    t.bigint "profile_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["profile_id"], name: "index_task_assignments_on_profile_id"
+    t.index ["task_id", "profile_id"], name: "index_task_assignments_on_task_id_and_profile_id", unique: true
+    t.index ["task_id"], name: "index_task_assignments_on_task_id"
+  end
+
+  create_table "task_tags", force: :cascade do |t|
+    t.bigint "task_id", null: false
+    t.bigint "tag_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["tag_id"], name: "index_task_tags_on_tag_id"
+    t.index ["task_id", "tag_id"], name: "index_task_tags_on_task_id_and_tag_id", unique: true
+    t.index ["task_id"], name: "index_task_tags_on_task_id"
+  end
+
+  create_table "tasks", force: :cascade do |t|
+    t.bigint "owner_profile_id", null: false
+    t.bigint "assignee_profile_id"
+    t.bigint "team_id", null: false
+    t.string "title", null: false
+    t.text "description"
+    t.datetime "due_at"
+    t.integer "status", default: 0, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["assignee_profile_id"], name: "index_tasks_on_assignee_profile_id"
+    t.index ["owner_profile_id"], name: "index_tasks_on_owner_profile_id"
+    t.index ["team_id"], name: "index_tasks_on_team_id"
+  end
+
+  create_table "team_memberships", force: :cascade do |t|
+    t.bigint "profile_id", null: false
+    t.bigint "team_id", null: false
+    t.string "role"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["profile_id", "team_id"], name: "index_team_memberships_on_profile_id_and_team_id", unique: true
+    t.index ["profile_id"], name: "index_team_memberships_on_profile_id"
+    t.index ["team_id"], name: "index_team_memberships_on_team_id"
+  end
+
+  create_table "teams", force: :cascade do |t|
+    t.string "name"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.string "join_token"
+    t.index ["join_token"], name: "index_teams_on_join_token", unique: true
+  end
 
   create_table "users", force: :cascade do |t|
     t.string "email", default: "", null: false
@@ -25,4 +114,18 @@ ActiveRecord::Schema[7.2].define(version: 2025_11_23_061232) do
     t.index ["email"], name: "index_users_on_email", unique: true
     t.index ["reset_password_token"], name: "index_users_on_reset_password_token", unique: true
   end
+
+  add_foreign_key "membership_requests", "profiles", column: "requester_profile_id"
+  add_foreign_key "membership_requests", "profiles", column: "target_profile_id"
+  add_foreign_key "membership_requests", "teams"
+  add_foreign_key "profiles", "users"
+  add_foreign_key "task_assignments", "profiles"
+  add_foreign_key "task_assignments", "tasks"
+  add_foreign_key "task_tags", "tags"
+  add_foreign_key "task_tags", "tasks"
+  add_foreign_key "tasks", "profiles", column: "assignee_profile_id"
+  add_foreign_key "tasks", "profiles", column: "owner_profile_id"
+  add_foreign_key "tasks", "teams"
+  add_foreign_key "team_memberships", "profiles"
+  add_foreign_key "team_memberships", "teams"
 end
