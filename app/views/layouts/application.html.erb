@@ -1,4 +1,4 @@
-<!-- app/view/layouts/application.html.erb -->
+<!-- app/views/layouts/application.html.erb -->
 <!DOCTYPE html>
 <html>
   <head>
@@ -19,77 +19,105 @@
     <%= javascript_importmap_tags %>
   </head>
 
-  <body class="bg-gray-100">
+  <body class="bg-white">
     <!-- ヘッダー -->
-      <header class="fixed top-0 inset-x-0 bg-white border-b shadow-sm z-10">
-        <!-- ✅ max-w-5xl mx-auto をやめて、全幅に -->
+      <header class="fixed top-0 inset-x-0 bg-gray-50 border-b shadow-sm z-10">
         <div class="w-full px-4 py-2">
-          <!-- 1段目：ロゴ + プロフィール切替 -->
-          <div class="flex items-center justify-between mb-3">
-            <!-- 左側：ロゴ -->
-            <div class="flex items-center gap-4">
-              <%= link_to "Todo Beaver", root_path, class: "font-bold text-xl whitespace-nowrap" %>
+          <!-- 1段：左 = プロフィール + ナビ / 右 = ロゴ -->
+          <div class="flex items-center justify-between">
+            <!-- 左側：プロフィールブロック + ナビブロック -->
+            <div class="flex items-center gap-8">
+              <!-- プロフィール表示 + プロフィール切替 + ドロップダウン -->
+              <div class="flex items-center gap-4">
+                <% if user_signed_in? && current_user.profiles.any? && current_profile %>
+                  <!-- プロフィールアイコン＋名前（クリックでメニュー） -->
+                  <details class="relative">
+                    <summary class="list-none cursor-pointer">
+                      <%= profile_chip(
+                            current_profile,
+                            size: :sm,
+                            wrapper_class: "text-sm text-gray-700 font-semibold"
+                          ) %>
+                    </summary>
 
-              <% if user_signed_in? && current_user.profiles.empty? %>
-                <%= link_to "プロフィールを作成",
-                            new_profile_path,
-                            class: "text-sm text-blue-600 underline" %>
+                    <!-- ドロップダウンメニュー -->
+                    <div class="absolute mt-2 left-0 w-40 bg-white border border-gray-200 rounded shadow text-sm z-50">
+                      <%= link_to "ログアウト",
+                                  destroy_user_session_path,
+                                  data: { turbo_method: :delete },
+                                  class: "block w-full text-left px-3 py-2 hover:bg-gray-100" %>
+                    </div>
+                  </details>
+
+                  <!-- プロフィール切り替えセレクト -->
+                  <div>
+                    <%= form_with url: switch_profiles_path, method: :post, local: true do |f| %>
+                      <%= f.select :profile_id,
+                                  options_from_collection_for_select(
+                                    current_user.profiles,
+                                    :id,
+                                    :label,
+                                    current_profile&.id
+                                  ),
+                                  {},
+                                  class: "border rounded px-3 py-1 text-sm bg-white",
+                                  onchange: "this.form.submit();" %>
+                    <% end %>
+                  </div>
+                <% end %>
+              </div>
+
+              <!-- プロフィールの右に少し空けて、左詰めでナビ -->
+              <% if user_signed_in? %>
+                <nav class="flex items-center gap-3">
+                  <!-- タスク -->
+                  <%= link_to root_path,
+                              class: "text-lg text-gray-700 font-semibold px-3 py-1 rounded hover:bg-gray-100 flex items-center gap-1" do %>
+                    <%= image_tag "beaver_icon.png",
+                                  alt: "タスク",
+                                  class: "block",
+                                  style: "height: 25px; width: auto;" %>
+                    <span>Task</span>
+                  <% end %>
+
+                  <!-- プロフィール -->
+                  <%= link_to home_profile_settings_path,
+                              class: "text-lg text-gray-700 font-semibold px-3 py-1 rounded hover:bg-gray-100 flex items-center gap-1" do %>
+                    <%= image_tag "butterfly_icon.png",
+                                  alt: "プロフィール",
+                                  class: "block",
+                                  style: "height: 25px; width: auto;" %>
+                    <span>Profile</span>
+                  <% end %>
+
+                  <!-- チーム -->
+                  <%= link_to home_team_settings_path,
+                              class: "text-lg text-gray-700 font-semibold px-3 py-1 rounded hover:bg-gray-100 flex items-center gap-1" do %>
+                    <%= image_tag "elephant_icon.png",
+                                  alt: "チーム",
+                                  class: "block",
+                                  style: "height: 33px; width: auto;" %>
+                    <span>Team</span>
+                  <% end %>
+                </nav>
               <% end %>
             </div>
 
-            <!-- 右側：プロフィール表示 + 選択 -->
-            <div class="flex items-center gap-4">
-              <% if user_signed_in? && current_user.profiles.any? %>
-                <% if current_profile %>
-                  <div class="text-sm text-gray-700">
-                    <span class="font-semibold">
-                      <%= current_profile.display_name.presence || current_profile.label %>
-                    </span>
-                  </div>
-                <% end %>
-
-                <div>
-                  <%= form_with url: switch_profiles_path, method: :post, local: true do |f| %>
-                    <%= f.select :profile_id,
-                                options_from_collection_for_select(
-                                  current_user.profiles,
-                                  :id,
-                                  :label,
-                                  current_profile&.id
-                                ),
-                                {},
-                                class: "border rounded px-3 py-1 text-sm bg-white",
-                                onchange: "this.form.submit();" %>
-                  <% end %>
-                </div>
+            <!-- 右側：ロゴ（イラスト） -->
+            <div class="flex items-center">
+              <%= link_to root_path, class: "flex items-center gap-2" do %>
+                <%= image_tag "todo-beaver_logo.png",
+                              alt: "Todo Beaver",
+                              class: "block",
+                              style: "height: 32px; width: auto;" %>
               <% end %>
             </div>
           </div>
-
-          <!-- 2段目：ボタン行 -->
-          <% if user_signed_in? %>
-            <div class="flex justify-end gap-3">
-              <%= link_to "プロフィール設定",
-                          home_profile_settings_path,
-                          class: "text-xs px-3 py-1 bg-gray-100 rounded border hover:bg-gray-200" %>
-
-              <%= link_to "チーム設定",
-                          home_team_settings_path,
-                          class: "text-xs px-3 py-1 bg-gray-100 rounded border hover:bg-gray-200" %>
-
-              <%= link_to "ログアウト",
-                          destroy_user_session_path,
-                          data: { turbo_method: :delete },
-                          class: "text-xs px-3 py-1 bg-red-100 text-red-700 rounded border border-red-300 hover:bg-red-200" %>
-            </div>
-          <% end %>
         </div>
       </header>
 
     <!-- メインコンテンツ -->
-    <!-- ✅ 横幅いっぱい使う＆下まで伸ばす -->
     <main class="pt-20 pb-0">
-      <!-- フラッシュメッセージ -->
       <% if notice %>
         <div class="mb-4 bg-green-100 text-green-800 px-4 py-2 rounded">
           <%= notice %>
@@ -101,23 +129,16 @@
         </div>
       <% end %>
 
-      <!-- 共通レイアウト：左ナビ＋右メイン -->
-      <!-- ✅ 画面全幅を使い、高さもヘッダーを除いた分だけ確保 -->
       <div class="flex gap-0 min-h-[calc(100vh-5rem)]">
         <% if content_for?(:sidebar) %>
-          <!-- レフトナビ -->
-          <!-- ✅ 左端にぴったり／背景は透明 -->
           <aside class="w-60 shrink-0 border-r border-gray-200 px-4 pt-6 pb-6 bg-transparent">
             <%= yield :sidebar %>
           </aside>
 
-          <!-- メインスクリーン -->
-          <!-- ✅ 残り全部を使う・背景を白にして下まで -->
           <section class="flex-1 bg-white px-6 pt-6 pb-6 overflow-auto">
             <%= yield %>
           </section>
         <% else %>
-          <!-- レフトナビなしの画面も、全幅＋下まで白 -->
           <section class="flex-1 bg-white px-6 pt-6 pb-6">
             <%= yield %>
           </section>

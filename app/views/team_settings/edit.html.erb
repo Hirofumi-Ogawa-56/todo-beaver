@@ -24,7 +24,15 @@
     <tbody>
       <% @teams.each do |team| %>
         <tr class="border-b">
-          <td class="py-2"><%= team.name %></td>
+          <td class="py-2">
+            <%= link_to team_path(team), class: "inline-block" do %>
+              <%= team_chip(
+                    team,
+                    size: :xs,
+                    wrapper_class: "px-2 py-1 rounded bg-gray-100 text-xs"
+                  ) %>
+            <% end %>
+          </td>
           <td class="py-2 font-mono text-xs text-gray-600">
             <%= team.join_token.presence || "-" %>
           </td>

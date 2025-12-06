@@ -15,7 +15,7 @@
   <div class="mb-4">
     <%= f.label :title, "タイトル", class: "block text-sm mb-1" %>
     <%= f.text_field :title,
-                     class: "border rounded px-2 py-1 w-full text-sm",
+                     class: "border border-gray-200 rounded px-2 py-1 w-full text-sm",
                      placeholder: "タスクの内容を一言で" %>
   </div>
 
@@ -27,14 +27,14 @@
       <!-- 日付：カレンダーで選ぶ -->
       <%= f.date_field :due_date,
                        value: (@task.due_date || @task.due_at&.to_date),
-                       class: "border rounded px-2 py-1 text-sm" %>
+                       class: "border border-gray-200 rounded px-2 py-1 text-sm" %>
 
       <span class="text-sm text-gray-500">時間</span>
 
       <!-- 時刻：テキスト入力のみ（30分単位を想定） -->
       <%= f.text_field :due_time,
                        value: (@task.due_time || @task.due_at&.strftime("%H:%M")),
-                       class: "border rounded px-2 py-1 text-sm w-20",
+                       class: "border border-gray-200 rounded px-2 py-1 text-sm w-20",
                        placeholder: "23:30",
                        inputmode: "numeric",
                        pattern: "[0-2][0-9]:(00|30)" %>
@@ -50,7 +50,7 @@
     <%= f.label :tag_list, "タグ（カンマ区切り）", class: "block text-sm mb-1" %>
     <%= f.text_field :tag_list,
                      value: @task.tag_list,
-                     class: "border rounded px-2 py-1 w-full text-sm",
+                     class: "border border-gray-200 rounded px-2 py-1 w-full text-sm",
                      placeholder: "例）RUNTEQ, Rails, バグ修正" %>
     <p class="text-[11px] text-gray-500 mt-1">
       カンマ（,）区切りで複数タグを入力できます。
@@ -58,27 +58,36 @@
   </div>
 
   <!-- 担当者（複数選択） -->
-  <div class="mb-4">
-    <%= f.label :assignee_ids, "担当者（複数選択可）", class: "block text-sm mb-1" %>
-    <%= f.collection_select :assignee_ids,
-                            @assignee_candidates,
-                            :id,
-                            :display_name,
-                            {},
-                            multiple: true,
-                            size: [@assignee_candidates.size, 8].min,
-                            class: "border rounded px-2 py-1 w-full text-sm" %>
-    <p class="text-[11px] text-gray-500 mt-1">
-      Ctrl（Windows）または Command（Mac）を押しながらクリックすると複数選択できます。
-    </p>
-  </div>
+    <div class="mb-4">
+      <%= f.label :assignee_ids, "担当者（複数選択可）", class: "block text-sm mb-1" %>
+
+      <div class="flex flex-wrap gap-2">
+        <%= f.collection_check_boxes :assignee_ids,
+                                    @assignee_candidates,
+                                    :id,
+                                    :display_name do |b| %>
+          <label class="inline-flex items-center px-2 py-1 rounded-full border border-gray-200 bg-gray-50 cursor-pointer text-xs">
+            <!-- 実際のチェックボックス（地味でもOK） -->
+            <%= b.check_box(class: "mr-1") %>
+
+            <!-- アイコン＋名前 -->
+            <%= profile_avatar(b.object, size: :xs) %>
+            <span class="ml-1"><%= b.object.display_name %></span>
+          </label>
+        <% end %>
+      </div>
+
+      <p class="text-[11px] text-gray-500 mt-1">
+        担当者をクリックすると選択／解除できます（複数選択可）。
+      </p>
+    </div>
 
   <!-- 詳細 -->
   <div class="mb-4">
     <%= f.label :description, "詳細", class: "block text-sm mb-1" %>
     <%= f.text_area :description,
                     rows: 4,
-                    class: "border rounded px-2 py-1 w-full text-sm" %>
+                    class: "border border-gray-200 rounded px-2 py-1 w-full text-sm" %>
   </div>
 
   <!-- ステータス -->
@@ -87,7 +96,7 @@
     <%= f.select :status,
                  Task.statuses.keys.map { |k| [k, k] },
                  {},
-                 class: "border rounded px-2 py-1 w-full text-sm" %>
+                 class: "border border-gray-200 rounded px-2 py-1 w-full text-sm" %>
   </div>
 
   <%= f.submit class: "px-4 py-2 bg-blue-600 text-white text-sm rounded hover:bg-blue-700" %>

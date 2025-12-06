@@ -14,8 +14,33 @@
   <div class="mb-4 max-w-md">
     <%= f.label :name, "チーム名", class: "block text-sm mb-1" %>
     <%= f.text_field :name,
-                     class: "w-full border rounded px-3 py-2 text-sm",
+                     class: "w-full border border-gray-200 rounded px-3 py-2 text-sm",
                      placeholder: "チーム名を入力してください" %>
+  </div>
+
+  <div class="mb-4">
+    <%= f.label :avatar, "チームアイコン", class: "block text-sm mb-1" %>
+
+    <% if @team.avatar.attached? %>
+      <div class="mb-2">
+        <%= team_avatar(@team, size: :md) %>
+      </div>
+    <% end %>
+
+    <%= f.file_field :avatar,
+                     accept: "image/*",
+                     class: "block w-full text-sm" %>
+
+    <% if @team.avatar.attached? %>
+      <label class="mt-2 inline-flex items-center text-xs text-red-600">
+        <%= f.check_box :remove_avatar, class: "mr-1" %>
+        画像を削除する
+      </label>
+    <% end %>
+
+    <p class="text-[11px] text-gray-500 mt-1">
+      正方形の画像がおすすめです（例: 400×400）。
+    </p>
   </div>
   
   <%= f.submit "チームを作成する",

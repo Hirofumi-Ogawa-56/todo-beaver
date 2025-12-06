@@ -8,6 +8,7 @@ class Task < ApplicationRecord
   has_many :tags, through: :task_tags
   has_many :task_assignments, dependent: :destroy
   has_many :assignees, through: :task_assignments, source: :profile
+  has_many :comments, dependent: :destroy
 
   enum status: {
     todo: 0,
