@@ -10,11 +10,6 @@
   <h1 class="text-xl font-bold mb-4">タスク一覧</h1>
 
   <div class="mb-4 flex justify-between items-center text-sm">
-    <div class="text-gray-600">
-      現在のプロフィール：
-      <span class="font-semibold"><%= current_profile&.label || "未選択" %></span>
-    </div>
-
     <%= link_to "新規タスク作成",
                 new_task_path,
                 class: "text-sm px-3 py-2 bg-blue-600 text-white rounded hover:bg-blue-700",
@@ -32,14 +27,13 @@
           <th class="text-left py-2 px-2">タイトル</th>
           <th class="text-left py-2 px-2">期限</th>
           <th class="text-left py-2 px-2">ステータス</th>
-          <th class="text-left py-2 px-2">チーム</th>
           <th class="text-left py-2 px-2">担当</th>
           <th class="text-left py-2 px-2"></th>
         </tr>
       </thead>
       <tbody>
         <% @tasks.each do |task| %>
-          <tr class="border-b">
+          <tr class="border-gray-50">
             <!-- Taskのタイトル -->
             <td class="py-2 px-2">
               <%= link_to task.title,
@@ -70,25 +64,24 @@
                 <%= f.select :status,
                              Task.statuses.keys.map { |k| [k, k] },
                              {},
-                             class: "border rounded px-2 py-1 text-xs",
+                             class: "border border-gray-200 rounded px-2 py-1 text-xs",
                              onchange: "this.form.submit();" %>
               <% end %>
             </td>
 
-            <!-- Taskのチーム名 -->
-            <td class="py-2 px-2"><%= task.team.name %></td>
-
             <!-- Taskの担当者 -->
             <td class="py-2">
-              <% if task.assignees.any? %>
+            <% if task.assignees.any? %>
                 <% task.assignees.each do |profile| %>
-                  <span class="inline-flex items-center px-2 py-1 mr-1 mb-1 rounded-full bg-gray-100 text-xs">
-                    <%= profile.display_name %>
-                  </span>
+                  <%= profile_chip(
+                        profile,
+                        size: :xs,
+                        wrapper_class: "px-2 py-1 mr-1 mb-1 rounded bg-gray-100 text-xs"
+                      ) %>
                 <% end %>
-              <% else %>
+            <% else %>
                 <span class="text-xs text-gray-400">未設定</span>
-              <% end %>
+            <% end %>
             </td>
 
             <!-- Taskの編集・削除 -->

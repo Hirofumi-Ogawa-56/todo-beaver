@@ -1,6 +1,4 @@
 # app/models/profile.rb
-# Profileクラスの定義
-# app/models/profile.rb
 class Profile < ApplicationRecord
   belongs_to :user
 
@@ -15,7 +13,7 @@ class Profile < ApplicationRecord
 
   has_many :task_assignments, dependent: :destroy
   has_many :assigned_tasks, through: :task_assignments, source: :task
-
+  has_many :comments, foreign_key: :author_profile_id, dependent: :nullify
 
   has_many :sent_membership_requests,
            class_name: "MembershipRequest",
@@ -27,7 +25,17 @@ class Profile < ApplicationRecord
            foreign_key: :target_profile_id,
            dependent: :destroy
 
+  has_one_attached :avatar
+
+  attr_accessor :remove_avatar
+
   before_create :set_join_token
+  before_save :purge_avatar_if_needed
+
+  def display_initials
+    base = display_name.presence || label.presence || "?"
+    base.split(/\s+/).map { |part| part[0] }.join[0, 2].upcase
+  end
 
   private
 
@@ -35,10 +43,21 @@ class Profile < ApplicationRecord
     self.join_token ||= generate_unique_join_token
   end
 
+  def purge_avatar_if_needed
+    if ActiveModel::Type::Boolean.new.cast(remove_avatar)
+      avatar.purge
+    end
+  end
+
   def generate_unique_join_token
     loop do
       token = SecureRandom.alphanumeric(8).upcase # 例: "A9B3ZK1Q"
       break token unless self.class.exists?(join_token: token)
     end
+  end
+
+  def purge_avatar_if_requested
+    return unless ActiveModel::Type::Boolean.new.cast(remove_avatar)
+    avatar.purge_later if avatar.attached?
   end
 end

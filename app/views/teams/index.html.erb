@@ -22,7 +22,15 @@
   <tbody>
     <% @teams.each do |team| %>
       <tr class="border-b">
-        <td class="py-2"><%= link_to team.name, team_path(team), class: "text-blue-600 underline" %></td>
+        <td class="py-2">
+          <%= link_to team_path(team), class: "inline-block" do %>
+            <%= team_chip(
+                  team,
+                  size: :xs,
+                  wrapper_class: "px-2 py-1 rounded bg-gray-100 text-xs"
+                ) %>
+          <% end %>
+        </td>
         <td class="py-2"><%= l(team.created_at.to_date) %></td>
         <td class="py-2">
           <%= link_to "編集", edit_team_path(team), class: "text-xs text-gray-600 underline mr-2" %>

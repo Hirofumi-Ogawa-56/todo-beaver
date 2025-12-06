@@ -13,72 +13,86 @@
       <%= f.select :team_id,
                    options_from_collection_for_select(@teams, :id, :name, @selected_team&.id),
                    {},
-                   class: "border rounded px-2 py-1 text-sm",
+                   class: "border border-gray-200 rounded px-2 py-1 text-sm",
                    onchange: "this.form.submit();" %>
     <% end %>
   </div>
 
   <% if @selected_team %>
-    <h2 class="text-lg font-semibold mb-2"><%= @selected_team.name %> のメンバー</h2>
+    <div class="flex items-center mb-2">
+      <%= team_chip(
+            @selected_team,
+            size: :sm,
+            wrapper_class: "px-2 py-1 rounded bg-gray-100 text-sm"
+          ) %>
+      <span class="ml-2 text-sm text-gray-500">のメンバー</span>
+    </div>
 
     <!-- メンバー一覧 -->
     <% if @memberships.any? %>
-  <table class="w-full text-sm mb-4">
-    <thead>
-      <tr class="border-b">
-        <th class="text-left py-2">プロフィール名</th>
-        <th class="text-left py-2">役割</th>
-        <th class="text-left py-2"></th>
-      </tr>
-    </thead>
-    <tbody>
-      <% @memberships.each do |membership| %>
-        <tr class="border-b">
-          <td class="py-2"><%= membership.profile.display_name %></td>
+      <table class="w-full text-sm mb-4">
+        <thead>
+          <tr class="border-b">
+            <th class="text-left py-2">プロフィール名</th>
+            <th class="text-left py-2">役割</th>
+            <th class="text-left py-2"></th>
+          </tr>
+        </thead>
+        <tbody>
+          <% @memberships.each do |membership| %>
+            <tr>
+              <td class="py-1">
+                <%= profile_chip(
+                  membership.profile,
+                  size: :xs,
+                  wrapper_class: "px-2 py-1 rounded bg-gray-100 text-xs"
+                ) %>
+              </td>
 
-          <td class="py-2">
-            <% if @can_manage_members %>
-              <!-- ✅ 管理者の場合だけ、プルダウンで変更できる -->
-              <%= form_with model: membership,
-                            url: team_membership_path(membership),
-                            method: :patch,
-                            local: true,
-                            class: "inline-block" do |f| %>
-                <%= f.select :role,
-                            options_for_select(
-                              [
-                                ["管理者", TeamMembership::ADMIN_ROLE],
-                                ["メンバー", ""]
-                              ],
-                              membership.admin? ? TeamMembership::ADMIN_ROLE : ""
-                            ),
-                            {},
-                            class: "border rounded px-2 py-1 text-xs",
-                            onchange: "this.form.submit();" %>
-              <% end %>
-            <% else %>
-              <!-- ✅ メンバーは「表示だけ」 -->
-              <% if membership.admin? %>
-                管理者
-              <% else %>
-                メンバー
-              <% end %>
-            <% end %>
-          </td>
+              <td class="py-2">
+                <% if @can_manage_members %>
+                  <!-- ✅ 管理者の場合だけ、プルダウンで変更できる -->
+                  <%= form_with model: membership,
+                                url: team_membership_path(membership),
+                                method: :patch,
+                                local: true,
+                                class: "inline-block" do |f| %>
+                    <%= f.select :role,
+                                options_for_select(
+                                  [
+                                    ["管理者", TeamMembership::ADMIN_ROLE],
+                                    ["メンバー", ""]
+                                  ],
+                                  membership.admin? ? TeamMembership::ADMIN_ROLE : ""
+                                ),
+                                {},
+                                class: "border border-gray-200 rounded px-2 py-1 text-xs",
+                                onchange: "this.form.submit();" %>
+                  <% end %>
+                <% else %>
+                  <!-- ✅ メンバーは「表示だけ」 -->
+                  <% if membership.admin? %>
+                    管理者
+                  <% else %>
+                    メンバー
+                  <% end %>
+                <% end %>
+              </td>
 
-<td class="py-2 text-right">
-  <% if @can_manage_members %>
-    <%= button_to "削除",
-                  team_membership_path(membership),
-                  method: :delete,
-                  data: { turbo_confirm: "このメンバーを削除しますか？" },
-                  class: "text-xs px-3 py-1 bg-red-50 text-red-700 rounded border border-red-200 hover:bg-red-100" %>
-  <% end %>
-</td>
-        </tr>
-      <% end %>
-    </tbody>
-  </table>
+              <td class="py-2 text-right">
+                <% if @can_manage_members %>
+                  <%= button_to "削除",
+                                team_membership_path(membership),
+                                method: :delete,
+                                data: { turbo_confirm: "このメンバーを削除しますか？" },
+                                class: "text-xs px-3 py-1 bg-red-50 text-red-700 rounded border border-red-200 hover:bg-red-100" %>
+                <% end %>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+      
     <% else %>
       <p class="text-sm text-gray-500 mb-4">
         まだこのチームにはメンバーがいません。

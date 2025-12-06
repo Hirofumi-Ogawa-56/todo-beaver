@@ -1,0 +1,25 @@
+<!-- app/views/comments/_form.html.erb -->
+<%= form_with model: [@task, comment], local: true do |f| %>
+  <% if comment.errors.any? %>
+    <div class="mb-2 p-2 bg-red-50 text-red-700 rounded text-xs">
+      <p class="font-semibold"><%= comment.errors.count %>件のエラーがあります。</p>
+      <ul class="list-disc list-inside">
+        <% comment.errors.full_messages.each do |msg| %>
+          <li><%= msg %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <div class="mb-2">
+    <%= f.text_area :body,
+                    rows: 3,
+                    class: "w-full border rounded px-2 py-1 text-sm",
+                    placeholder: "コメントを入力..." %>
+  </div>
+
+  <div class="flex justify-end">
+    <%= f.submit "送信",
+                 class: "px-3 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700" %>
+  </div>
+<% end %>

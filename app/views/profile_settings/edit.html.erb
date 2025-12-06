@@ -5,23 +5,7 @@
 
 <h1 class="text-xl font-bold mb-4">プロフィール編集</h1>
 
-<p class="text-sm text-gray-600 mb-4">
-  現在選択中のプロフィールの情報を編集できます。
-</p>
-
-<% if @profile %>
-  <div class="mb-4 p-3 bg-white border rounded">
-    <p class="text-sm text-gray-700">
-      現在のプロフィール：
-      <span class="font-semibold"><%= @profile.label %></span>
-      <% if @profile.display_name.present? %>
-        <span class="text-xs text-gray-500 ml-2">
-          （表示名: <%= @profile.display_name %>）
-        </span>
-      <% end %>
-    </p>
-  </div>
-
+ <% if @profile %>
   <%= render "profiles/form", profile: @profile %>
 <% else %>
   <p class="text-sm text-red-600">

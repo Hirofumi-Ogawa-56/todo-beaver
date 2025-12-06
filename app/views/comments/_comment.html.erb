@@ -1,0 +1,22 @@
+<!-- app/views/comments/_comment.html.erb -->
+<% profile = comment.author_profile %>
+
+<div class="py-2 border-b border-gray-100">
+  <!-- 1行目：チップ + 日付 -->
+  <div class="flex items-center justify-between text-[11px] text-gray-500">
+    <%= profile_chip(
+          profile,
+          size: :xs,
+          wrapper_class: "text-xs text-gray-700 font-semibold"
+        ) %>
+
+    <span><%= l comment.created_at, format: :ja_short %></span>
+  </div>
+
+  <!-- 2行目：本文（改行をちゃんと反映＋インデント） -->
+  <%= simple_format(
+        h(comment.body),                             # 中身を一旦エスケープ
+        { class: "mt-1 text-sm", style: "padding-left: 1.5rem;" }, # pタグにこのクラス/スタイル
+        wrapper_tag: "p"                             # <p>でラップ
+      ) %>
+</div>
