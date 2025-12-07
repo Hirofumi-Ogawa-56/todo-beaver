@@ -42,32 +42,21 @@
                 data: {
                 turbo_frame: "side-panel-frame",
                 action: "click->side-panel#open",
-                side_panel_title_param: task.title
+                side_panel_title_param: "タスクの詳細"
                 } %>
             </td>
 
             <!-- Taskの期限 -->
             <td class="py-2 px-2">
-              <% if task.due_at.present? %>
-                <%= task.due_at.strftime("%m/%d %H:%M") %>
-              <% else %>
-                -
-              <% end %>
+              <%= due_badge(task) %>
             </td>
 
             <!-- Taskのステータス -->
-            <td class="py-2 px-2">
-              <%= form_with model: task,
-                            url: task_path(task),
-                            method: :patch,
-                            local: true do |f| %>
-                <%= f.select :status,
-                             Task.statuses.keys.map { |k| [k, k] },
-                             {},
-                             class: "border border-gray-200 rounded px-2 py-1 text-xs",
-                             onchange: "this.form.submit();" %>
-              <% end %>
-            </td>
+              <td class="py-2 px-2">
+                <div class="mb-1">
+                  <%= status_badge(task) %>
+                </div>
+              </td>
 
             <!-- Taskの担当者 -->
             <td class="py-2">
@@ -84,21 +73,39 @@
             <% end %>
             </td>
 
-            <!-- Taskの編集・削除 -->
-            <td class="py-2 px-2 text-right">
+          <!-- Taskのステータス変更 + 編集・削除 -->
+          <td class="py-2 px-2 text-right">
+            <div class="flex items-center justify-end gap-2">
+              <!-- ステータス変更プルダウン -->
+              <%= form_with model: task,
+                            url: task_path(task),
+                            method: :patch,
+                            local: true do |f| %>
+                <%= f.select :status,
+                            Task.statuses.keys.map { |k| [k, k] },
+                            {},
+                            class: "border border-gray-200 rounded px-2 py-1 text-xs",
+                            onchange: "this.form.submit();" %>
+              <% end %>
+
+              <!-- 編集ボタン -->
               <%= link_to "編集",
-                edit_task_path(task),
-                class: "text-xs text-gray-600 underline mr-2",
-                data: {
-                turbo_frame: "side-panel-frame",
-                action: "click->side-panel#open",
-                side_panel_title_param: "タスク編集"
-                } %>
+                          edit_task_path(task),
+                          class: "text-xs text-gray-600 underline",
+                          data: {
+                            turbo_frame: "side-panel-frame",
+                            action: "click->side-panel#open",
+                            side_panel_title_param: "タスク編集"
+                          } %>
+
+              <!-- 削除ボタン -->
               <%= link_to "削除",
                           task_path(task),
                           data: { turbo_method: :delete, turbo_confirm: "このタスクを削除しますか？" },
                           class: "text-xs text-red-600 underline" %>
-            </td>
+            </div>
+          </td>
+
           </tr>
         <% end %>
       </tbody>

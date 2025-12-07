@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2025_12_05_111906) do
+ActiveRecord::Schema[7.2].define(version: 2025_12_06_141956) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -48,6 +48,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_12_05_111906) do
     t.text "body", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.boolean "pinned", default: false, null: false
     t.index ["author_profile_id"], name: "index_comments_on_author_profile_id"
     t.index ["task_id"], name: "index_comments_on_task_id"
   end
