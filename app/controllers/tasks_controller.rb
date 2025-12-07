@@ -7,8 +7,11 @@ class TasksController < ApplicationController
 
   def index
     base_scope =
-      Task.joins(team: :team_memberships)
-          .where(team_memberships: { profile_id: current_profile.id })
+      Task.left_joins(:assignees)
+          .where(
+            "profiles.id = :pid OR tasks.owner_profile_id = :pid",
+            pid: current_profile.id
+          )
 
     @tasks =
       apply_filter(base_scope)

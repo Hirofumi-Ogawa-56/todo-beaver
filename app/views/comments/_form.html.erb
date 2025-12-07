@@ -18,6 +18,27 @@
                     placeholder: "コメントを入力..." %>
   </div>
 
+  <!-- ★ ピン留め + ステータス変更 -->
+  <div class="mb-2 flex flex-wrap items-center gap-4 text-[11px] text-gray-600">
+    <!-- ピン留め -->
+    <label class="inline-flex items-center gap-1">
+      <%= f.check_box :pinned %>
+      <span>このコメントをピン留め（Outcome）にする</span>
+    </label>
+
+    <!-- ステータス変更 -->
+    <div class="flex items-center gap-1">
+      <span>タスクのステータス</span>
+      <%= select_tag "comment[task_status]",
+                     options_for_select(
+                       [["変更しない", ""]] +
+                       Task.statuses.keys.map { |k| [k, k] },
+                       "" # デフォルトは「変更しない」
+                     ),
+                     class: "border border-gray-200 rounded px-2 py-1" %>
+    </div>
+  </div>
+
   <div class="flex justify-end">
     <%= f.submit "送信",
                  class: "px-3 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700" %>

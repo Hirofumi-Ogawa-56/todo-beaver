@@ -9,6 +9,9 @@ class Task < ApplicationRecord
   has_many :task_assignments, dependent: :destroy
   has_many :assignees, through: :task_assignments, source: :profile
   has_many :comments, dependent: :destroy
+  has_many :pinned_comments,
+           -> { where(pinned: true).order(created_at: :asc) },
+           class_name: "Comment"
 
   enum status: {
     todo: 0,

@@ -60,7 +60,7 @@
                                     current_profile&.id
                                   ),
                                   {},
-                                  class: "border rounded px-3 py-1 text-sm bg-white",
+                                  class: "border border-gray-200 rounded px-3 py-1 text-sm bg-white",
                                   onchange: "this.form.submit();" %>
                     <% end %>
                   </div>
@@ -77,9 +77,39 @@
                                   alt: "タスク",
                                   class: "block",
                                   style: "height: 25px; width: auto;" %>
-                    <span>Task</span>
+                    <span>-Task</span>
                   <% end %>
 
+                  <!-- ワークス -->
+                  <%= link_to root_path,
+                              class: "text-lg text-gray-700 font-semibold px-3 py-1 rounded hover:bg-gray-100 flex items-center gap-1" do %>
+                    <%= image_tag "owl_icon.png",
+                                  alt: "タスク",
+                                  class: "block",
+                                  style: "height: 25px; width: auto;" %>
+                    <span>-Works</span>
+                  <% end %>
+
+                  <!-- チャット -->
+                  <%= link_to root_path,
+                              class: "text-lg text-gray-700 font-semibold px-3 py-1 rounded hover:bg-gray-100 flex items-center gap-1" do %>
+                    <%= image_tag "orca_icon.png",
+                                  alt: "タスク",
+                                  class: "block",
+                                  style: "height: 20px; width: auto;" %>
+                    <span>-Chat</span>
+                  <% end %>
+
+                  <!-- ソーシャル -->
+                  <%= link_to root_path,
+                              class: "text-lg text-gray-700 font-semibold px-3 py-1 rounded hover:bg-gray-100 flex items-center gap-1" do %>
+                    <%= image_tag "rabbit_icon.png",
+                                  alt: "タスク",
+                                  class: "block",
+                                  style: "height: 25px; width: auto;" %>
+                    <span>-Social</span>
+                  <% end %>                  
+                  
                   <!-- プロフィール -->
                   <%= link_to home_profile_settings_path,
                               class: "text-lg text-gray-700 font-semibold px-3 py-1 rounded hover:bg-gray-100 flex items-center gap-1" do %>
@@ -87,7 +117,7 @@
                                   alt: "プロフィール",
                                   class: "block",
                                   style: "height: 25px; width: auto;" %>
-                    <span>Profile</span>
+                    <span>-Profile</span>
                   <% end %>
 
                   <!-- チーム -->
@@ -97,7 +127,7 @@
                                   alt: "チーム",
                                   class: "block",
                                   style: "height: 33px; width: auto;" %>
-                    <span>Team</span>
+                    <span>-Team</span>
                   <% end %>
                 </nav>
               <% end %>
@@ -106,10 +136,10 @@
             <!-- 右側：ロゴ（イラスト） -->
             <div class="flex items-center">
               <%= link_to root_path, class: "flex items-center gap-2" do %>
-                <%= image_tag "todo-beaver_logo.png",
+                <%= image_tag "zoo_logo.png",
                               alt: "Todo Beaver",
                               class: "block",
-                              style: "height: 32px; width: auto;" %>
+                              style: "height: 45px; width: auto;" %>
               <% end %>
             </div>
           </div>
@@ -147,3 +177,6 @@
     </main>
   </body>
 </html>
+
+<!-- Tailwind に yellow系クラスを認識させるためのダミー要素（画面には表示されません） -->
+<span class="hidden bg-yellow-100 bg-yellow-200 text-yellow-800 border-yellow-300"></span>
