@@ -7,8 +7,6 @@ class MembershipRequestsController < ApplicationController
     case params[:direction]
     when "team_to_profile"
       create_team_to_profile_request
-    # when "profile_to_team"
-    #   プロフィール → チーム申請 を実装するときに使う予定
     else
       redirect_back fallback_location: root_path,
                     alert: "不正なリクエストです"
@@ -16,7 +14,6 @@ class MembershipRequestsController < ApplicationController
   end
 
   def approve
-    # 「この招待を承認してよい人か？」のチェック
     unless @membership_request.team_to_profile? &&
            @membership_request.pending? &&
            @membership_request.target_profile_id == current_profile&.id
@@ -26,7 +23,6 @@ class MembershipRequestsController < ApplicationController
     end
 
     MembershipRequest.transaction do
-      # admin フラグに応じて role を決める
       role_value =
         if @membership_request.admin?
           TeamMembership::ADMIN_ROLE # 例: "admin"
@@ -34,14 +30,12 @@ class MembershipRequestsController < ApplicationController
           nil
         end
 
-      # チームにメンバーとして追加
       TeamMembership.create!(
         team: @membership_request.team,
         profile: current_profile,
         role: role_value
       )
 
-      # 申請ステータスを approved に更新
       @membership_request.update!(status: :approved)
     end
 
@@ -55,12 +49,10 @@ class MembershipRequestsController < ApplicationController
     @membership_request = MembershipRequest.find(params[:id])
   end
 
-  # チーム → プロフィール 招待の作成
   def create_team_to_profile_request
     team = Team.find(params[:team_id])
     target_profile = Profile.find(params[:target_profile_id])
 
-    # 招待を発行した「側」のプロフィール（今の人の current_profile）を requester_profile として持たせておく
     requester_profile = current_profile
     unless requester_profile
       redirect_back fallback_location: members_team_settings_path(team_id: team.id),

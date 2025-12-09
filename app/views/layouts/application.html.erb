@@ -159,7 +159,11 @@
         </div>
       <% end %>
 
-      <div class="flex gap-0 min-h-[calc(100vh-5rem)]">
+      <div
+        class="flex gap-0 min-h-[calc(100vh-5rem)]"
+        data-controller="side-panel"
+        data-side-panel-initial-width-value="480"
+      >
         <% if content_for?(:sidebar) %>
           <aside class="w-60 shrink-0 border-r border-gray-200 px-4 pt-6 pb-6 bg-transparent">
             <%= yield :sidebar %>
@@ -173,10 +177,15 @@
             <%= yield %>
           </section>
         <% end %>
+
+      <!-- 共通サイドパネルを描画 -->
+      <%= render "shared/side_panel" %>
       </div>
     </main>
+
+    <!-- Tailwind に yellow系クラスを認識させるためのダミー要素（画面には表示されません） -->
+    <span class="hidden bg-yellow-100 bg-yellow-200 text-yellow-800 border-yellow-300"></span>
+
   </body>
 </html>
 
-<!-- Tailwind に yellow系クラスを認識させるためのダミー要素（画面には表示されません） -->
-<span class="hidden bg-yellow-100 bg-yellow-200 text-yellow-800 border-yellow-300"></span>

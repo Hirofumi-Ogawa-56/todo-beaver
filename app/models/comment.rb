@@ -7,5 +7,10 @@ class Comment < ApplicationRecord
     pinned
   end
 
+  has_many :reactions, dependent: :destroy
+  has_many :heart_reactions,
+           -> { where(kind: "heart") },
+           class_name: "Reaction"
+
   validates :body, presence: true, length: { maximum: 2000 }
 end

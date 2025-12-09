@@ -13,10 +13,42 @@
     <span><%= l comment.created_at, format: :ja_short %></span>
   </div>
 
-  <!-- 2行目：本文（改行をちゃんと反映＋インデント） -->
-  <%= simple_format(
-        h(comment.body),                             # 中身を一旦エスケープ
-        { class: "mt-1 text-sm", style: "padding-left: 1.5rem;" }, # pタグにこのクラス/スタイル
-        wrapper_tag: "p"                             # <p>でラップ
-      ) %>
+  <!-- 2行目：本文（左）＋ PINバッジ＆ハート（右） -->
+  <div class="mt-1 flex items-start justify-between gap-2">
+    <!-- 本文（左側） -->
+    <div class="flex-1 pl-6 text-sm">
+      <%= simple_format(
+            h(comment.body),
+            {},               # pタグのクラスを追加したければここに
+            wrapper_tag: "p"
+          ) %>
+    </div>
+
+    <!-- 右側：PINバッジ + ハート（横並びで右寄せ） -->
+    <div class="flex items-center gap-1 text-[11px] text-gray-500 pr-1">
+      <% if comment.pinned? %>
+        <span class="inline-flex items-center px-2 py-0.5 rounded-full bg-yellow-50 text-[10px] text-yellow-700 border border-yellow-200">
+          PIN
+        </span>
+      <% end %>
+
+      <% heart_reactions = comment.heart_reactions.includes(:profile) %>
+      <% liked_by_current = heart_reactions.any? { |r| r.profile_id == current_profile.id } %>
+      <% count = heart_reactions.size %>
+
+      <%= button_to(
+            task_comment_reactions_path(comment.task, comment),
+            method: :post,
+            class: "inline-flex items-center gap-1 px-2 py-0.5 rounded-full border text-[11px] " \
+                   "hover:bg-pink-50 " \
+                   "#{liked_by_current ? 'bg-pink-50 border-pink-300 text-pink-700' : 'bg-white border-gray-200 text-gray-500'}"
+          ) do %>
+        <span><%= liked_by_current ? "♥" : "♡" %></span>
+        <% if count.positive? %>
+          <span><%= count %></span>
+        <% end %>
+      <% end %>
+    </div>
+  </div>
 </div>
+

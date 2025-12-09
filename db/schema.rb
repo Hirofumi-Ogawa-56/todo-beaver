@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2025_12_06_141956) do
+ActiveRecord::Schema[7.2].define(version: 2025_12_07_042702) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -79,6 +79,16 @@ ActiveRecord::Schema[7.2].define(version: 2025_12_06_141956) do
     t.string "join_token"
     t.index ["join_token"], name: "index_profiles_on_join_token", unique: true
     t.index ["user_id"], name: "index_profiles_on_user_id"
+  end
+
+  create_table "reactions", force: :cascade do |t|
+    t.bigint "comment_id", null: false
+    t.bigint "profile_id", null: false
+    t.string "kind"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["comment_id"], name: "index_reactions_on_comment_id"
+    t.index ["profile_id"], name: "index_reactions_on_profile_id"
   end
 
   create_table "tags", force: :cascade do |t|
@@ -162,6 +172,8 @@ ActiveRecord::Schema[7.2].define(version: 2025_12_06_141956) do
   add_foreign_key "membership_requests", "profiles", column: "target_profile_id"
   add_foreign_key "membership_requests", "teams"
   add_foreign_key "profiles", "users"
+  add_foreign_key "reactions", "comments"
+  add_foreign_key "reactions", "profiles"
   add_foreign_key "task_assignments", "profiles"
   add_foreign_key "task_assignments", "tasks"
   add_foreign_key "task_tags", "tags"

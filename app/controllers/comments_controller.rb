@@ -16,7 +16,6 @@ class CommentsController < ApplicationController
 
     redirect_to task_path(@task), notice: "コメントを追加しました。"
   rescue ActiveRecord::RecordInvalid
-    # エラー時はタスク詳細をそのまま再表示
     @comments = @task.comments.includes(:author_profile).order(:created_at)
     render "tasks/show", status: :unprocessable_entity
   end
@@ -51,11 +50,9 @@ class CommentsController < ApplicationController
   end
 
   def comment_params
-    # ★ pinned を許可（複数ピン対応）
     params.require(:comment).permit(:body, :pinned)
   end
 
-  # ★ タスクのステータス変更だけをここで処理する
   def apply_task_status_change
     new_status = params.dig(:comment, :task_status).presence
     return unless new_status

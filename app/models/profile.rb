@@ -14,6 +14,7 @@ class Profile < ApplicationRecord
   has_many :task_assignments, dependent: :destroy
   has_many :assigned_tasks, through: :task_assignments, source: :task
   has_many :comments, foreign_key: :author_profile_id, dependent: :nullify
+  has_many :reactions, dependent: :destroy
 
   has_many :sent_membership_requests,
            class_name: "MembershipRequest",
