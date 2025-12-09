@@ -3,23 +3,7 @@
   <%= render "tasks/sidebar" %>
 <% end %>
 
-<div
-  data-controller="side-panel"
-  data-side-panel-initial-width-value="480"
->
-  <h1 class="text-xl font-bold mb-4">タスク一覧</h1>
-
-  <div class="mb-4 flex justify-between items-center text-sm">
-    <%= link_to "新規タスク作成",
-                new_task_path,
-                class: "text-sm px-3 py-2 bg-blue-600 text-white rounded hover:bg-blue-700",
-                data: {
-                  turbo_frame: "side-panel-frame",
-                  action: "click->side-panel#open",
-                  side_panel_title_param: "新規タスク"
-                } %>
-  </div>
-
+<div>
   <% if @tasks.any? %>
     <table class="w-full text-sm">
       <thead>
@@ -27,7 +11,8 @@
           <th class="text-left py-2 px-2">タイトル</th>
           <th class="text-left py-2 px-2">期限</th>
           <th class="text-left py-2 px-2">ステータス</th>
-          <th class="text-left py-2 px-2">担当</th>
+          <th class="text-left py-2 px-2">担当者</th>
+          <th class="text-left py-2 px-2">作成者</th>
           <th class="text-left py-2 px-2"></th>
         </tr>
       </thead>
@@ -73,6 +58,19 @@
             <% end %>
             </td>
 
+            <!-- Taskの作成者 -->
+            <td class="py-2 px-2">
+              <% if task.owner_profile %>
+                <%= profile_chip(
+                      task.owner_profile,
+                      size: :xs,
+                      wrapper_class: "px-2 py-1 rounded bg-gray-100 text-xs"
+                    ) %>
+              <% else %>
+                <span class="text-xs text-gray-400">不明</span>
+              <% end %>
+            </td>
+
           <!-- Taskのステータス変更 + 編集・削除 -->
           <td class="py-2 px-2 text-right">
             <div class="flex items-center justify-end gap-2">
@@ -116,42 +114,4 @@
     </p>
   <% end %>
 
-  <!-- 右側スライドパネル（汎用） -->
-  <div
-    data-side-panel-target="panel"
-    class="fixed top-0 right-0 h-full bg-white shadow-lg border-l border-gray-200
-           translate-x-full transition-transform duration-200 ease-out
-           flex flex-col z-40"
-    style="width: 480px;"
-  >
-    <!-- 左端リサイズ用ハンドル -->
-    <div
-      data-side-panel-target="resizeHandle"
-      data-action="mousedown->side-panel#startResize"
-      class="absolute left-0 top-0 h-full w-1 cursor-col-resize bg-transparent"
-    ></div>
-
-    <!-- ヘッダー -->
-    <div class="flex items-center justify-between px-3 py-2 border-b border-gray-200">
-      <h2 class="text-sm font-semibold" data-side-panel-target="title">
-        <!-- タイトルはリンク側から渡す -->
-      </h2>
-      <button
-        type="button"
-        class="text-xs text-gray-500 hover:text-gray-800"
-        data-action="click->side-panel#close"
-      >
-        ✕
-      </button>
-    </div>
-
-    <!-- 中身：Turbo Frame で差し替わる -->
-    <div class="flex-1 overflow-y-auto p-3">
-      <turbo-frame id="side-panel-frame">
-        <p class="text-xs text-gray-400">
-          ここに、新規タスク作成フォームなどが表示されます。
-        </p>
-      </turbo-frame>
-    </div>
-  </div>
 </div>

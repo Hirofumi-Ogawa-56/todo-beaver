@@ -33,9 +33,15 @@ Rails.application.routes.draw do
   # teamのCRUD
   resources :teams
 
+  # 「tasks/slot_tasks」という単独ルート
+  get "tasks/slot_tasks", to: "tasks#slot_tasks", as: :slot_tasks
+
   # tasksのCRUD
   resources :tasks do
-    resources :comments, only: %i[create edit update destroy]
+    resources :comments, only: %i[create edit update destroy] do
+      # コメントにリアクション（ハート）
+      resources :reactions, only: :create
+    end
   end
 
   # team_membershipsのCRUD

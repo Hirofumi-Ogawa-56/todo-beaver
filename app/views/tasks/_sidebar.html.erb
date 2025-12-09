@@ -1,6 +1,36 @@
 <!-- app/views/tasks/_sidebar.html.erb -->
 
-<h2 class="font-semibold text-sm mb-3">タスク</h2>
+<h2 class="font-semibold text-lg mb-3">Task</h2>
+
+<!-- ▼表示切り替え（リスト/カレンダー）+新規作成ボタン -->
+<div class="mb-4 flex justify-between items-center text-sm">
+  <div class="inline-flex items-center rounded-full border border-gray-200 bg-gray-50 p-0.5">
+    <%= link_to "リスト",
+                tasks_path,
+                class: "px-3 py-1 text-xs rounded-full " +
+                        (@view_mode == "calendar" ?
+                          "text-gray-500 hover:bg-white" :
+                          "bg-white shadow text-gray-900") %>
+
+    <%= link_to "カレンダー",
+                tasks_path(view: :calendar),
+                class: "px-3 py-1 text-xs rounded-full " +
+                        (@view_mode == "calendar" ?
+                          "bg-white shadow text-gray-900" :
+                          "text-gray-500 hover:bg-white") %>
+  </div>
+</div>
+
+<div class="mb-4 flex justify-between items-center text-sm">
+  <%= link_to "新規タスク作成",
+              new_task_path,
+              class: "text-xs px-3 py-2 bg-blue-600 text-white rounded hover:bg-blue-700",
+              data: {
+                turbo_frame: "side-panel-frame",
+                action: "click->side-panel#open",
+                side_panel_title_param: "新規タスク"
+              } %>
+</div>
 
 <nav class="space-y-1">
   <!-- 全体 -->

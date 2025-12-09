@@ -6,17 +6,71 @@ class TasksController < ApplicationController
   before_action :set_collections, only: %i[new create edit update]
 
   def index
-    base_scope =
-      Task.left_joins(:assignees)
-          .where(
-            "profiles.id = :pid OR tasks.owner_profile_id = :pid",
-            pid: current_profile.id
-          )
+    @view_mode = params[:view] == "calendar" ? "calendar" : "list"
 
-    @tasks =
-      apply_filter(base_scope)
+    assigned_task_ids =
+      TaskAssignment.where(profile_id: current_profile.id).select(:task_id)
+
+    base_scope =
+      Task.where(owner_profile_id: current_profile.id)
+          .or(Task.where(id: assigned_task_ids))
+
+    if @view_mode == "calendar"
+      # ← カレンダーモードのときはこちら
+      setup_calendar(base_scope)
+      render :calendar
+    else
+      # ← それ以外（リストモード）はこれまで通り
+      @tasks =
+        apply_filter(base_scope)
+          .includes(:team, :owner_profile, :assignees)
+          .order(Arel.sql("COALESCE(tasks.due_at, tasks.created_at) ASC"))
+    end
+  end
+
+
+  def slot_tasks
+    # date と hour は +N バッジ側からパラメータでもらう想定
+    date =
+      begin
+        Date.parse(params[:date])
+      rescue ArgumentError
+        Time.zone.today.to_date
+      end
+
+    hour = params[:hour].to_i
+
+    assigned_task_ids =
+      TaskAssignment.where(profile_id: current_profile.id).select(:task_id)
+
+    base_scope =
+      Task.where(owner_profile_id: current_profile.id)
+          .or(Task.where(id: assigned_task_ids))
+
+    # その日のタスクだけざっくり絞る
+    day_start = date.beginning_of_day.in_time_zone
+    day_end   = date.end_of_day.in_time_zone
+
+    tasks_for_day =
+      base_scope
+        .where(due_at: day_start..day_end)
         .includes(:team, :owner_profile, :assignees)
-        .order(Arel.sql("COALESCE(tasks.due_at, tasks.created_at) ASC"))
+
+    # カレンダーと同じルール:
+    # display_time = due_at - 1.hour の「時」が指定 hour と一致するもの
+    @tasks_in_slot =
+      tasks_for_day.select do |task|
+        next false if task.due_at.blank?
+
+        display_time = task.due_at - 1.hour
+        display_time.hour == hour
+      end
+
+    @slot_date = date
+    @slot_hour = hour
+
+    # side-panel の turbo_frame に埋め込む想定なので layout なしでOK
+    render layout: false
   end
 
   def show
@@ -179,5 +233,51 @@ class TasksController < ApplicationController
     else
       scope
     end
+  end
+
+  def setup_calendar(scope)
+    # ▼ 基準日（?date=YYYY-MM-DD があればそれ、なければ今日）
+    @base_date =
+      begin
+        params[:date].present? ? Date.parse(params[:date]) : Time.zone.today.to_date
+      rescue ArgumentError
+        Time.zone.today.to_date
+      end
+
+    # ▼ 週の開始・終了（ここでは月曜はじまり）
+    @week_start = @base_date.beginning_of_week(:monday)
+    @week_end   = @week_start + 6.days
+
+    # ビューで使う配列
+    @calendar_days = (@week_start..@week_end).to_a
+
+    # ▼ 時間軸（とりあえず 8:00〜23:00）
+    @hours = (8..23).to_a
+
+    # ▼ この週に「期限がある」タスクだけ取得
+    @tasks_for_calendar =
+      scope
+        .where(due_at: @week_start.beginning_of_day..@week_end.end_of_day)
+        .includes(:team, :owner_profile, :assignees)
+
+    # ▼ [日付][時間] => [タスク...] なハッシュ
+    slots = {}
+    @calendar_days.each do |date|
+      slots[date] = {}
+      @hours.each { |h| slots[date][h] = [] }
+    end
+
+    @tasks_for_calendar.each do |task|
+      next unless task.due_at
+
+      date = task.due_at.to_date
+      hour = task.due_at.hour
+
+      next unless slots[date] && slots[date][hour]
+
+      slots[date][hour] << task
+    end
+
+    @calendar_slots = slots
   end
 end

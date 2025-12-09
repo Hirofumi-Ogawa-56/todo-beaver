@@ -40,8 +40,8 @@ module TasksHelper
     # 期限未設定
     return content_tag(:span, "未設定", class: "#{base_class} bg-gray-100 text-gray-500") if task.due_at.blank?
 
-    now = Time.current
-    due = task.due_at
+    now = Time.zone.now
+    due = task.due_at.in_time_zone(Time.zone)
 
     label = due.strftime("%m/%d %H:%M")
 
