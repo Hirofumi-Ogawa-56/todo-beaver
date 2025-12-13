@@ -4,15 +4,15 @@
 
 <!-- ▼表示切り替え（リスト/カレンダー）+新規作成ボタン -->
 <div class="mb-4 flex justify-between items-center text-sm">
-  <div class="inline-flex items-center rounded-full border border-gray-200 bg-gray-50 p-0.5">
-    <%= link_to "リスト",
+  <div class="inline-flex items-center rounded-full border border-gray-300 bg-gray-50 p-0.5">
+    <%= link_to "List",
                 tasks_path,
                 class: "px-3 py-1 text-xs rounded-full " +
                         (@view_mode == "calendar" ?
                           "text-gray-500 hover:bg-white" :
                           "bg-white shadow text-gray-900") %>
 
-    <%= link_to "カレンダー",
+    <%= link_to "Calendar",
                 tasks_path(view: :calendar),
                 class: "px-3 py-1 text-xs rounded-full " +
                         (@view_mode == "calendar" ?

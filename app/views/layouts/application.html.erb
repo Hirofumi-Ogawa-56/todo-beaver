@@ -21,10 +21,10 @@
 
   <body class="bg-white">
     <!-- ヘッダー -->
-      <header class="fixed top-0 inset-x-0 bg-gray-50 border-b shadow-sm z-10">
-        <div class="w-full px-4 py-2">
+      <header class="fixed top-0 inset-x-0  shadow-sm z-10 <%= header_theme_class %>">
+        <div class="w-full h-16 px-4 flex items-center">
           <!-- 1段：左 = プロフィール + ナビ / 右 = ロゴ -->
-          <div class="flex items-center justify-between">
+          <div class="flex items-center justify-between w-full">
             <!-- 左側：プロフィールブロック + ナビブロック -->
             <div class="flex items-center gap-8">
               <!-- プロフィール表示 + プロフィール切替 + ドロップダウン -->
@@ -36,12 +36,12 @@
                       <%= profile_chip(
                             current_profile,
                             size: :sm,
-                            wrapper_class: "text-sm text-gray-700 font-semibold"
+                            wrapper_class: "text-sm font-semibold"
                           ) %>
                     </summary>
 
                     <!-- ドロップダウンメニュー -->
-                    <div class="absolute mt-2 left-0 w-40 bg-white border border-gray-200 rounded shadow text-sm z-50">
+                    <div class="absolute mt-2 left-0 w-40 bg-white border border-gray-300 rounded shadow text-sm z-50">
                       <%= link_to "ログアウト",
                                   destroy_user_session_path,
                                   data: { turbo_method: :delete },
@@ -60,7 +60,7 @@
                                     current_profile&.id
                                   ),
                                   {},
-                                  class: "border border-gray-200 rounded px-3 py-1 text-sm bg-white",
+                                  class: "border border-gray-300 rounded px-3 py-1 text-sm text-gray-700 bg-white",
                                   onchange: "this.form.submit();" %>
                     <% end %>
                   </div>
@@ -72,72 +72,96 @@
                 <nav class="flex items-center gap-3">
                   <!-- タスク -->
                   <%= link_to root_path,
-                              class: "text-lg text-gray-700 font-semibold px-3 py-1 rounded hover:bg-gray-100 flex items-center gap-1" do %>
-                    <%= image_tag "beaver_icon.png",
+                              class: "text-lg font-semibold px-3 py-1 rounded hover:bg-white/10 flex items-center gap-1" do %>
+                    <%#= image_tag "beaver_icon.png",
                                   alt: "タスク",
                                   class: "block",
                                   style: "height: 25px; width: auto;" %>
-                    <span>-Task</span>
+                    <span>Task</span>
                   <% end %>
 
                   <!-- ワークス -->
-                  <%= link_to root_path,
-                              class: "text-lg text-gray-700 font-semibold px-3 py-1 rounded hover:bg-gray-100 flex items-center gap-1" do %>
-                    <%= image_tag "owl_icon.png",
+                  <%#= link_to root_path,
+                              class: "text-lg font-semibold px-3 py-1 rounded hover:bg-white/10 flex items-center gap-1" do %>
+                    <%#= image_tag "owl_icon.png",
                                   alt: "タスク",
                                   class: "block",
                                   style: "height: 25px; width: auto;" %>
-                    <span>-Works</span>
-                  <% end %>
+                    <%# <span>-Works</span> %>
+                  <%# end %>
 
                   <!-- チャット -->
-                  <%= link_to root_path,
-                              class: "text-lg text-gray-700 font-semibold px-3 py-1 rounded hover:bg-gray-100 flex items-center gap-1" do %>
-                    <%= image_tag "orca_icon.png",
+                  <%#= link_to root_path,
+                              class: "text-lg font-semibold px-3 py-1 rounded hover:bg-white/10 flex items-center gap-1" do %>
+                    <%#= image_tag "wolf_icon.png",
                                   alt: "タスク",
                                   class: "block",
-                                  style: "height: 20px; width: auto;" %>
-                    <span>-Chat</span>
-                  <% end %>
+                                  style: "height: 27px; width: auto;" %>
+                    <%# <span>-Chat</span> %>
+                  <%# end %>
 
                   <!-- ソーシャル -->
-                  <%= link_to root_path,
-                              class: "text-lg text-gray-700 font-semibold px-3 py-1 rounded hover:bg-gray-100 flex items-center gap-1" do %>
-                    <%= image_tag "rabbit_icon.png",
+                  <%#= link_to root_path,
+                              class: "text-lg font-semibold px-3 py-1 rounded hover:bg-white/10 flex items-center gap-1" do %>
+                    <%#= image_tag "rabbit_icon.png",
                                   alt: "タスク",
                                   class: "block",
                                   style: "height: 25px; width: auto;" %>
-                    <span>-Social</span>
-                  <% end %>                  
+                    <%# <span>-Social</span> %>
+                  <%# end %>                  
                   
                   <!-- プロフィール -->
-                  <%= link_to home_profile_settings_path,
-                              class: "text-lg text-gray-700 font-semibold px-3 py-1 rounded hover:bg-gray-100 flex items-center gap-1" do %>
-                    <%= image_tag "butterfly_icon.png",
+                  <%= link_to edit_profile_settings_path,
+                              class: "text-lg font-semibold px-3 py-1 rounded hover:bg-white/10 flex items-center gap-1" do %>
+                    <%#= image_tag "butterfly_icon.png",
                                   alt: "プロフィール",
                                   class: "block",
                                   style: "height: 25px; width: auto;" %>
-                    <span>-Profile</span>
+                    <span>Profile</span>
                   <% end %>
 
                   <!-- チーム -->
-                  <%= link_to home_team_settings_path,
-                              class: "text-lg text-gray-700 font-semibold px-3 py-1 rounded hover:bg-gray-100 flex items-center gap-1" do %>
-                    <%= image_tag "elephant_icon.png",
+                  <%= link_to edit_team_settings_path,
+                              class: "text-lg font-semibold px-3 py-1 rounded hover:bg-white/10 flex items-center gap-1" do %>
+                    <%#= image_tag "elephant_icon.png",
                                   alt: "チーム",
                                   class: "block",
                                   style: "height: 33px; width: auto;" %>
-                    <span>-Team</span>
+                    <span>Team</span>
+                  <% end %>
+              
+
+                  <% if controller_name == "tasks" %>
+                    <div class="ml-4">
+                      <%= form_with url: tasks_path, method: :get, local: true,
+                                    class: "flex items-center gap-1" do %>
+
+                        <!-- 今の検索・フィルタ状態を引き継ぐ -->
+                        <%= hidden_field_tag :q, params[:q] if params[:q].present? %>
+                        <%= hidden_field_tag :filter, params[:filter] if params[:filter].present? %>
+                        <%= hidden_field_tag :sort, params[:sort] if params[:sort].present? %>
+                        <%= hidden_field_tag :direction, params[:direction] if params[:direction].present? %>
+                        <%= hidden_field_tag :view, params[:view] if params[:view].present? %>
+
+                        <label class="flex items-center gap-1 text-xs">
+                          <%= check_box_tag :all_profiles,
+                                            "1",
+                                            params[:all_profiles] == "1",
+                                            onchange: "this.form.submit();" %>
+                          <span>全てのプロフィールのタスクを表示</span>
+                        </label>
+                      <% end %>
+                    </div>
                   <% end %>
                 </nav>
-              <% end %>
+                <% end %>
             </div>
 
             <!-- 右側：ロゴ（イラスト） -->
             <div class="flex items-center">
               <%= link_to root_path, class: "flex items-center gap-2" do %>
-                <%= image_tag "zoo_logo.png",
-                              alt: "Todo Beaver",
+                <%= image_tag "forestly_logo.png",
+                              alt: "forestly",
                               class: "block",
                               style: "height: 45px; width: auto;" %>
               <% end %>
@@ -147,7 +171,7 @@
       </header>
 
     <!-- メインコンテンツ -->
-    <main class="pt-20 pb-0">
+    <main class="pt-16 pb-0">
       <% if notice %>
         <div class="mb-4 bg-green-100 text-green-800 px-4 py-2 rounded">
           <%= notice %>
@@ -160,20 +184,20 @@
       <% end %>
 
       <div
-        class="flex gap-0 min-h-[calc(100vh-5rem)]"
+        class="flex gap-0 min-h-[calc(100vh-4rem)]"
         data-controller="side-panel"
         data-side-panel-initial-width-value="480"
       >
         <% if content_for?(:sidebar) %>
-          <aside class="w-60 shrink-0 border-r border-gray-200 px-4 pt-6 pb-6 bg-transparent">
+          <aside class="w-60 shrink-0 px-4 pt-3 pb-6 self-stretch <%= sidebar_theme_class %>">
             <%= yield :sidebar %>
           </aside>
 
-          <section class="flex-1 bg-white px-6 pt-6 pb-6 overflow-auto">
+          <section class="flex-1 bg-white px-6 pt-3 pb-6 overflow-auto">
             <%= yield %>
           </section>
         <% else %>
-          <section class="flex-1 bg-white px-6 pt-6 pb-6">
+          <section class="flex-1 bg-white px-6 pt-3 pb-6">
             <%= yield %>
           </section>
         <% end %>
@@ -184,7 +208,15 @@
     </main>
 
     <!-- Tailwind に yellow系クラスを認識させるためのダミー要素（画面には表示されません） -->
-    <span class="hidden bg-yellow-100 bg-yellow-200 text-yellow-800 border-yellow-300"></span>
+    <span class="hidden
+      bg-slate-800 bg-slate-900
+      bg-indigo-700 bg-indigo-800
+      bg-emerald-700 bg-emerald-800
+      bg-rose-700 bg-rose-800
+      bg-amber-700 bg-amber-800
+      text-white
+      bg-white/10 text-white/80 hover:bg-white/10 hover:text-white
+    "></span>
 
   </body>
 </html>

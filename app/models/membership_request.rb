@@ -28,7 +28,7 @@ class MembershipRequest < ApplicationRecord
             uniqueness: {
               scope: [ :target_profile_id, :team_id, :direction ],
               conditions: -> { where(status: statuses[:pending]) },
-              message: "から同じ内容の申請がすでに存在します"
+              message: "同じ申請がすでに送信されており、承認待ちです。"
             }
 
   validate :target_presence
