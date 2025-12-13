@@ -7,27 +7,49 @@ class TasksController < ApplicationController
 
   def index
     @view_mode = params[:view] == "calendar" ? "calendar" : "list"
+    @all_profiles_mode = (params[:all_profiles] == "1")
 
-    assigned_task_ids =
-      TaskAssignment.where(profile_id: current_profile.id).select(:task_id)
+    if @all_profiles_mode
+      profile_ids = current_user.profiles.pluck(:id)
 
-    base_scope =
-      Task.where(owner_profile_id: current_profile.id)
-          .or(Task.where(id: assigned_task_ids))
+      assigned_task_ids =
+        TaskAssignment.where(profile_id: profile_ids).select(:task_id)
+
+      base_scope =
+        Task.where(owner_profile_id: profile_ids)
+            .or(Task.where(id: assigned_task_ids))
+    else
+      assigned_task_ids =
+        TaskAssignment.where(profile_id: current_profile.id).select(:task_id)
+
+      base_scope =
+        Task.where(owner_profile_id: current_profile.id)
+            .or(Task.where(id: assigned_task_ids))
+    end
 
     if @view_mode == "calendar"
-      # ← カレンダーモードのときはこちら
       setup_calendar(base_scope)
       render :calendar
     else
-      # ← それ以外（リストモード）はこれまで通り
+      @query = params[:q].to_s
+
+      rel = apply_filter(base_scope)
+      rel = rel.keyword_search(@query) if @query.present?
+      rel = apply_column_filters(rel)
+
       @tasks =
-        apply_filter(base_scope)
+        rel
           .includes(:team, :owner_profile, :assignees)
-          .order(Arel.sql("COALESCE(tasks.due_at, tasks.created_at) ASC"))
+          .order(build_order_clause)
+          .page(params[:page])
+          .per(50)
+
+      respond_to do |format|
+        format.html          # 初回表示 / 通常遷移
+        format.turbo_stream  # もっと見る用（.turbo_stream を付けて叩く）
+      end
     end
   end
-
 
   def slot_tasks
     # date と hour は +N バッジ側からパラメータでもらう想定
@@ -96,7 +118,6 @@ class TasksController < ApplicationController
 
     build_due_at_from_virtual_fields(@task)
 
-    # ここで due_at 周りのエラーをチェックしておく
     if @task.errors.any?
       set_collections
       render :new, status: :unprocessable_entity
@@ -110,7 +131,8 @@ class TasksController < ApplicationController
     end
 
     if @task.errors.empty?
-      redirect_to @task, notice: "タスクを作成しました。"
+      # ★ ここを変更
+      redirect_to tasks_path, notice: "タスクを作成しました。"
     else
       set_collections
       render :new, status: :unprocessable_entity
@@ -127,7 +149,7 @@ class TasksController < ApplicationController
   def update
     @task.assign_attributes(task_params)
 
-    # 👇 期限系のフィールドが送られてきたときだけ due_at を組み立てる
+    # 期限系のフィールドが送られてきたときだけ due_at を組み立てる
     if task_params.key?(:due_date) || task_params.key?(:due_time)
       build_due_at_from_virtual_fields(@task)
 
@@ -146,7 +168,14 @@ class TasksController < ApplicationController
     end
 
     if @task.errors.empty?
-      redirect_to tasks_path, notice: "ステータスを更新しました。"
+      # ★ ここで分岐させる
+      if turbo_frame_request?
+        # ライトパネルからの更新 → そのままタスク詳細をライトパネルに表示
+        redirect_to task_path(@task), notice: "タスクを更新しました。"
+      else
+        # 通常のページ（一覧など）からの更新 → 一覧へ戻る
+        redirect_to tasks_path, notice: "タスクを更新しました。"
+      end
     else
       set_collections
       render :edit, status: :unprocessable_entity
@@ -279,5 +308,100 @@ class TasksController < ApplicationController
     end
 
     @calendar_slots = slots
+  end
+
+  def apply_column_filters(scope)
+    rel = scope
+
+    # タイトルフィルタ
+    if params[:title_contains].present?
+      rel = rel.where("tasks.title ILIKE ?", "%#{params[:title_contains]}%")
+    end
+
+    # 期限フィルタ（特定の日付だけを表示）
+    if params[:due_on].present?
+      begin
+        date = Date.parse(params[:due_on])
+        rel = rel.where(due_at: date.beginning_of_day..date.end_of_day)
+      rescue ArgumentError
+        # 不正な日付は無視（何もしない）
+      end
+    end
+
+    # ステータスフィルタ（自由記入：todo / in / done など部分一致）
+    if params[:status_keyword].present?
+      keyword = params[:status_keyword].to_s
+
+      matched_keys =
+        Task.statuses.keys.select { |k| k.include?(keyword) }
+
+      if matched_keys.any?
+        rel = rel.where(status: Task.statuses.values_at(*matched_keys))
+      else
+        # 何もマッチしない → 結果0件
+        rel = rel.none
+      end
+    end
+
+    # 担当者フィルタ（display_name 部分一致）
+    if params[:assignee_keyword].present?
+      profile_ids =
+        Profile.where("display_name ILIKE ?", "%#{params[:assignee_keyword]}%")
+               .pluck(:id)
+
+      if profile_ids.any?
+        task_ids =
+          TaskAssignment.where(profile_id: profile_ids).select(:task_id)
+        rel = rel.where(id: task_ids)
+      else
+        rel = rel.none
+      end
+    end
+
+    # 作成者フィルタ（display_name 部分一致）
+    if params[:owner_keyword].present?
+      profile_ids =
+        Profile.where("display_name ILIKE ?", "%#{params[:owner_keyword]}%")
+               .pluck(:id)
+
+      if profile_ids.any?
+        rel = rel.where(owner_profile_id: profile_ids)
+      else
+        rel = rel.none
+      end
+    end
+
+    rel
+  end
+
+  # ソート条件を組み立てる
+  def build_order_clause
+    # どのカラムでソートするか（許可リスト）
+    column =
+    case params[:sort]
+    when "title"
+        "tasks.title"
+    when "due_at"
+        "tasks.due_at"
+    when "status"
+        "tasks.status"
+    when "owner"
+        # 作成者（owner_profile の display_name）
+        "(SELECT display_name FROM profiles " \
+          "WHERE profiles.id = tasks.owner_profile_id LIMIT 1)"
+    when "assignee"
+        # 担当者（複数いる場合は一番小さい名前で代表させる）
+        "(SELECT MIN(p.display_name) FROM task_assignments ta " \
+          "JOIN profiles p ON p.id = ta.profile_id " \
+          "WHERE ta.task_id = tasks.id)"
+    else
+        "tasks.due_at"  # デフォルト
+    end
+
+    # 昇順 or 降順（パラメータが変な値なら ASC に倒す）
+    direction = params[:direction] == "desc" ? "DESC" : "ASC"
+
+    # ついでに created_at も第2キーにしておくと安定
+    Arel.sql("#{column} #{direction}, tasks.created_at ASC")
   end
 end

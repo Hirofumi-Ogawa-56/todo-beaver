@@ -3,7 +3,6 @@ class Profile < ApplicationRecord
   belongs_to :user
 
   validates :label, presence: true, length: { maximum: 25 }
-  validates :theme, length: { maximum: 50 }, allow_blank: true
   validates :display_name, presence: true, length: { maximum: 30 }
 
   validates :join_token, uniqueness: true, allow_nil: true
@@ -33,6 +32,20 @@ class Profile < ApplicationRecord
   before_create :set_join_token
   before_save :purge_avatar_if_needed
 
+    THEMES = %w[
+    default
+    slate
+    indigo
+    emerald
+    rose
+    amber
+    ].freeze
+
+  validates :theme, inclusion: { in: THEMES }, allow_blank: true
+
+  before_validation :set_default_theme, on: :create
+
+
   def display_initials
     base = display_name.presence || label.presence || "?"
     base.split(/\s+/).map { |part| part[0] }.join[0, 2].upcase
@@ -60,5 +73,9 @@ class Profile < ApplicationRecord
   def purge_avatar_if_requested
     return unless ActiveModel::Type::Boolean.new.cast(remove_avatar)
     avatar.purge_later if avatar.attached?
+  end
+
+  def set_default_theme
+    self.theme = "default" if theme.blank?
   end
 end

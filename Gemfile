@@ -1,3 +1,4 @@
+# Gemfile
 source "https://rubygems.org"
 
 # Bundle edge Rails instead: gem "rails", github: "rails/rails", branch: "main"
@@ -59,3 +60,9 @@ end
 gem "devise"
 
 gem "tailwindcss-rails"
+
+gem "kaminari"
+
+group :development do
+  gem "letter_opener_web"
+end

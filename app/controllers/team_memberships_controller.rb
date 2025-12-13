@@ -19,7 +19,7 @@ class TeamMembershipsController < ApplicationController
                     notice: "メンバーを追加しました"
     else
       redirect_back fallback_location: members_team_settings_path(team_id: team.id),
-                    alert: "メンバーを追加できませんでした"
+                   alert: "メンバーを追加できませんでした"
     end
   end
 

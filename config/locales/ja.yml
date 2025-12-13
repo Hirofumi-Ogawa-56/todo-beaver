@@ -1,6 +1,12 @@
+# config/locals/ja.yml
 ja:
+  activerecord:
+    errors:
+      modeles:
+        membership_request:
+          attributes:
+            team_id:
+              taken: "このプロフィールへの招待はすでに送信済み・承認待ちです。"
   time:
     formats:
-      ja_short: "%m/%d %H:%M"      # 例: 12/05 11:00
-      # あるいは  "12月05日 11:00" にしたければ:
-      # ja_short: "%m月%d日 %H:%M"
+      ja_short: "%m/%d %H:%M" 

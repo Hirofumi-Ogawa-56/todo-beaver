@@ -18,13 +18,21 @@ class ProfileSettingsController < ApplicationController
 
   def edit
     @profile = current_profile
-
-    # current_profile が無い場合のガード
     unless @profile
       redirect_to home_profile_settings_path, alert: "編集中のプロフィールが選択されていません。"
+      return
     end
+
+    @incoming_team_invites =
+      @profile.received_membership_requests
+              .team_to_profile
+              .pending
+              .includes(:team, :requester_profile)
+
+    # ▼ 参加IDでチーム検索（GET）
+    @team_invite_token = params[:team_invite_token].to_s.strip.upcase
+    @invite_teams = @team_invite_token.present? ? Team.where(join_token: @team_invite_token) : Team.none
   end
 
-  def theme
-  end
+  def theme; end
 end

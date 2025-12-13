@@ -51,6 +51,15 @@ class TeamSettingsController < ApplicationController
       @current_membership = nil
       @can_manage_members = false
     end
+
+    @incoming_join_requests =
+      if @selected_team
+        MembershipRequest
+          .where(team: @selected_team, direction: "profile_to_team", status: "pending")
+          .includes(:requester_profile)
+      else
+        MembershipRequest.none
+      end
   end
 
   # プロフィールが選択されていないユーザーはチーム設定を見せない
