@@ -37,4 +37,26 @@ Rails.application.configure do
     host: ENV.fetch("APP_HOST", "todo-beaver.onrender.com"),
     protocol: "https"
   }
+
+  # --- Submit mode switch (email delivery) ---
+  deliver_emails = ENV.fetch("DELIVER_EMAILS", "false") == "true"
+
+  config.action_mailer.perform_deliveries = deliver_emails
+  config.action_mailer.raise_delivery_errors = deliver_emails
+
+  if deliver_emails
+    config.action_mailer.delivery_method = :smtp
+    config.action_mailer.smtp_settings = {
+      address: ENV.fetch("SMTP_ADDRESS"),
+      port: ENV.fetch("SMTP_PORT", "587").to_i,
+      domain: ENV.fetch("SMTP_DOMAIN", "todo-beaver.onrender.com"),
+      user_name: ENV.fetch("SMTP_USERNAME"),
+      password: ENV.fetch("SMTP_PASSWORD"),
+      authentication: ENV.fetch("SMTP_AUTH", "plain").to_sym,
+      enable_starttls_auto: ENV.fetch("SMTP_STARTTLS", "true") == "true"
+    }
+  else
+    # Don't deliver emails in submit mode (prevents 500)
+    config.action_mailer.delivery_method = :test
+  end
 end
