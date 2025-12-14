@@ -184,14 +184,22 @@ class TasksController < ApplicationController
 
 
   def destroy
-    unless current_profile.teams.exists?(id: @task.team_id)
-      redirect_to tasks_path, alert: "このタスクを削除する権限がありません。"
-      return
+    if @task.team_id.present?
+      unless current_profile.teams.exists?(id: @task.team_id)
+        redirect_to tasks_path, alert: "このタスクを削除する権限がありません。"
+        return
+      end
+    else
+      unless @task.owner_profile_id == current_profile.id
+        redirect_to tasks_path, alert: "このタスクを削除する権限がありません。"
+        return
+      end
     end
 
     @task.destroy
     redirect_to tasks_path, notice: "タスクを削除しました。"
   end
+
 
   private
 
@@ -203,10 +211,14 @@ class TasksController < ApplicationController
     @teams = current_profile.teams.order(:name)
 
     @assignee_candidates =
-      Profile.joins(:team_memberships)
-             .where(team_memberships: { team_id: @teams.ids })
-             .distinct
-             .order(:display_name, :label)
+      if @teams.any?
+        Profile.joins(:team_memberships)
+              .where(team_memberships: { team_id: @teams.ids })
+              .distinct
+              .order(:display_name, :label)
+      else
+        Profile.where(id: current_profile.id)
+      end
   end
 
   def task_params
