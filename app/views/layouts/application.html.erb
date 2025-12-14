@@ -10,7 +10,7 @@
 
     <%= yield :head %>
 
-    <link rel="manifest" href="/manifest.json">
+    <%# <link rel="manifest" href="/manifest.json"> %>
     <link rel="icon" href="/icon.png" type="image/png">
     <link rel="icon" href="/icon.svg" type="image/svg+xml">
     <link rel="apple-touch-icon" href="/icon.png">
@@ -20,8 +20,13 @@
   </head>
 
   <body class="bg-white">
+    <% if submit_mode? %>
+      <div class="fixed top-0 inset-x-0 z-20 text-xs px-3 py-2 bg-amber-50 text-amber-800 border-b border-amber-200">
+        【提出モード】メール送信は無効です（ログインはデモアカウントをご利用ください）
+      </div>
+    <% end %>
     <!-- ヘッダー -->
-      <header class="fixed top-0 inset-x-0  shadow-sm z-10 <%= header_theme_class %>">
+      <header class="fixed <%= submit_mode? ? 'top-8' : 'top-0' %> inset-x-0 shadow-sm z-10 <%= header_theme_class %>">
         <div class="w-full h-16 px-4 flex items-center">
           <!-- 1段：左 = プロフィール + ナビ / 右 = ロゴ -->
           <div class="flex items-center justify-between w-full">
@@ -171,7 +176,7 @@
       </header>
 
     <!-- メインコンテンツ -->
-    <main class="pt-16 pb-0">
+    <main class="<%= submit_mode? ? 'pt-24' : 'pt-16' %> pb-0">
       <% if notice %>
         <div class="mb-4 bg-green-100 text-green-800 px-4 py-2 rounded">
           <%= notice %>

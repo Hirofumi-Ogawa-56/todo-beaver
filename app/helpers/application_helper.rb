@@ -12,6 +12,10 @@ module ApplicationHelper
     "amber"   => { header: "bg-amber-700 text-white",  nav: "bg-amber-800 text-white" }
   }.freeze
 
+  def submit_mode?
+    ENV.fetch("DELIVER_EMAILS", "false") != "true"
+  end
+
   def current_theme_key
     key = current_profile&.theme.presence || "default"
     THEME_CLASSES.key?(key) ? key : "default"
