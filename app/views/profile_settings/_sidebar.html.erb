@@ -1,0 +1,21 @@
+<!-- app/views/profile_settings/_sidebar.html.erb -->
+<h2 class="font-semibold text-sm mb-3">プロフィール設定</h2>
+<nav class="space-y-1">
+
+<!-- ホームをコメントアウト -->
+<%#= link_to "ホーム",
+            home_profile_settings_path,
+            class: nav_class(home_profile_settings_path) %>
+
+<%= link_to "プロフィール編集",
+            edit_profile_settings_path,
+            class: nav_class(edit_profile_settings_path) %>
+
+<%= link_to "新規プロフィール作成",
+            new_profile_path,
+            class: nav_class(new_profile_path) %>
+
+<%= link_to "メール・パスワード変更",
+            edit_user_registration_path,
+            class: nav_class(edit_user_registration_path) %>
+</nav>

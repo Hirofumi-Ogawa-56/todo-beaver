@@ -13,3 +13,23 @@
  *= require_tree .
  *= require_self
  */
+
+/* app/assets/stylesheets/application.css */
+summary::-webkit-details-marker {
+  display: none;
+}
+
+summary::marker {
+  content: "";
+}
+
+/* カレンダーの1マスの中身用ボックス */
+.calendar-slot-inner {
+  height: 48px;        /* ← 好きな高さに。96px ≒ 3行ぶんイメージ */
+  overflow-y: auto;    /* ← 中だけ縦スクロール */
+}
+
+/* タスクのウィークリーカレンダー用テーブル */
+.calendar-table {
+  table-layout: fixed;  /* ← これで col の幅に従って均等割り */
+}

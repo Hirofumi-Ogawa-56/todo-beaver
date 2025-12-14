@@ -1,0 +1,7 @@
+<!-- app/views/teams/edit.html.erb -->
+<% content_for :sidebar do %>
+  <%= render "team_settings/sidebar" %>
+<% end %>
+
+<h1 class="text-xl font-bold mb-4">チーム編集</h1>
+<%= render "form", team: @team %>

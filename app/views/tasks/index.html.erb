@@ -1,0 +1,247 @@
+<!-- app/views/tasks/index.html.erb -->
+<% content_for :sidebar do %>
+  <%= render "tasks/sidebar" %>
+<% end %>
+
+<div>
+  <!-- ▼ 総合検索フォーム -->
+  <div class="mb-1">
+    <%= form_with url: tasks_path, method: :get, local: true,
+                  class: "flex items-center gap-2 max-w-xl" do %>
+
+      <!-- 今のクイックフィルタを維持 -->
+      <%= hidden_field_tag :filter, params[:filter] if params[:filter].present? %>
+
+      <!-- all_profiles も維持 -->
+      <%= hidden_field_tag :all_profiles, params[:all_profiles] if params[:all_profiles].present? %>
+
+      <%= text_field_tag :q,
+                        @query,
+                        class: "flex-1 border border-gray-300 rounded px-3 py-1 text-sm",
+                        placeholder: "タイトル・詳細・タグで検索（スペース区切りでAND検索）" %>
+
+      <%= submit_tag "検索",
+                    class: "px-3 py-1 bg-gray-800 text-white text-sm rounded hover:bg-gray-900" %>
+
+      <% if @query.present? %>
+        <%= link_to "クリア",
+                    tasks_path(
+                      filter:      params[:filter],
+                      all_profiles: params[:all_profiles]  # ★ ここでモード維持
+                    ),
+                    class: "text-xs text-gray-500 underline ml-2" %>
+      <% end %>
+    <% end %>
+  </div>
+
+  <!-- ▼ カラムごとのフィルタ -->
+  <div class="mb-1">
+    <%= form_with url: tasks_path, method: :get, local: true do %>
+      <%# 総合検索とクイックフィルタは維持 %>
+      <%= hidden_field_tag :q, @query if @query.present? %>
+      <%= hidden_field_tag :filter, params[:filter] if params[:filter].present? %>
+      <%= hidden_field_tag :all_profiles, params[:all_profiles] if params[:all_profiles].present? %>
+
+      <table class="w-full text-xs">
+        <tbody>
+          <tr>
+            <!-- タイトル -->
+            <td class="py-1 px-2">
+              <%= text_field_tag :title_contains,
+                                 params[:title_contains],
+                                 class: "w-full border border-gray-300 rounded px-2 py-1",
+                                 placeholder: "部分一致" %>
+            </td>
+
+            <!-- 期限（自由入力でもいいですが、UX的に date_field_tag おすすめ） -->
+            <td class="py-1 px-2">
+              <%= date_field_tag :due_on,
+                                 params[:due_on],
+                                 class: "w-full border border-gray-300 rounded px-2 py-1" %>
+            </td>
+
+            <!-- ステータス（todo / in / done など） -->
+            <td class="py-1 px-2">
+              <%= text_field_tag :status_keyword,
+                                 params[:status_keyword],
+                                 class: "w-full border border-gray-300 rounded px-2 py-1",
+                                 placeholder: "todo / prog / done" %>
+            </td>
+
+            <!-- 担当者 -->
+            <td class="py-1 px-2">
+              <%= text_field_tag :assignee_keyword,
+                                 params[:assignee_keyword],
+                                 class: "w-full border border-gray-300 rounded px-2 py-1",
+                                 placeholder: "担当者名の一部" %>
+            </td>
+
+            <!-- 作成者 -->
+            <td class="py-1 px-2">
+              <%= text_field_tag :owner_keyword,
+                                 params[:owner_keyword],
+                                 class: "w-full border border-gray-300 rounded px-2 py-1",
+                                 placeholder: "作成者名の一部" %>
+            </td>
+
+            <!-- 右端：ボタン -->
+            <td class="py-1 px-2">
+              <div class="flex justify-end gap-2">
+                <%= submit_tag "フィルタ適用",
+                               class: "px-3 py-1 bg-gray-100 text-gray-700 text-xs rounded border border-gray-300 hover:bg-gray-200" %>
+
+                <%= link_to "フィルタクリア",
+                            tasks_path(
+                              q:           @query,
+                              filter:      params[:filter],
+                              all_profiles: params[:all_profiles]
+                            ),
+                            class: "px-3 py-1 text-xs text-gray-500 underline" %>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    <% end %>
+  </div>
+
+
+<% if @tasks.any? %>
+  <div class="overflow-y-auto max-h-[calc(100vh-260px)]">
+    <table class="w-full text-sm">
+      <thead class="sticky top-0 bg-gray-50 z-10">
+        <tr class="border-b">
+          <th class="text-left py-2 px-2">
+            <%= sort_link("タイトル", "title") %>
+          </th>
+          <th class="text-left py-2 px-2">
+            <%= sort_link("期限", "due_at") %>
+          </th>
+          <th class="text-left py-2 px-2">
+            <%= sort_link("ステータス", "status") %>
+          </th>
+          <th class="text-left py-2 px-2">
+            <%= sort_link("担当者", "assignee") %>
+          </th>
+          <th class="text-left py-2 px-2">
+            <%= sort_link("作成者", "owner") %>
+          </th>
+          <th class="text-left py-2 px-2"></th>
+        </tr>
+      </thead>
+
+      <!-- ★ ここに id を付ける -->
+      <tbody id="tasks-table-body">
+        <% @tasks.each do |task| %>
+          <tr class="border-gray-50">
+            <!-- Taskのタイトル -->
+            <td class="py-2 px-2">
+              <%= link_to task.title,
+                          task_path(task),
+                          class: "font-semibold text-gray-600 underline",
+                          data: {
+                            turbo_frame: "side-panel-frame",
+                            action: "click->side-panel#open",
+                            side_panel_title_param: "タスクの詳細"
+                          } %>
+            </td>
+
+            <!-- Taskの期限 -->
+            <td class="py-2 px-2">
+              <%= due_badge(task) %>
+            </td>
+
+            <!-- Taskのステータス -->
+            <td class="py-2 px-2">
+              <div class="mb-1">
+                <%= status_badge(task) %>
+              </div>
+            </td>
+
+            <!-- Taskの担当者 -->
+            <td class="py-2">
+              <% if task.assignees.any? %>
+                <% task.assignees.each do |profile| %>
+                  <%= profile_chip(
+                        profile,
+                        size: :xs,
+                        wrapper_class: "px-2 py-1 mr-1 mb-1 rounded bg-gray-100 text-xs font-semibold"
+                      ) %>
+                <% end %>
+              <% else %>
+                <span class="text-xs text-gray-400">未設定</span>
+              <% end %>
+            </td>
+
+            <!-- Taskの作成者 -->
+            <td class="py-2 px-2">
+              <% if task.owner_profile %>
+                <%= profile_chip(
+                      task.owner_profile,
+                      size: :xs,
+                      wrapper_class: "px-2 py-1 rounded bg-gray-100 text-xs font-semibold"
+                    ) %>
+              <% else %>
+                <span class="text-xs text-gray-400">不明</span>
+              <% end %>
+            </td>
+
+            <!-- Taskのステータス変更 + 編集・削除 -->
+            <td class="py-2 px-2 text-right">
+              <div class="flex items-center justify-end gap-2">
+                <!-- ステータス変更プルダウン -->
+                <%= form_with model: task,
+                              url: task_path(task),
+                              method: :patch,
+                              local: true do |f| %>
+                  <%= f.select :status,
+                               Task.statuses.keys.map { |k| [k, k] },
+                               {},
+                               class: "border border-gray-300 rounded px-2 py-1 text-xs",
+                               onchange: "this.form.submit();" %>
+                <% end %>
+
+                <!-- 編集ボタン -->
+                <%= link_to "編集",
+                            edit_task_path(task),
+                            class: "text-xs text-gray-600 underline",
+                            data: {
+                              turbo_frame: "side-panel-frame",
+                              action: "click->side-panel#open",
+                              side_panel_title_param: "タスク編集"
+                            } %>
+
+                <!-- 削除ボタン -->
+                <%= link_to "削除",
+                            task_path(task),
+                            data: { turbo_method: :delete, turbo_confirm: "このタスクを削除しますか？" },
+                            class: "text-xs text-red-600 underline" %>
+              </div>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  <!-- ▼ もっと見る（次のページへ） -->
+  <% if @tasks.next_page.present? %>
+    <div id="load-more-tasks" class="mt-2 flex justify-center">
+      <%= link_to "もっと見る",
+                  tasks_path(
+                    request.query_parameters.merge(
+                      page:   @tasks.next_page,
+                      format: :turbo_stream
+                    )
+                  ),
+                  class: "px-4 py-2 text-xs bg-gray-100 border border-gray-300 rounded hover:bg-gray-200" %>
+    </div>
+  <% end %>
+  </div>
+
+
+
+<% else %>
+  <p class="text-sm text-gray-500">
+    まだタスクがありません。「新規タスク作成」から追加してください。
+  </p>
+<% end %>
+</div>

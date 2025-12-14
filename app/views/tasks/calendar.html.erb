@@ -1,0 +1,180 @@
+<!-- app/views/tasks/calendar.html.erb -->
+<% content_for :sidebar do %>
+  <%= render "tasks/sidebar" %>
+<% end %>
+
+<div>
+  <!-- 週移動ナビ -->
+  <div class="flex items-center gap-2 text-xs text-gray-600 mb-3">
+    <%= link_to "＜ 前の週",
+                tasks_path(view: :calendar, date: (@week_start - 7.days).to_s),
+                class: "px-2 py-1 rounded border border-gray-300 hover:bg-gray-50" %>
+
+    <span>
+      <%= @week_start.strftime("%Y/%m/%d") %> 〜 <%= @week_end.strftime("%Y/%m/%d") %>
+    </span>
+
+    <%= link_to "次の週 ＞",
+                tasks_path(view: :calendar, date: (@week_start + 7.days).to_s),
+                class: "px-2 py-1 rounded border border-gray-300 hover:bg-gray-50" %>
+
+    <%= link_to "今日",
+                tasks_path(view: :calendar),
+                class: "px-2 py-1 rounded border border-gray-300 hover:bg-gray-50" %>
+  </div>
+
+    <!-- 共通変数 -->
+    <% header_height = 48 %>              <%# ヘッダーの高さ（px）を共通化 %>
+    <% column_height = 16 * 60 %>         <%# 8:00〜24:00 などを表現する高さ %>
+    <% start_hour = @hours.first %>
+    <% end_hour   = @hours.last %>        <%# ここでは +1 しない %>
+    <% total_minutes = (end_hour - start_hour + 1) * 60 %>
+    <% px_per_min = column_height.to_f / total_minutes %>
+
+    <!-- カレンダー -->
+    <div class="mt-8"> 
+    <div class="border border-gray-300 rounded bg-white overflow-x-auto">
+
+        <div class="flex min-w-[900px] text-[11px]">
+            <!-- ▼ 左側：時間カラム -->
+            <div class="w-10 border-r border-gray-300 bg-gray-50">
+            <!-- 上のヘッダー（右の日付ヘッダーと高さを揃える） -->
+            <div class="border-b border-gray-300 flex items-center justify-center text-[11px] text-gray-400"
+                style="height: <%= header_height %>px;">
+                時間
+            </div>
+
+            <!-- 時間軸エリア -->
+            <div class="relative" style="height: <%= column_height %>px;">
+                <% (start_hour..end_hour).each do |h| %>
+                <% minutes_from_start = (h - start_hour) * 60 %>
+                <% top = minutes_from_start * px_per_min %>
+
+                <div class="absolute left-0 right-0 border-t border-gray-100"
+                    style="top: <%= top %>px;">
+                    <span class="absolute right-1 top-0.5 text-[10px] text-gray-400">
+                    <%= "%02d:00" % h %>
+                    </span>
+                </div>
+                <% end %>
+            </div>
+            </div>
+
+            <!-- ▼ 右側：日カラム -->
+            <div class="flex-1 flex">
+            <% @calendar_days.each do |date| %>
+                <% day_tasks = @tasks_for_calendar.select { |t| t.due_at&.to_date == date } %>
+
+                <!-- 1日ぶんの縦カラム -->
+                <div class="flex-1 border-l border-gray-300">
+                <!-- 日付ヘッダー（高さを header_height に合わせる） -->
+                <div class="bg-gray-50 border-b border-gray-300
+                            flex flex-col items-center justify-center text-center"
+                    style="height: <%= header_height %>px;">
+                    <div class="text-lg font-semibold leading-tight">
+                    <%= date.strftime("%m/%d") %>
+                    </div>
+                    <div class="leading-tight">
+                    <%= %w[Sun. Mon. Tue. Wed. Thu. Fri. Sat.][date.wday] %>
+                    </div>
+                </div>
+
+            <!-- 時間軸エリア -->
+            <div class="relative" style="height: <%= column_height %>px;">
+                <% day_start = date.to_time.in_time_zone.change(hour: start_hour, min: 0) %>
+                <% day_end   = date.to_time.in_time_zone.change(hour: end_hour,   min: 0) + 1.hour %>
+
+                <!-- 背景の時間グリッド（横線） -->
+                <% (start_hour..end_hour).each do |h| %>
+                <% minutes_from_start = (h - start_hour) * 60 %>
+                <% top = minutes_from_start * px_per_min %>
+
+                <div class="absolute left-0 right-0 border-t border-gray-100"
+                    style="top: <%= top %>px;">
+                    <span class="absolute left-1 top-0.5 text-[10px] text-gray-300">
+                    <%= "%02d:00" % h %>
+                    </span>
+                </div>
+                <% end %>
+
+                <% max_per_slot = 2 %> <%# この時間帯で横に並べる最大件数 %>
+                <% slot_groups = Hash.new { |h, k| h[k] = [] } %>
+
+                <% day_tasks.each do |task| %>
+                    <% next unless task.due_at %>
+                    <% display_time = task.due_at - 1.hour %>
+                    <% slot_time = display_time.beginning_of_hour %>
+                    <% slot_groups[slot_time] << task %>
+                <% end %>
+
+                <% slot_groups.sort.each do |slot_time, tasks_in_slot| %>
+                    <% start_time = slot_time %>
+                    <% end_time   = slot_time + 1.hour %>
+
+                    <% start_clamped = [start_time, day_start].max %>
+                    <% end_clamped   = [end_time,   day_end].min %>
+
+                    <% duration = end_clamped - start_clamped %>
+                    <% next if duration <= 0 %>
+
+                    <% minutes_from_start = ((start_clamped - day_start) / 60).to_i %>
+                    <% top_px = minutes_from_start * px_per_min %>
+                    <% height_px = 18 %>
+
+                    <% visible_tasks = tasks_in_slot.first(max_per_slot) %>
+                    <% hidden_count  = [tasks_in_slot.size - max_per_slot, 0].max %>
+
+                    <div class="absolute left-0 right-0 px-1"
+                        style="top: <%= top_px %>px; height: <%= height_px %>px;">
+                    <div class="flex gap-1 items-center">
+                        <% visible_tasks.each do |task| %>
+                        <% color_class =
+                            case task.status
+                            when "todo"        then "bg-red-100 text-red-700"
+                            when "in_progress" then "bg-blue-100 text-blue-700"
+                            when "done"        then "bg-green-100 text-green-700"
+                            when "archived"    then "bg-yellow-100 text-yellow-800"
+                            else                    "bg-gray-100 text-gray-600"
+                            end
+                        %>
+
+                        <%= link_to task_path(task),
+                            class: "flex-1 min-w-0 rounded text-[11px] px-2 py-0 " \
+                                    "overflow-hidden truncate border border-gray-300 shadow-sm " \
+                                    "hover:opacity-80 #{color_class}",
+                            data: {
+                                turbo_frame: "side-panel-frame",
+                                action: "click->side-panel#open",
+                                side_panel_title_param: task.title
+                            } do %>
+                            <!-- <span class="text-[10px]">T｜</span> -->
+                            <span><%= task.title %></span>
+                        <% end %>
+                        <% end %>
+
+                        <% if hidden_count > 0 %>
+                        <%= link_to(
+                                "+#{hidden_count}",
+                                slot_tasks_path(
+                                date: date.to_s,
+                                hour: slot_time.hour
+                                ),
+                                class: "text-[11px] px-2 py-0.5 rounded-full bg-white/80
+                                        border border-gray-300 text-gray-500 whitespace-nowrap font-semibold hover:bg-gray-100",
+                                data: {
+                                turbo_frame: "side-panel-frame",
+                                action: "click->side-panel#open",
+                                side_panel_title_param: "#{date.strftime('%m/%d')} #{slot_time.strftime('%H:%M')} のタスク"
+                                }
+                            ) %>
+                        <% end %>
+                    </div>
+                    </div>
+                <% end %>
+                </div>
+            </div>
+            <% end %>
+        </div>
+        </div>
+    </div>
+</div>

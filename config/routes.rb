@@ -1,10 +1,50 @@
 # config/routes.rb
 Rails.application.routes.draw do
-  root "home#index"
+  root "tasks#index"
 
-  devise_for :users
+  devise_for :users, controllers: {
+    confirmations: "users/confirmations",
+    passwords: "users/passwords"
+  }
+
+  post "/account/send_change_email", to: "account_settings#send_change_email", as: :send_change_email
+  post "/account/send_password_reset", to: "account_settings#send_password_reset", as: :send_password_reset
+
+  resources :profiles do
+    collection { post :switch }
+  end
 
   get "up" => "rails/health#show", as: :rails_health_check
-  get "service-worker" => "rails/pwa#service_worker", as: :pwa_service_worker
-  get "manifest" => "rails/pwa#manifest", as: :pwa_manifest
+
+  resource :profile_settings, only: [] do
+    get :home
+    get :edit
+    get :theme
+  end
+
+  resource :team_settings, only: [] do
+    get :home
+    get :edit
+    get :members
+  end
+
+  resources :teams
+
+  get "tasks/slot_tasks", to: "tasks#slot_tasks", as: :slot_tasks
+
+  resources :tasks do
+    resources :comments, only: %i[create edit update destroy] do
+      resources :reactions, only: :create
+    end
+  end
+
+  resources :team_memberships, only: %i[create destroy update]
+
+  resources :membership_requests, only: %i[create] do
+    member { patch :approve }
+  end
+
+  if Rails.env.development?
+    mount LetterOpenerWeb::Engine, at: "/letter_opener"
+  end
 end

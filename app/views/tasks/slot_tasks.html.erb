@@ -1,0 +1,70 @@
+<!-- app/views/tasks/slot_tasks.html.erb -->
+<turbo-frame id="side-panel-frame">
+  <div class="space-y-3 text-sm">
+    <div class="flex items-center justify-between">
+      <div>
+        <div class="text-xs text-gray-500">
+          <%= @slot_date.strftime("%Y/%m/%d") %>
+          <%= "%02d:00" % @slot_hour %> のタスク
+        </div>
+        <div class="text-lg font-semibold text-gray-800">
+          この時間帯のタスク一覧
+        </div>
+      </div>
+    </div>
+
+    <% if @tasks_in_slot.any? %>
+      <ul class="space-y-2">
+        <% @tasks_in_slot.each do |task| %>
+          <li class="border border-gray-300 rounded px-3 py-2 hover:bg-gray-50">
+            <div class="flex items-center justify-between gap-2">
+              <div class="min-w-0">
+                <div class="font-semibold text-gray-800 truncate">
+                  <%= task.title %>
+                </div>
+                <div class="text-[11px] text-gray-500 mt-0.5">
+                  期限:
+                  <% if task.due_at %>
+                    <%= task.due_at.strftime("%m/%d %H:%M") %>
+                  <% else %>
+                    未設定
+                  <% end %>
+                </div>
+                <div class="text-[11px] text-gray-500 mt-0.5 flex flex-wrap gap-1">
+                  <% if task.assignees.any? %>
+                    <% task.assignees.each do |profile| %>
+                      <%= profile_chip(
+                            profile,
+                            size: :xs,
+                            wrapper_class: "px-1 py-0.5 rounded bg-gray-100 text-[11px]"
+                          ) %>
+                    <% end %>
+                  <% else %>
+                    <span class="text-gray-400">担当: 未設定</span>
+                  <% end %>
+                </div>
+              </div>
+
+              <div class="flex flex-col items-end gap-1">
+                <%= status_badge(task) %>
+
+                <%= link_to "詳細を見る",
+                            task_path(task),
+                            class: "text-[11px] text-blue-600 underline",
+                            data: {
+                              turbo_frame: "side-panel-frame",
+                              action: "click->side-panel#open",
+                              side_panel_title_param: "タスク詳細"
+                            } %>
+              </div>
+            </div>
+          </li>
+        <% end %>
+      </ul>
+    <% else %>
+      <p class="text-xs text-gray-500">
+        この時間帯のタスクはありません。
+      </p>
+    <% end %>
+  </div>
+</turbo-frame>

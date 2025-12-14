@@ -1,0 +1,8 @@
+# test/fixtures/tags.yml
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  name: "tag_alpha"
+
+two:
+  name: "tag_beta"

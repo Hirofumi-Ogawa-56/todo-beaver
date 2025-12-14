@@ -1,0 +1,8 @@
+<!-- app/views/devise/mailer/confirmation_instructions.html.erb -->
+<p>Forestly</p>
+<p>メールアドレス変更の確認です。</p>
+<p>以下のリンクを開いて、メールアドレスの変更を確定してください。</p>
+
+<p>
+  <%= link_to "メールアドレス変更を進める", user_confirmation_url(confirmation_token: @token) %>
+</p>

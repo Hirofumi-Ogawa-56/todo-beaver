@@ -1,0 +1,11 @@
+<!-- app/views/profiles/new.html.erb -->
+
+<% if user_signed_in? && current_user.profiles.any? %>
+  <% content_for :sidebar do %>
+    <%= render "profile_settings/sidebar" %>
+  <% end %>
+<% end %>
+
+<h1 class="text-xl font-bold mb-4">プロフィール作成</h1>
+
+<%= render "form", profile: @profile %>

@@ -1,0 +1,12 @@
+# config/locals/ja.yml
+ja:
+  activerecord:
+    errors:
+      modeles:
+        membership_request:
+          attributes:
+            team_id:
+              taken: "このプロフィールへの招待はすでに送信済み・承認待ちです。"
+  time:
+    formats:
+      ja_short: "%m/%d %H:%M" 
