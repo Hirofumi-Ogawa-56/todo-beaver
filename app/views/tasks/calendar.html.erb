@@ -8,7 +8,7 @@
   <div class="flex items-center gap-2 text-xs text-gray-600 mb-3">
     <%= link_to "＜ 前の週",
                 tasks_path(view: :calendar, date: (@week_start - 7.days).to_s),
-                class: "px-2 py-1 rounded border border-gray-200 hover:bg-gray-50" %>
+                class: "px-2 py-1 rounded border border-gray-300 hover:bg-gray-50" %>
 
     <span>
       <%= @week_start.strftime("%Y/%m/%d") %> 〜 <%= @week_end.strftime("%Y/%m/%d") %>
@@ -16,11 +16,11 @@
 
     <%= link_to "次の週 ＞",
                 tasks_path(view: :calendar, date: (@week_start + 7.days).to_s),
-                class: "px-2 py-1 rounded border border-gray-200 hover:bg-gray-50" %>
+                class: "px-2 py-1 rounded border border-gray-300 hover:bg-gray-50" %>
 
     <%= link_to "今日",
                 tasks_path(view: :calendar),
-                class: "px-2 py-1 rounded border border-gray-200 hover:bg-gray-50" %>
+                class: "px-2 py-1 rounded border border-gray-300 hover:bg-gray-50" %>
   </div>
 
     <!-- 共通変数 -->
@@ -33,13 +33,13 @@
 
     <!-- カレンダー -->
     <div class="mt-8"> 
-    <div class="border border-gray-200 rounded bg-white overflow-x-auto">
+    <div class="border border-gray-300 rounded bg-white overflow-x-auto">
 
         <div class="flex min-w-[900px] text-[11px]">
             <!-- ▼ 左側：時間カラム -->
-            <div class="w-10 border-r border-gray-200 bg-gray-50">
+            <div class="w-10 border-r border-gray-300 bg-gray-50">
             <!-- 上のヘッダー（右の日付ヘッダーと高さを揃える） -->
-            <div class="border-b border-gray-200 flex items-center justify-center text-[11px] text-gray-400"
+            <div class="border-b border-gray-300 flex items-center justify-center text-[11px] text-gray-400"
                 style="height: <%= header_height %>px;">
                 時間
             </div>
@@ -66,9 +66,9 @@
                 <% day_tasks = @tasks_for_calendar.select { |t| t.due_at&.to_date == date } %>
 
                 <!-- 1日ぶんの縦カラム -->
-                <div class="flex-1 border-l border-gray-200">
+                <div class="flex-1 border-l border-gray-300">
                 <!-- 日付ヘッダー（高さを header_height に合わせる） -->
-                <div class="bg-gray-50 border-b border-gray-200
+                <div class="bg-gray-50 border-b border-gray-300
                             flex flex-col items-center justify-center text-center"
                     style="height: <%= header_height %>px;">
                     <div class="text-lg font-semibold leading-tight">
@@ -140,7 +140,7 @@
 
                         <%= link_to task_path(task),
                             class: "flex-1 min-w-0 rounded text-[11px] px-2 py-0 " \
-                                    "overflow-hidden truncate border border-gray-200 shadow-sm " \
+                                    "overflow-hidden truncate border border-gray-300 shadow-sm " \
                                     "hover:opacity-80 #{color_class}",
                             data: {
                                 turbo_frame: "side-panel-frame",
@@ -153,10 +153,20 @@
                         <% end %>
 
                         <% if hidden_count > 0 %>
-                        <span class="text-[11px] px-2 py-0.5 rounded-full bg-white/80
-                                    border border-gray-200 text-gray-500 whitespace-nowrap font-semibold">
-                            +<%= hidden_count %>
-                        </span>
+                        <%= link_to(
+                                "+#{hidden_count}",
+                                slot_tasks_path(
+                                date: date.to_s,
+                                hour: slot_time.hour
+                                ),
+                                class: "text-[11px] px-2 py-0.5 rounded-full bg-white/80
+                                        border border-gray-300 text-gray-500 whitespace-nowrap font-semibold hover:bg-gray-100",
+                                data: {
+                                turbo_frame: "side-panel-frame",
+                                action: "click->side-panel#open",
+                                side_panel_title_param: "#{date.strftime('%m/%d')} #{slot_time.strftime('%H:%M')} のタスク"
+                                }
+                            ) %>
                         <% end %>
                     </div>
                     </div>

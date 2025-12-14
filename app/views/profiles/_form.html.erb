@@ -14,14 +14,14 @@
   <div class="mb-4">
     <%= f.label :label, "プロフィール管理名（プロフィール切り替えに利用する名前）", class: "block mb-1 text-sm" %>
     <%= f.text_field :label,
-                     class: "border border-gray-200 rounded px-2 py-1 w-full",
+                     class: "border border-gray-300 rounded px-2 py-1 w-full",
                      placeholder: "株式会社〇〇 / 副業 / プライベート など" %>
   </div>
 
   <div class="mb-4">
     <%= f.label :display_name, "表示名（他のユーザーに表示される名前）", class: "block mb-1 text-sm" %>
     <%= f.text_field :display_name,
-                    class: "border border-gray-200 rounded px-2 py-1 w-full",
+                    class: "border border-gray-300 rounded px-2 py-1 w-full",
                     placeholder: "例）田中太郎 / Tanaka Taro など" %>
   </div>
 
@@ -34,9 +34,25 @@
         </div>
     <% end %>
 
-    <%= f.file_field :avatar,
-                    accept: "image/*",
-                    class: "block w-full text-sm" %>
+    <div class="flex items-center gap-2">
+      <!-- 見た目用のボタン（label） -->
+      <%= f.label :avatar,
+                  class: "px-3 py-1 border border-gray-300 rounded text-sm bg-white cursor-pointer hover:bg-gray-50" do %>
+        ファイルを選択
+      <% end %>
+
+      <!-- 選択されたファイル名を表示する所 -->
+      <span id="avatar-filename" class="text-xs text-gray-500">
+        選択されていません
+      </span>
+
+      <!-- 本体の file input は隠す -->
+      <%= f.file_field :avatar,
+                       accept: "image/*",
+                       class: "hidden",
+                       onchange: "document.getElementById('avatar-filename').textContent = this.files[0]?.name || '選択されていません';" %>
+    </div>
+
 
     <% if @profile.avatar.attached? %>
         <label class="mt-2 inline-flex items-center text-xs text-red-600">
@@ -46,7 +62,7 @@
     <% end %>
 
     <p class="text-[11px] text-gray-500 mt-1">
-        正方形の画像がおすすめです（例: 400×400）。
+        正方形の画像が推奨です（例: 400×400）。
     </p>
     </div>
 
@@ -59,7 +75,7 @@
       <input type="text"
              value="<%= @profile.join_token %>"
              readonly
-             class="border border-gray-200 rounded px-2 py-1 w-full bg-gray-50 text-gray-600 text-sm" />
+             class="border border-gray-300 rounded px-2 py-1 w-full bg-gray-50 text-gray-600 text-sm" />
 
       <p class="text-[11px] text-gray-400 mt-1">
         このIDは編集できません。プロフィール参加申請に使います。
@@ -68,11 +84,22 @@
   <% end %>
 
   <div class="mb-4">
-    <%= f.label :theme, "テーマ（任意）", class: "block mb-1 text-sm" %>
-    <%= f.text_field :theme,
-                     class: "border border-gray-200 rounded px-2 py-1 w-full",
-                     placeholder: "dark / blue / work など" %>
+    <p class="block mb-2 text-sm">テーマ（ヘッダー・左ナビの色）</p>
+
+    <div class="flex flex-wrap gap-2">
+      <% Profile::THEMES.each do |key| %>
+        <label class="inline-flex items-center gap-2 px-3 py-2 rounded border border-gray-300 bg-white cursor-pointer">
+          <%= f.radio_button :theme, key, class: "mr-1" %>
+          <span class="text-sm"><%= key %></span>
+        </label>
+      <% end %>
+    </div>
+
+    <p class="text-[11px] text-gray-500 mt-2">
+      メイン画面とライトパネルは白のまま、ヘッダーと左ナビだけ色が変わります。
+    </p>
   </div>
 
-  <%= f.submit "プロフィールを作成する", class: "px-4 py-2 bg-blue-600 text-white text-sm rounded hover:bg-blue-700" %>
+  <%= f.submit(@profile.persisted? ? "プロフィール設定を更新する" : "プロフィールを作成する",
+             class: "px-4 py-2 bg-blue-600 text-white text-sm rounded hover:bg-blue-700") %>
 <% end %>

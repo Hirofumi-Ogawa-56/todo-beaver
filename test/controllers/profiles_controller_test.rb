@@ -3,9 +3,7 @@ require "test_helper"
 
 class ProfilesControllerTest < ActionDispatch::IntegrationTest
   setup do
-    @user = users(:one)
-    sign_in @user
-    @profile = profiles(:one)
+    @user, @profile = sign_in_with_profile
   end
 
   test "should get index" do

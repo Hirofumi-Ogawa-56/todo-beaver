@@ -3,9 +3,9 @@ require "test_helper"
 
 class TeamsControllerTest < ActionDispatch::IntegrationTest
   setup do
-    @user = users(:one)
-    sign_in @user
+    @user, @profile = sign_in_with_profile
     @team = teams(:one)
+    TeamMembership.create!(team: @team, profile: @profile, role: TeamMembership::ADMIN_ROLE)
   end
 
   test "should get index" do
@@ -18,7 +18,6 @@ class TeamsControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
   end
 
-  # チームのfixtureがまだなければ、この2つのテストはコメントアウトか skip でもOK
   test "should show team" do
     get team_url(@team)
     assert_response :success

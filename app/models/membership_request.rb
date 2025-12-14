@@ -6,18 +6,10 @@ class MembershipRequest < ApplicationRecord
   belongs_to :team
 
   # 方向
-  enum direction: {
-    profile_to_team: 0, # プロフィール → チームに参加申請
-    team_to_profile: 1  # チーム → プロフィールへ招待
-  }
+  enum :direction, { profile_to_team: 0, team_to_profile: 1 }
 
   # 状態
-  enum status: {
-    pending: 0,   # 申請中
-    approved: 1,  # 承認済み
-    rejected: 2,  # 却下
-    canceled: 3   # 取り消し
-  }
+  enum :status, { pending: 0, approved: 1, rejected: 2, canceled: 3 }
 
   # バリデーション
   validates :direction, presence: true
@@ -28,7 +20,7 @@ class MembershipRequest < ApplicationRecord
             uniqueness: {
               scope: [ :target_profile_id, :team_id, :direction ],
               conditions: -> { where(status: statuses[:pending]) },
-              message: "から同じ内容の申請がすでに存在します"
+              message: "同じ申請がすでに送信されており、承認待ちです。"
             }
 
   validate :target_presence

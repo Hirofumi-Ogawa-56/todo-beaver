@@ -41,7 +41,7 @@
             method: :post,
             class: "inline-flex items-center gap-1 px-2 py-0.5 rounded-full border text-[11px] " \
                    "hover:bg-pink-50 " \
-                   "#{liked_by_current ? 'bg-pink-50 border-pink-300 text-pink-700' : 'bg-white border-gray-200 text-gray-500'}"
+                   "#{liked_by_current ? 'bg-pink-50 border-pink-300 text-pink-700' : 'bg-white border-gray-300 text-gray-500'}"
           ) do %>
         <span><%= liked_by_current ? "♥" : "♡" %></span>
         <% if count.positive? %>

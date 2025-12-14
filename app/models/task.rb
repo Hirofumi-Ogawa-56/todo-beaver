@@ -13,20 +13,33 @@ class Task < ApplicationRecord
            -> { where(pinned: true).order(created_at: :asc) },
            class_name: "Comment"
 
-  enum status: {
-    todo: 0,
-    done: 1,
-    in_progress: 2,
-    archived: 3
-  }
+  enum :status, { todo: 0, done: 1, in_progress: 2, archived: 3 }
 
   validates :title, presence: true, length: { maximum: 30 }
   validates :status, presence: true
 
-  validate :due_at_cannot_be_in_the_past, if: -> { due_at.present? }
 
-  # ✅ フォーム用の「仮想」属性
+  # フォーム用の「仮想」属性
   attr_accessor :due_date, :due_time, :tag_list
+
+  # 検索スコープ
+  scope :keyword_search, ->(query) do
+    terms = query.to_s.strip.split(/\s+/)
+    rel   = left_outer_joins(:tags).distinct
+
+    terms.each do |term|
+      next if term.blank?
+
+      pattern = "%#{sanitize_sql_like(term)}%" # ← Task. は不要
+
+      rel = rel.where(
+        "tasks.title ILIKE :pattern OR tasks.description ILIKE :pattern OR tags.name ILIKE :pattern",
+        pattern:
+      )
+    end
+
+    rel
+  end
 
   # フォーム表示用：既存タグ → カンマ区切り文字列
   def tag_list

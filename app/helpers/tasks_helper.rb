@@ -59,4 +59,37 @@ module TasksHelper
 
     content_tag :span, label, class: "#{base_class} #{color_class}"
   end
+
+  # カラム名クリックでソートするリンク
+  # 1回目クリック → 降順
+  # 同じカラムをもう1回クリック → 昇順
+  def sort_link(label, column)
+    current_sort      = params[:sort]
+    current_direction = params[:direction]
+
+    # 次の direction を決める
+    next_direction =
+      if current_sort == column && current_direction == "desc"
+        "asc"   # 今が desc で同じカラム → 昇順に切り替え
+      else
+        "desc"  # それ以外（初回 or 別カラム）→ 降順スタート
+      end
+
+    # 今の状態に応じて矢印アイコン
+    icon =
+      if current_sort == column
+        current_direction == "desc" ? "▼" : "▲"
+      else
+        ""
+      end
+
+    link_to(
+      safe_join([ label, icon ].reject(&:blank?), " "),
+      tasks_path(
+        # いまの検索/フィルタ/カラムフィルタのパラメータを維持しつつ
+        request.query_parameters.merge(sort: column, direction: next_direction)
+      ),
+      class: "inline-flex items-center gap-1 text-xs text-gray-700 hover:underline"
+    )
+  end
 end
