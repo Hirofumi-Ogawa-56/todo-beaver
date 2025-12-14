@@ -2,7 +2,7 @@
 class Task < ApplicationRecord
   belongs_to :owner_profile,    class_name: "Profile"
   belongs_to :assignee_profile, class_name: "Profile", optional: true
-  belongs_to :team
+  belongs_to :team, optional: true
 
   has_many :task_tags, dependent: :destroy
   has_many :tags, through: :task_tags
