@@ -3,8 +3,7 @@ require "test_helper"
 
 class TasksControllerTest < ActionDispatch::IntegrationTest
   setup do
-    @user = users(:one)
-    sign_in @user
+    @user, @profile = sign_in_with_profile
   end
 
   test "should get index" do

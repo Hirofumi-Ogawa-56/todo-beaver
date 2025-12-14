@@ -1,25 +1,80 @@
-<h2>Change your password</h2>
+<!-- app/views/devise/passwords/edit.html.erb -->
+<div class="min-h-screen flex items-center justify-center bg-white px-4">
+  <div class="w-full max-w-md">
+    <!-- ロゴ -->
+    <div class="flex flex-col items-center text-center mb-8">
+      <%= image_tag "forestly_logo.png",
+                    alt: "forestly",
+                    class: "block",
+                    style: "height: 128px; width: auto;" %>
+      <p class="mt-0 text-sm text-gray-600">
+        多様なあなたのTaskアプリ
+      </p>
+    </div>
 
-<%= form_for(resource, as: resource_name, url: password_path(resource_name), html: { method: :put }) do |f| %>
-  <%= render "devise/shared/error_messages", resource: resource %>
-  <%= f.hidden_field :reset_password_token %>
-
-  <div class="field">
-    <%= f.label :password, "New password" %><br />
-    <% if @minimum_password_length %>
-      <em>(<%= @minimum_password_length %> characters minimum)</em><br />
+    <% if flash[:alert].present? %>
+      <div class="mb-4 rounded border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+        <%= flash[:alert] %>
+      </div>
     <% end %>
-    <%= f.password_field :password, autofocus: true, autocomplete: "new-password" %>
-  </div>
 
-  <div class="field">
-    <%= f.label :password_confirmation, "Confirm new password" %><br />
-    <%= f.password_field :password_confirmation, autocomplete: "new-password" %>
-  </div>
+    <% if flash[:notice].present? %>
+      <div class="mb-4 rounded border border-green-200 bg-green-50 px-3 py-2 text-sm text-green-800">
+        <%= flash[:notice] %>
+      </div>
+    <% end %>
 
-  <div class="actions">
-    <%= f.submit "Change my password" %>
-  </div>
-<% end %>
+    <!-- タイトル -->
+    <h1 class="text-lg font-semibold text-center mb-4">
+      パスワードを設定（再設定）
+    </h1>
 
-<%= render "devise/shared/links" %>
+    <p class="text-sm text-gray-600 text-center mb-6">
+      新しいパスワードを入力してください。
+    </p>
+
+    <%= form_for(resource,
+                 as: resource_name,
+                 url: user_password_path,
+                 html: { method: :put, data: { turbo: false } }) do |f| %>
+
+      <!-- reset token は必須 -->
+      <%= f.hidden_field :reset_password_token %>
+
+      <% if resource.errors.any? %>
+        <div class="mb-4 rounded border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+          <ul class="list-disc list-inside">
+            <% resource.errors.full_messages.each do |msg| %>
+              <li><%= msg %></li>
+            <% end %>
+          </ul>
+        </div>
+      <% end %>
+
+      <div class="space-y-3">
+        <div class="flex items-center gap-3">
+          <%= f.label :password, "パスワード", class: "w-28 text-sm text-gray-700" %>
+          <%= f.password_field :password,
+                               autocomplete: "new-password",
+                               class: "flex-1 border border-gray-200 rounded px-3 py-2 text-sm" %>
+        </div>
+
+        <div class="flex items-center gap-3">
+          <%= f.label :password_confirmation, "パスワード再入力", class: "w-28 text-sm text-gray-700" %>
+          <%= f.password_field :password_confirmation,
+                               autocomplete: "new-password",
+                               class: "flex-1 border border-gray-200 rounded px-3 py-2 text-sm" %>
+        </div>
+
+        <div class="pt-2">
+          <%= f.submit "確定する",
+                      class: "w-full px-4 py-2 bg-blue-600 text-white text-sm rounded hover:bg-blue-700" %>
+        </div>
+      </div>
+    <% end %>
+
+    <div class="mt-6 text-center text-sm">
+      <%= link_to "ログインへ戻る", new_user_session_path, class: "text-gray-600 underline" %>
+    </div>
+  </div>
+</div>

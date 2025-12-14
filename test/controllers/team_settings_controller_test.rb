@@ -3,8 +3,10 @@ require "test_helper"
 
 class TeamSettingsControllerTest < ActionDispatch::IntegrationTest
   setup do
-    @user = users(:one)
-    sign_in @user
+    @user, @profile = sign_in_with_profile
+
+    @team = Team.create!(name: "Team A")
+    TeamMembership.create!(team: @team, profile: @profile, role: TeamMembership::ADMIN_ROLE)
   end
 
   test "should get home" do

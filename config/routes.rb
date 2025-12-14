@@ -3,7 +3,8 @@ Rails.application.routes.draw do
   root "tasks#index"
 
   devise_for :users, controllers: {
-    confirmations: "users/confirmations"
+    confirmations: "users/confirmations",
+    passwords: "users/passwords"
   }
 
   post "/account/send_change_email", to: "account_settings#send_change_email", as: :send_change_email

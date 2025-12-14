@@ -1,6 +1,7 @@
 # app/controllers/application_controller.rb
 class ApplicationController < ActionController::Base
   allow_browser versions: :modern
+  before_action :authenticate_user!, unless: :devise_controller?
   before_action :set_current_profile
   helper_method :current_profile
 
