@@ -77,7 +77,6 @@
                             class: "border border-gray-300 rounded px-2 py-1",
                             onchange: "this.form.submit();" %>
         <% end %>
-
       </div>
 
     <% if @task.pinned_comments.any? %>
@@ -121,9 +120,10 @@
                   side_panel_title_param: "タスク編集"
                 } %>
 
-    <%= link_to "削除",
+    <%= button_to "削除",
                 task_path(@task),
-                data: { turbo_method: :delete, turbo_confirm: "このタスクを削除しますか？" },
+                method: :delete,
+                form: {data: { turbo_confirm: "このタスクを削除しますか？" }},
                 class: "ml-auto px-2 py-1 bg-red-50 text-red-700 border border-red-200 rounded hover:bg-red-100" %>
   </div>
 

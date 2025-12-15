@@ -84,7 +84,7 @@
                   <%= button_to "削除",
                                 team_membership_path(membership),
                                 method: :delete,
-                                data: { turbo_confirm: "このメンバーを削除しますか？" },
+                                form: { data: { turbo_confirm: "このメンバーを削除しますか？" }},
                                 class: "text-xs px-3 py-1 bg-red-50 text-red-700 rounded border border-red-200 hover:bg-red-100" %>
                 <% end %>
               </td>
