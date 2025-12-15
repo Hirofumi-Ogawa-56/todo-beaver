@@ -1,5 +1,5 @@
 // app/javascript/controllers/index.js
-import { application } from "./application"
-import SidePanelController from "./side_panel_controller"
+import { application } from "controllers/application"
+import { eagerLoadControllersFrom } from "@hotwired/stimulus-loading"
 
-application.register("side-panel", SidePanelController)
+eagerLoadControllersFrom("controllers", application)
