@@ -197,7 +197,11 @@ class TasksController < ApplicationController
     end
 
     @task.destroy
-    redirect_to tasks_path, notice: "タスクを削除しました。"
+
+    respond_to do |format|
+      format.html { redirect_to tasks_path, notice: "タスクを削除しました。" }
+      format.turbo_stream # ← destroy.turbo_stream.erb を探す
+    end
   end
 
 
