@@ -44,6 +44,8 @@ Rails.application.configure do
   config.action_mailer.perform_deliveries = deliver_emails
   config.action_mailer.raise_delivery_errors = deliver_emails
 
+  config.public_file_server.enabled = true
+
   if deliver_emails
     config.action_mailer.delivery_method = :smtp
     config.action_mailer.smtp_settings = {

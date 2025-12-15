@@ -42,10 +42,11 @@
                         edit_team_path(team),
                         class: "text-xs text-blue-600 underline mr-3" %>
 
-            <%= link_to "削除",
-                        team_path(team),
-                        data: { turbo_method: :delete, turbo_confirm: "本当に削除しますか？" },
-                        class: "text-xs text-red-600 underline" %>
+            <%= button_to "削除",
+              team_path(team),
+              method: :delete,
+              form: { data: { turbo_confirm: "本当に削除しますか？" } },
+              class: "text-xs text-red-600 underline bg-transparent border-0 p-0 inline" %>
           </td>
         </tr>
       <% end %>

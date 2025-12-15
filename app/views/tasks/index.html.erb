@@ -133,7 +133,7 @@
       <!-- ★ ここに id を付ける -->
       <tbody id="tasks-table-body">
         <% @tasks.each do |task| %>
-          <tr class="border-gray-50">
+          <tr id="<%= dom_id(task) %>" class="border-gray-50">
             <!-- Taskのタイトル -->
             <td class="py-2 px-2">
               <%= link_to task.title,
@@ -212,9 +212,10 @@
                             } %>
 
                 <!-- 削除ボタン -->
-                <%= link_to "削除",
+                <%= button_to "削除",
                             task_path(task),
-                            data: { turbo_method: :delete, turbo_confirm: "このタスクを削除しますか？" },
+                            method: :delete,
+                            form: { data: { turbo_confirm: "このタスクを削除しますか？", turbo_stream: true } },
                             class: "text-xs text-red-600 underline" %>
               </div>
             </td>

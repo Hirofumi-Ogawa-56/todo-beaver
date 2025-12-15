@@ -24,9 +24,11 @@
             <td class="p-2 space-x-2">
               <%= link_to "編集", edit_profile_path(profile),
                           class: "text-blue-600 underline" %>
-              <%= link_to "削除", profile_path(profile),
-                          data: { turbo_method: :delete, turbo_confirm: "削除してよいですか？" },
-                          class: "text-red-600 underline" %>
+              <%= button_to "削除",
+                profile_path(profile),
+                method: :delete,
+                form: { data: { turbo_confirm: "削除してよいですか？" } },
+                class: "text-red-600 underline text-xs bg-transparent border-0 p-0 inline" %>
             </td>
           </tr>
         <% end %>
