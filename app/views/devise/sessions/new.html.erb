@@ -30,10 +30,13 @@
       <div class="mb-4 rounded border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
         <p class="font-semibold">【提出モード】デモアカウント</p>
         <p class="mt-1">
-          Email:
+          Email (A):
           <code class="px-1 py-0.5 bg-white/60 rounded select-all"><%= ENV.fetch("DEMO_EMAIL", "demo@example.com") %></code>
           <br>
-          Password:
+          Email (B):
+          <code class="px-1 py-0.5 bg-white/60 rounded select-all"><%= ENV.fetch("DEMO_EMAIL_2", "demo2@example.com") %></code>
+          <br>
+          Password (共通):
           <code class="px-1 py-0.5 bg-white/60 rounded select-all"><%= ENV.fetch("DEMO_PASSWORD", "password") %></code>
         </p>
         <p class="mt-2 text-xs text-amber-800">

@@ -7,15 +7,28 @@ class Users::PasswordsController < Devise::PasswordsController
     email = resource_params[:email].to_s.downcase.strip
     deliver_emails = ENV.fetch("DELIVER_EMAILS", "false") == "true"
 
-    # 提出モードではデモメールだけ許可（スパム登録防止）
+    is_new_demo_creation = false
+
+    # 提出モードの場合、許可リストを作成
     unless deliver_emails
-      demo_email = ENV.fetch("DEMO_EMAIL", "demo@example.com").to_s.downcase
-      return redirect_to new_user_session_path, alert: "提出モードではデモメールのみ使用できます。" unless email == demo_email
+      allowed_demo_emails = []
+      allowed_demo_emails << ENV.fetch("DEMO_EMAIL", "demo@example.com").to_s.downcase
+      # 2つ目のデモメールが環境変数に設定されていれば追加
+      if ENV["DEMO_EMAIL_2"].present?
+        allowed_demo_emails << ENV["DEMO_EMAIL_2"].to_s.downcase
+      end
+      allowed_demo_emails.compact!
+
+      # 許可リストに含まれていなければ、スパム登録を防ぐためにリダイレクト
+      unless allowed_demo_emails.include?(email)
+        return redirect_to new_user_session_path, alert: "提出モードでは指定されたデモメールのみ使用できます。"
+      end
     end
 
     user = User.find_by(email: email)
 
     if user.nil?
+      is_new_demo_creation = true
       password =
         if deliver_emails
           Devise.friendly_token.first(20)
@@ -31,13 +44,31 @@ class Users::PasswordsController < Devise::PasswordsController
       unless user.save
         return redirect_to new_user_session_path, alert: user.errors.full_messages.first
       end
+
+      # ★★★ 新しいユーザー作成時のプロフィール作成ロジックのみ実行 ★★★
+
+      # 1. プロファイルを作成
+      new_profile_label = email.split("@").first
+      user.profiles.create!(
+        display_name: new_profile_label.capitalize,
+        label: new_profile_label,
+        theme: "default"
+      )
+
+      # ★★★ チーム参加ロジックは削除 ★★★
     end
 
     if deliver_emails
       user.send_reset_password_instructions
       notice = "メールを送信しました。メールを確認し、リンクからパスワード設定（再設定）を完了してください。"
     else
-      notice = "デモアカウントを作成しました。画面上のデモID/パスワードでログインしてください。"
+      # ユーザーが今作成されたばかりの場合、その情報を通知
+      if is_new_demo_creation
+        notice = "テストユーザー**「#{email}」**を作成しました。パスワードは**「#{ENV.fetch("DEMO_PASSWORD", "password")}」**でログインしてください。"
+      else
+        # 既存のデモアカウントの場合
+        notice = "デモアカウントを作成しました。画面上のデモID/パスワードでログインしてください。"
+      end
     end
 
     redirect_to new_user_session_path, notice: notice
