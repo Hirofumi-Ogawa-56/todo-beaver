@@ -57,8 +57,13 @@ ja:
         send_password_reset_instructions: "パスワードの変更用メールを送信する"
   date:
     formats:
+      default: "%Y/%m/%d"
       short: "%Y/%m/%d"
       md: "%m/%d"
+  time:
+      formats:
+        default: "%Y/%m/%d %H:%M:%S"
+        ja_short: "%m/%d %H:%M"
   activerecord:
     attributes:
       user:
