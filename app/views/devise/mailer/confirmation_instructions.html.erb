@@ -1,8 +1,17 @@
 <!-- app/views/devise/mailer/confirmation_instructions.html.erb -->
-<p>Forestly</p>
-<p>メールアドレス変更の確認です。</p>
-<p>以下のリンクを開いて、メールアドレスの変更を確定してください。</p>
+<p>
+  <%= t('common.app_name') %>
+</p>
 
 <p>
-  <%= link_to "メールアドレス変更を進める", user_confirmation_url(confirmation_token: @token) %>
+  <%= t('devise.mailer.confirmation_instructions.instruction_title') %>
+</p>
+
+<p>
+  <%= t('devise.mailer.confirmation_instructions.instruction_body') %>
+</p>
+
+<p>
+  <%= link_to t('devise.mailer.confirmation_instructions.action_link'), 
+              user_confirmation_url(confirmation_token: @token) %>
 </p>

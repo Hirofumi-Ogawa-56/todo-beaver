@@ -1,0 +1,9 @@
+<!-- app/views/tasks/update.turbo_stream.erb -->
+<%# 一覧画面の該当行だけを最新のパーシャルで差し替える %>
+<%= turbo_stream.replace dom_id(@task), partial: "tasks/task_row", locals: { task: @task } %>
+
+<%# サイドパネルが開いている場合、その中身も最新にする %>
+<%= turbo_stream.replace "side-panel-frame", template: "tasks/show" %>
+
+<%# 通知（フラッシュメッセージ）を更新する %>
+<%= turbo_stream.prepend "flash", partial: "shared/flash" %>

@@ -4,11 +4,12 @@
     <div class="flex items-center justify-between">
       <div>
         <div class="text-xs text-gray-500">
-          <%= @slot_date.strftime("%Y/%m/%d") %>
-          <%= "%02d:00" % @slot_hour %> のタスク
+            <%= t('tasks.calendar.slot_time_header', 
+                            date: l(@slot_date, format: :short), 
+                            time: "%02d:00" % @slot_hour) %>
         </div>
         <div class="text-lg font-semibold text-gray-800">
-          この時間帯のタスク一覧
+          <%= t('tasks.calendar.slot_title_list') %>
         </div>
       </div>
     </div>
@@ -23,11 +24,11 @@
                   <%= task.title %>
                 </div>
                 <div class="text-[11px] text-gray-500 mt-0.5">
-                  期限:
+                  <%= t('tasks.show.due_date') %>:
                   <% if task.due_at %>
                     <%= task.due_at.strftime("%m/%d %H:%M") %>
                   <% else %>
-                    未設定
+                    <%= t('common.not_set') %>
                   <% end %>
                 </div>
                 <div class="text-[11px] text-gray-500 mt-0.5 flex flex-wrap gap-1">
@@ -40,7 +41,9 @@
                           ) %>
                     <% end %>
                   <% else %>
-                    <span class="text-gray-400">担当: 未設定</span>
+                    <span class="text-gray-400">
+                      <%= t('tasks.show.assignee') %>: <%= t('common.not_set') %>
+                    </span>
                   <% end %>
                 </div>
               </div>
@@ -54,7 +57,7 @@
                             data: {
                               turbo_frame: "side-panel-frame",
                               action: "click->side-panel#open",
-                              side_panel_title_param: "タスク詳細"
+                              side_panel_title_param: t('tasks.show.title')
                             } %>
               </div>
             </div>
@@ -63,7 +66,7 @@
       </ul>
     <% else %>
       <p class="text-xs text-gray-500">
-        この時間帯のタスクはありません。
+        <%= t('tasks.calendar.no_tasks_in_slot') %>
       </p>
     <% end %>
   </div>

@@ -6,7 +6,7 @@
 <div>
   <!-- 週移動ナビ -->
   <div class="flex items-center gap-2 text-xs text-gray-600 mb-3">
-    <%= link_to "＜ 前の週",
+    <%= link_to t('common.prev_week'),
                 tasks_path(view: :calendar, date: (@week_start - 7.days).to_s),
                 class: "px-2 py-1 rounded border border-gray-300 hover:bg-gray-50" %>
 
@@ -14,11 +14,11 @@
       <%= @week_start.strftime("%Y/%m/%d") %> 〜 <%= @week_end.strftime("%Y/%m/%d") %>
     </span>
 
-    <%= link_to "次の週 ＞",
+    <%= link_to t('common.next_week'),
                 tasks_path(view: :calendar, date: (@week_start + 7.days).to_s),
                 class: "px-2 py-1 rounded border border-gray-300 hover:bg-gray-50" %>
 
-    <%= link_to "今日",
+    <%= link_to t('common.today'),
                 tasks_path(view: :calendar),
                 class: "px-2 py-1 rounded border border-gray-300 hover:bg-gray-50" %>
   </div>
@@ -41,7 +41,7 @@
             <!-- 上のヘッダー（右の日付ヘッダーと高さを揃える） -->
             <div class="border-b border-gray-300 flex items-center justify-center text-[11px] text-gray-400"
                 style="height: <%= header_height %>px;">
-                時間
+                <%= t('common.time') %>
             </div>
 
             <!-- 時間軸エリア -->

@@ -32,18 +32,20 @@ class Profile < ApplicationRecord
   before_create :set_join_token
   before_save :purge_avatar_if_needed
 
-    THEMES = %w[
-    default
-    slate
-    indigo
-    emerald
-    rose
-    amber
-    ].freeze
+  THEMES = %w[
+  default
+  slate
+  indigo
+  emerald
+  rose
+  amber
+  ].freeze
+  before_validation :set_default_theme
+  validates :theme, inclusion: { in: THEMES }, allow_nil: true
 
-  validates :theme, inclusion: { in: THEMES }, allow_blank: true
+  LOCALES = %w[ja en ja_en].freeze
+  validates :locale, inclusion: { in: LOCALES }, allow_blank: true
 
-  before_validation :set_default_theme, on: :create
 
 
   def display_initials

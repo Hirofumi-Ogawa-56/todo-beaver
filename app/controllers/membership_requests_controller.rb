@@ -24,7 +24,8 @@ class MembershipRequestsController < ApplicationController
         direction: "profile_to_team",
         team: team,
         requester_profile: current_profile,
-        status: :pending
+        status: :pending,
+        admin: params[:admin] == "1"
       )
 
       if req.save

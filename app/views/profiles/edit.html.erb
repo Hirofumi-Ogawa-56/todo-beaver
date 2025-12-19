@@ -3,6 +3,6 @@
   <%= render "profile_settings/sidebar" %>
 <% end %>
 
-<h1 class="text-xl font-bold mb-4">プロフィール編集</h1>
+<h1 class="text-xl font-bold mb-4"><%= t('profiles.edit.title') %></h1>
 
 <%= render "form", profile: @profile %>

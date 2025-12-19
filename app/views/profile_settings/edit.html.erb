@@ -3,53 +3,63 @@
   <%= render "profile_settings/sidebar" %>
 <% end %>
 
-<h1 class="text-xl font-bold mb-4">プロフィール編集</h1>
+<h1 class="text-xl font-bold mb-4"><%= t('profile_settings.edit.title') %></h1>
 
 <% if @profile %>
   <%= render "profiles/form", profile: @profile %>
 
-  <!-- ▼ 参加IDでチームに参加申請する ▼ -->
+  <!-- ▼ チームIDでチームに参加申請する ▼ -->
   <div class="mt-6 border-t pt-4">
-    <h3 class="text-sm font-semibold mb-2">プロフィール参加IDでチームに参加申請</h3>
+    <h3 class="text-sm font-semibold mb-2"><%= t('profile_settings.edit.search_team_title') %></h3>
 
-    <!-- 1) 参加IDでチーム検索（GET） -->
     <%= form_with url: edit_profile_settings_path, method: :get, local: true,
                   class: "flex flex-wrap items-end gap-2 mb-3" do %>
       <div>
-        <label class="block text-xs mb-1">参加ID</label>
+        <label class="block text-xs mb-1"><%= t('profile_settings.edit.team_invite_token') %></label>
         <%= text_field_tag :team_invite_token,
-                           @team_invite_token,
-                           class: "border rounded px-2 py-1 text-sm",
-                           placeholder: "例）AB12CD34" %>
+                          @team_invite_token,
+                          class: "border rounded px-2 py-1 text-sm",
+                          placeholder: "例）AB12CD34" %>
       </div>
-
       <div class="mb-1">
-        <%= submit_tag "チームを検索",
-                       class: "px-3 py-2 text-xs bg-gray-100 rounded border hover:bg-gray-200" %>
+        <%= submit_tag t('profile_settings.edit.search_button'),
+                      class: "px-3 py-2 text-xs bg-gray-100 rounded border hover:bg-gray-200" %>
       </div>
     <% end %>
 
     <% if @team_invite_token.present? %>
       <% if @invite_teams.any? %>
-        <!-- 2) 検索結果から参加申請（POST） -->
-        <%= form_with url: membership_requests_path, method: :post, local: true,
-                      class: "flex flex-wrap items-end gap-2" do %>
-          <%= hidden_field_tag :direction, "profile_to_team" %>
+        <div class="p-3 bg-blue-50 border border-blue-200 rounded">
+          <% @invite_teams.each do |team| %>
+            <div class="flex flex-wrap items-center justify-between gap-4">
+              <div class="flex items-center gap-2">
+                <%= team_chip(team, size: :xs) %>
+                <span class="text-xs text-gray-600 font-medium">
+                  <%= t('profile_settings.edit.ask_membership_request') %>
+                </span>
+              </div>
 
-          <div>
-            <label class="block text-xs mb-1">参加申請するチーム</label>
-            <%= select_tag :team_id,
-                           options_from_collection_for_select(@invite_teams, :id, :name),
-                           class: "border rounded px-2 py-1 text-sm" %>
-          </div>
+              <%= form_with url: membership_requests_path, method: :post, local: true, class: "flex items-center gap-4" do %>
+                <%= hidden_field_tag :direction, "profile_to_team" %>
+                <%= hidden_field_tag :team_id, team.id %>
+                
+                <label class="inline-flex items-center gap-1 cursor-pointer">
+                  <%= check_box_tag :admin, "1", false, class: "rounded border-gray-300 text-blue-600 focus:ring-blue-500" %>
+                  <span class="text-xs text-gray-700">
+                    <%= t('profile_settings.edit.apply_as_admin') %>
+                  </span>
+                </label>
 
-          <div class="mb-1">
-            <%= submit_tag "参加申請を送る",
-                           class: "px-4 py-2 text-xs bg-blue-100 text-blue-700 rounded border border-blue-300 hover:bg-blue-200" %>
-          </div>
-        <% end %>
+                <%= submit_tag t('common.filter_apply'),
+                              class: "px-4 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700 shadow-sm" %>
+              <% end %>
+            </div>
+          <% end %>
+        </div>
       <% else %>
-        <p class="text-xs text-red-500 mt-2">入力された参加IDに該当するチームが見つかりませんでした。</p>
+        <p class="text-xs text-red-500 mt-2">
+          <%= t('profile_settings.edit.team_not_found') %>
+        </p>
       <% end %>
     <% end %>
   </div>
@@ -58,13 +68,13 @@
   <%# ---- 招待一覧 ---- %>
   <% if @incoming_team_invites.present? && @incoming_team_invites.any? %>
     <div class="mt-6 border-t pt-4">
-      <h2 class="text-sm font-semibold mb-2">このプロフィール宛のチーム招待</h2>
+      <h2 class="text-sm font-semibold mb-2"><%= t('profile_settings.edit.incoming_invites_title') %></h2>
 
       <table class="w-full text-xs">
         <thead>
           <tr class="border-b">
-            <th class="text-left py-1">チーム名</th>
-            <th class="text-left py-1">招待元プロフィール</th>
+            <th class="text-left py-1"><%= t('profile_settings.edit.column_team_name') %></th>
+            <th class="text-left py-1"><%= t('profile_settings.edit.column_requester') %></th>
             <th class="text-left py-1"></th>
           </tr>
         </thead>
@@ -90,7 +100,7 @@
                 <% end %>
               </td>
               <td class="py-1 text-right">
-                <%= button_to "承認",
+                <%= button_to t('common.approve'),
                               approve_membership_request_path(req),
                               method: :patch,
                               class: "px-3 py-1 text-[11px] bg-blue-100 text-blue-700 rounded border border-blue-300 hover:bg-blue-200" %>
@@ -101,12 +111,14 @@
       </table>
     </div>
   <% else %>
-    <p class="text-xs text-gray-500 mt-4">このプロフィール宛のチーム招待はありません。</p>
+    <p class="text-xs text-gray-500 mt-4">
+     <%= t('profile_settings.edit.no_invites') %>
+    </p>
   <% end %>
 
 <% else %>
   <p class="text-sm text-red-600">
-    編集対象のプロフィールが見つかりませんでした。
+    <%= t('profile_settings.edit.not_found') %>
   </p>
 <% end %>
 

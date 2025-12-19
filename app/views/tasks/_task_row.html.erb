@@ -1,0 +1,88 @@
+<!-- app/views/tasks/_task_row.html.erb -->
+    <tr id="<%= dom_id(task) %>" class="border-gray-50">
+    <!-- Taskのタイトル -->
+    <td class="py-2 px-2">
+        <%= link_to task.title,
+                    task_path(task),
+                    class: "font-semibold text-gray-600 underline",
+                    data: {
+                    turbo_frame: "side-panel-frame",
+                    action: "click->side-panel#open",
+                    side_panel_title_param: t('tasks.show.title')
+                    } %>
+    </td>
+
+    <!-- Taskの期限 -->
+    <td class="py-2 px-2">
+        <%= due_badge(task) %>
+    </td>
+
+    <!-- Taskのステータス -->
+    <td class="py-2 px-2">
+        <div class="mb-1">
+        <%= status_badge(task) %>
+        </div>
+    </td>
+
+    <!-- Taskの担当者 -->
+    <td class="py-2">
+        <% if task.assignees.any? %>
+        <% task.assignees.each do |profile| %>
+            <%= profile_chip(
+                profile,
+                size: :xs,
+                wrapper_class: "px-2 py-1 mr-1 mb-1 rounded bg-gray-100 text-xs font-semibold"
+                ) %>
+        <% end %>
+        <% else %>
+        <span class="text-xs text-gray-400"><%= t('common.not_set') %></span>
+        <% end %>
+    </td>
+
+    <!-- Taskの作成者 -->
+    <td class="py-2 px-2">
+        <% if task.owner_profile %>
+        <%= profile_chip(
+                task.owner_profile,
+                size: :xs,
+                wrapper_class: "px-2 py-1 rounded bg-gray-100 text-xs font-semibold"
+            ) %>
+        <% else %>
+        <span class="text-xs text-gray-400"><%= t('common.unknown') %></span>
+        <% end %>
+    </td>
+
+    <!-- Taskのステータス変更 + 編集・削除 -->
+    <td class="py-2 px-2 text-right">
+        <div class="flex items-center justify-end gap-2">
+        <!-- ステータス変更プルダウン -->
+        <%= form_with model: task,
+                        url: task_path(task),
+                        method: :patch,
+                        local: true do |f| %>
+            <%= f.select :status,
+                        Task.statuses.keys.map { |k| [k, k] },
+                        {},
+                        class: "border border-gray-300 rounded px-2 py-1 text-xs",
+                        onchange: "this.form.submit();" %>
+        <% end %>
+
+        <!-- 編集ボタン -->
+        <%= link_to t('common.edit'),
+                    edit_task_path(task),
+                    class: "text-xs text-gray-600 underline",
+                    data: {
+                        turbo_frame: "side-panel-frame",
+                        action: "click->side-panel#open",
+                        side_panel_title_param: t('tasks.show.edit_title')
+                    } %>
+
+        <!-- 削除ボタン -->
+        <%= button_to t('common.delete'),
+                    task_path(task),
+                    method: :delete,
+                    form: { data: { turbo_confirm: t('tasks.index.confirm_delete'), turbo_stream: true } },
+                    class: "text-xs text-red-600 underline" %>
+        </div>
+    </td>
+    </tr>

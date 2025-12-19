@@ -1,108 +1,14 @@
 <!-- app/views/tasks/index.turbo_stream.erb -->
 <%= turbo_stream.append "tasks-table-body" do %>
-  <% @tasks.each do |task| %>
-    <tr id="<%= dom_id(task) %>" class="border-gray-50">
-      <!-- Taskのタイトル -->
-      <td class="py-2 px-2">
-        <%= link_to task.title,
-                    task_path(task),
-                    class: "font-semibold text-gray-600 underline",
-                    data: {
-                      turbo_frame: "side-panel-frame",
-                      action: "click->side-panel#open",
-                      side_panel_title_param: "タスクの詳細"
-                    } %>
-      </td>
-
-      <!-- Taskの期限 -->
-      <td class="py-2 px-2">
-        <%= due_badge(task) %>
-      </td>
-
-      <!-- Taskのステータス -->
-      <td class="py-2 px-2">
-        <div class="mb-1">
-          <%= status_badge(task) %>
-        </div>
-      </td>
-
-      <!-- Taskの担当者 -->
-      <td class="py-2">
-        <% if task.assignees.any? %>
-          <% task.assignees.each do |profile| %>
-            <%= profile_chip(
-                  profile,
-                  size: :xs,
-                  wrapper_class: "px-2 py-1 mr-1 mb-1 rounded bg-gray-100 text-xs"
-                ) %>
-          <% end %>
-        <% else %>
-          <span class="text-xs text-gray-400">未設定</span>
-        <% end %>
-      </td>
-
-      <!-- Taskの作成者 -->
-      <td class="py-2 px-2">
-        <% if task.owner_profile %>
-          <%= profile_chip(
-                task.owner_profile,
-                size: :xs,
-                wrapper_class: "px-2 py-1 rounded bg-gray-100 text-xs"
-              ) %>
-        <% else %>
-          <span class="text-xs text-gray-400">不明</span>
-        <% end %>
-      </td>
-
-      <!-- Taskのステータス変更 + 編集・削除 -->
-      <td class="py-2 px-2 text-right">
-        <div class="flex items-center justify-end gap-2">
-          <!-- ステータス変更プルダウン -->
-          <%= form_with model: task,
-                        url: task_path(task),
-                        method: :patch,
-                        local: true do |f| %>
-            <%= f.select :status,
-                         Task.statuses.keys.map { |k| [k, k] },
-                         {},
-                         class: "border border-gray-300 rounded px-2 py-1 text-xs",
-                         onchange: "this.form.submit();" %>
-          <% end %>
-
-          <!-- 編集ボタン -->
-          <%= link_to "編集",
-                      edit_task_path(task),
-                      class: "text-xs text-gray-600 underline",
-                      data: {
-                        turbo_frame: "side-panel-frame",
-                        action: "click->side-panel#open",
-                        side_panel_title_param: "タスク編集"
-                      } %>
-
-          <!-- 削除ボタン -->
-          <%= button_to "削除",
-            task_path(task),
-            method: :delete,
-            form: { data: { turbo_confirm: "このタスクを削除しますか？", turbo_stream: true } },
-            class: "text-xs text-red-600 underline" %>
-
-        </div>
-      </td>
-    </tr>
-  <% end %>
+  <%= render partial: "tasks/task_row", collection: @tasks, as: :task %>
 <% end %>
 
-<%# 「もっと見る」ボタンを差し替え or 削除 %>
+<%# 「もっと見る」ボタンの制御（ここは現状のままでOKです） %>
 <% if @tasks.next_page.present? %>
   <%= turbo_stream.replace "load-more-tasks" do %>
     <div id="load-more-tasks" class="mt-2 flex justify-center">
       <%= link_to "もっと見る",
-                  tasks_path(
-                    request.query_parameters.merge(
-                      page:   @tasks.next_page,
-                      format: :turbo_stream
-                    )
-                  ),
+                  tasks_path(request.query_parameters.merge(page: @tasks.next_page, format: :turbo_stream)),
                   class: "px-4 py-2 text-xs bg-gray-100 border border-gray-300 rounded hover:bg-gray-200" %>
     </div>
   <% end %>

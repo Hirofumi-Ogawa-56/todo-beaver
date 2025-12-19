@@ -149,10 +149,8 @@ class TasksController < ApplicationController
   def update
     @task.assign_attributes(task_params)
 
-    # 期限系のフィールドが送られてきたときだけ due_at を組み立てる
     if task_params.key?(:due_date) || task_params.key?(:due_time)
       build_due_at_from_virtual_fields(@task)
-
       if @task.errors.any?
         set_collections
         render :edit, status: :unprocessable_entity
@@ -162,19 +160,20 @@ class TasksController < ApplicationController
 
     Task.transaction do
       if @task.save
-        # tag_list が送られてきたときだけタグ再作成（一覧からの status 更新では呼ばれない）
         @task.update_tags_from_list! if task_params.key?(:tag_list)
       end
     end
 
     if @task.errors.empty?
-      # ★ ここで分岐させる
-      if turbo_frame_request?
-        # ライトパネルからの更新 → そのままタスク詳細をライトパネルに表示
-        redirect_to task_path(@task), notice: "タスクを更新しました。"
-      else
-        # 通常のページ（一覧など）からの更新 → 一覧へ戻る
-        redirect_to tasks_path, notice: "タスクを更新しました。"
+      respond_to do |format|
+        format.html do
+          if turbo_frame_request?
+            redirect_to task_path(@task), notice: "タスクを更新しました。"
+          else
+            redirect_to tasks_path, notice: "タスクを更新しました。"
+          end
+        end
+        format.turbo_stream # update.turbo_stream.erb を探す
       end
     else
       set_collections

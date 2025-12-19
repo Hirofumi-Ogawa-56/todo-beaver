@@ -3,7 +3,12 @@ class ApplicationController < ActionController::Base
   allow_browser versions: :modern
   before_action :authenticate_user!, unless: :devise_controller?
   before_action :set_current_profile
+  before_action :set_locale
   helper_method :current_profile
+
+  def set_locale
+    I18n.locale = current_profile&.locale || I18n.default_locale
+  end
 
   private
 

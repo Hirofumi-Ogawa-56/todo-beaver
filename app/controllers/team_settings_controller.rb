@@ -32,16 +32,18 @@ class TeamSettingsController < ApplicationController
       @can_manage_members = @current_membership&.admin?
 
       # ▼ ここから：申請IDでプロフィール検索用 ▼
-      @invite_token = params[:invite_token].to_s.strip.upcase
+      @profile_invite_token = params[:profile_invite_token].to_s.strip.upcase
 
-      @invite_profiles =
-        if @invite_token.present?
-          Profile.where(join_token: @invite_token)
-                 .where.not(id: @members.map(&:id)) # すでにメンバーなら候補から除外
-        else
-          Profile.none
-        end
-      # ▲ ここまで ▼
+      if @profile_invite_token.present?
+        # 検索結果を @found_profile に代入（ビューの if @found_profile と一致させる）
+        @found_profile = Profile.where(join_token: @profile_invite_token)
+                                .where.not(id: @members.map(&:id)) # すでにメンバーなら除外
+                                .first
+      end
+
+      @incoming_join_requests = MembershipRequest
+          .where(team: @selected_team, direction: "profile_to_team", status: "pending")
+          .includes(:requester_profile)
 
     else
       @memberships        = []

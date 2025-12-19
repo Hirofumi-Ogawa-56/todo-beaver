@@ -4,7 +4,7 @@
     <% content_for :sidebar do %>
       <%= render "tasks/sidebar" %>
     <% end %>
-    <h1 class="text-xl font-bold mb-4">タスク編集</h1>
+    <h1 class="text-xl font-bold mb-4"><%= t('tasks.edit.title') %></h1>
   <% end %>
 
   <%= render "form", task: @task %>

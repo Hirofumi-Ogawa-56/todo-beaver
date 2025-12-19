@@ -1,0 +1,273 @@
+# config/locales/ja_en.yml
+ja_en:
+  common:
+    app_name: "Forestly"
+    tagline: "多様なあなたのTaskアプリ"
+    edit: "Edit"
+    delete: "Delete"
+    confirm_delete: "本当に削除しますか？"
+    approve: "Approve"
+    unknown: "Unknown"
+    not_set: "Not set"
+    search: "Search"
+    clear: "Clear"
+    filter_apply: "Apply Filter"
+    filter_clear: "Clear Filter"
+    more: "More"
+    today: "Today"
+    prev_week: "＜ Prev Week"
+    next_week: "Next Week ＞"
+    time: "Time"
+    load_more: "Load More"
+    created_at: "Created at"
+    remove_image: "Remove image"
+    back: "Back"
+  error:
+    template:
+      header: "%{count}件のエラーがあります。"
+  devise:
+    sessions:
+      new:
+        title: "Log in"
+        sign_up_link: "新規ユーザー登録"
+        send_sign_up_email: "登録用メールの送信"
+        demo_mode:
+          header: "【提出モード】Demo Accounts"
+          common: "Common"
+          note: "※メール送信は無効です。ログイン後にMVP機能をご確認ください。"
+    mailer:
+      confirmation_instructions:
+        subject: "Confirmation: Email Change"
+        instruction_title: "メールアドレス変更の確認です。"
+        instruction_body: "以下のリンクを開いて、メールアドレスの変更を確定してください。"
+        action_link: "Confirm Email Change"
+      reset_password_instructions:
+        subject: "Reset Password Instructions"
+        instruction_title: "パスワード変更のご案内です。"
+        instruction_body: "以下のリンクを開いて、新しいパスワードを設定してください。"
+        action_link: "Change Password"
+    registrations:
+      edit:
+        title: "Account Settings"
+        current_email: "現在のメールアドレス"
+        unconfirmed_email_msg: "変更申請中： %{email}（確認待ち）"
+        change_email_title: "Change Email"
+        send_email_change_instructions: "新しいメールアドレスに変更用メールを送信する"
+        change_password_title: "Change Password"
+        send_password_reset_instructions: "パスワードの変更用メールを送信する"
+  date:
+    formats:
+      short: "%Y/%m/%d"
+      md: "%m/%d"
+  activerecord:
+    attributes:
+      user:
+        email: "Email"
+        password: "Password"
+        new_email: "New Email Address"
+      team:
+        name: "Team Name"
+        join_token: "Team ID"
+        avatar: "Team Icon"
+      comment:
+        body: "Body"
+        pinned: "Pin this comment"
+    errors:
+      template:
+        header: "%{count}件のエラーがあります："
+    models:
+      team: "Team"
+      profile: "Profile"
+      membership_request:
+        attributes:
+          team_id:
+            taken: "このプロフィールへの招待はすでに送信済み・承認待ちです。"
+      comment: "Comment"
+    placeholders:
+      team:
+        name: "チーム名を入力してください"
+      comment:
+        body: "コメントを入力..."
+  users:
+    confirmations:
+      edit_email_title: "Confirm Email Change"
+      new_email_label: "新しいメールアドレス（確認用）"
+      submit_confirm: "Confirm"
+  helpers:
+    submit:
+      create: "Create %{model}"
+      update: "Update %{model}"
+      comment:
+        create: "Post Comment"
+  time:
+    formats:
+      ja_short: "%m/%d %H:%M" 
+  layouts:
+    application:
+      nav:
+        task: "Tasks"
+        works: "Works"
+        chat: "Chat"
+        social: "Social"
+        profile: "Profiles"
+        team: "Teams"
+        all_profiles_tasks: "全てのプロフィールのタスクを表示"
+      menu:
+        logout: "Log out"
+        confirm_logout: "ログアウトしますか？"
+      submit_mode: "【提出モード】メール送信は無効です"
+  profiles:
+    form:
+      label_title: "Profile Management Name（切り替えに利用する名前）"
+      label_placeholder: "e.g. Company / Side Project / Private"
+      display_name_title: "Display Name（他ユーザーに表示される名前）"
+      display_name_placeholder: "e.g. John Doe"
+      avatar_title: "Avatar Image"
+      choose_file: "Choose file"
+      no_file_selected: "選択されていません"
+      remove_avatar: "Remove avatar"
+      avatar_hint: "正方形の画像が推奨です（例: 400×400）。"
+      profile_id: "Profile ID"
+      profile_id_immutable_hint: "このIDは編集できません。"
+      theme_title: "Theme（ヘッダー・左ナビの色）"
+      theme_hint: "メイン画面は白のまま、ヘッダーと左ナビの色が変わります。"
+      locale_title: "Language"
+      submit_create: "Create Profile"
+      submit_update: "Update Profile"
+    index:
+      title: "Profiles"
+      new_link: "Create New Profile"
+      column_name: "Name"
+      column_theme: "Theme"
+      column_actions: "Actions"
+      no_profiles: "まだプロフィールがありません。"
+    show:
+      title: "Profile Details"
+      label_title: "Profile Name（管理用）"
+      display_name_title: "Display Name（公開用）"
+      theme_title: "Theme Color"
+    new:
+      title: "Create Profile"
+    edit:
+      title: "Edit Profile"
+    locales:
+      ja: "日本語 (Full Japanese)"
+      en: "English (Full English)"
+      ja_en: "主に日本語 キーワードのみ英語 (Japanese with English Keywords)"
+  profile_settings:
+    sidebar:
+      title: "Profile Settings"
+      home: "Home"
+      edit: "Edit Profile"
+      new: "New Profile"
+      auth: "Auth Settings"
+    edit:
+      title: "Edit Profile"
+      search_team_title: "Join Team"
+      search_button: "Search Team"
+      team_invite_token: "Team ID"
+      ask_membership_request: "へ参加申請を送りますか？"
+      apply_as_admin: "Apply as Admin"
+      team_not_found: "該当するチームが見つかりませんでした。"
+      column_team_name: "Team Name"
+      column_requester: "Inviter"
+      incoming_invites_title: "Incoming Invitations"
+      no_invites: "招待はありません。"
+      not_found: "プロフィールが見つかりませんでした。"
+  teams:
+    index:
+      title: "Teams"
+      edit_settings_title: "Edit Team"
+      new_team: "Create Team"
+      no_teams_html: "まだチームがありません。"
+    new:
+      title: "New Team"
+    members:
+      title: "Members"
+      select_team: "管理するチームを選択:"
+      suffix_of_team: "のメンバー"
+      role: "Role"
+      roles:
+        admin: "Admin"
+        member: "Member"
+      confirm_remove: "このメンバーをチームから削除しますか？"
+      no_members: "メンバーがいません。"
+      invite_section_title: "Invite Member"
+      invite_id_label: "Profile ID"
+      invite_confirm_msg: "さんを招待しますか？"
+      invite_as_admin: "Admin権限を付与"
+      send_invite: "Send Invite"
+      join_requests_title: "Join Requests"
+      requester: "Requester"
+      no_requests: "未承認の申請はありません。"
+  forms:
+    avatar_hint: "正方形の画像が推奨です（例: 400×400）。"
+  tasks:
+    status:
+      todo: "To Do"
+      in_progress: "In Progress"
+      done: "Done"
+      archived: "Archived"
+    sidebar:
+      title: "Tasks"
+      list: "List"
+      calendar: "Calendar"
+      view_list: "List"
+      view_calendar: "Calendar"
+      new_task: "New Task"
+      all_tasks: "All Tasks"
+      today_tasks: "Today"
+      week_tasks: "This Week"
+      incomplete_tasks: "Incomplete"
+      done_tasks: "Done"
+    index:
+      search_placeholder: "Search by title, description, or tags"
+      filter_title: "Filter"
+      filter_placeholder_status: "todo / prog / done"
+      filter_assignee: "Assignee name"
+      filter_owner: "Owner name"
+      filter_placeholder_partial: "Partial match"
+      filter_placeholder_assignee: "Assignee"
+      filter_placeholder_owner: "Owner"
+      column_title: "Title"
+      column_due_at: "Due Date"
+      column_status: "Status"
+      column_assignee: "Assignee"
+      column_owner: "Owner"
+      no_tasks: "まだタスクがありません。"
+      confirm_delete: "このタスクを削除しますか？"
+    form:
+      title: "Title"
+      due_date: "Due Date"
+      due_time: "Time"
+      due_hint: "例）09:00, 13:30 (30分単位)。空の場合は期限なしになります。"
+      assignee: "Assignee"
+      assignee_hint: "クリックで選択／解除（複数可）。"
+      description: "Description"
+      tags: "Tags"
+      tag_placeholder: "e.g. Project, Rails, Bug"
+      tag_hint: "カンマ（,）区切りで複数入力できます。"
+      status: "Status"
+      submit_create: "Create Task"
+      submit_update: "Update Task"
+    new:
+      title: "New Task"
+    show:
+      due_date: "Due"
+      assignee: "Assignee"
+      owner: "Owner"
+      status: "Status"
+      pin: "Pin"
+      title: "Task Details"
+      edit_title: "Edit Task"
+      comment_title: "Comments"
+      no_comments: "まだコメントはありません。"
+      new_comment: "Add Comment"
+    edit:
+      title: "Edit Task"
+    calendar:
+      slot_time_header: "Schedule for %{date} %{time}"
+      slot_title: "Tasks for %{date} %{time}"
+      slot_title_list: "Task List"
+      view_detail: "View Detail"
+      no_tasks_in_slot: "この時間帯のタスクはありません。"
