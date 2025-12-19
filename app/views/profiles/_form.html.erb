@@ -2,7 +2,9 @@
 <%= form_with model: @profile, local: true do |f| %>
   <% if @profile.errors.any? %>
     <div class="mb-4 p-3 bg-red-50 text-red-700 rounded">
-      <p><%= @profile.errors.count %>件のエラーがあります：</p>
+      <p>
+        <%= t('errors.template.header', count: @profile.errors.count, model: Profile.model_name.human) %>
+      </p>
       <ul class="list-disc list-inside">
         <% @profile.errors.full_messages.each do |msg| %>
           <li><%= msg %></li>
@@ -12,21 +14,21 @@
   <% end %>
 
   <div class="mb-4">
-    <%= f.label :label, "プロフィール管理名（プロフィール切り替えに利用する名前）", class: "block mb-1 text-sm" %>
+    <%= f.label :label, t('profiles.form.label_title'), class: "block mb-1 text-sm" %>
     <%= f.text_field :label,
                      class: "border border-gray-300 rounded px-2 py-1 w-full",
-                     placeholder: "株式会社〇〇 / 副業 / プライベート など" %>
+                     placeholder: t('profiles.form.label_placeholder') %>
   </div>
 
   <div class="mb-4">
-    <%= f.label :display_name, "表示名（他のユーザーに表示される名前）", class: "block mb-1 text-sm" %>
+    <%= f.label :display_name, t('profiles.form.display_name_title'), class: "block mb-1 text-sm" %>
     <%= f.text_field :display_name,
                     class: "border border-gray-300 rounded px-2 py-1 w-full",
-                    placeholder: "例）田中太郎 / Tanaka Taro など" %>
+                    placeholder: t('profiles.form.display_name_placeholder') %>
   </div>
 
   <div class="mb-4">
-    <%= f.label :avatar, "アイコン画像", class: "block text-sm mb-1" %>
+    <%= f.label :avatar, t('profiles.form.avatar_title'), class: "block text-sm mb-1" %>
 
     <% if @profile.avatar.attached? %>
         <div class="mb-2">
@@ -38,12 +40,12 @@
       <!-- 見た目用のボタン（label） -->
       <%= f.label :avatar,
                   class: "px-3 py-1 border border-gray-300 rounded text-sm bg-white cursor-pointer hover:bg-gray-50" do %>
-        ファイルを選択
+        <%= t('profiles.form.choose_file') %>
       <% end %>
 
       <!-- 選択されたファイル名を表示する所 -->
       <span id="avatar-filename" class="text-xs text-gray-500">
-        選択されていません
+        <%= t('profiles.form.no_file_selected') %>
       </span>
 
       <!-- 本体の file input は隠す -->
@@ -57,19 +59,15 @@
     <% if @profile.avatar.attached? %>
         <label class="mt-2 inline-flex items-center text-xs text-red-600">
         <%= f.check_box :remove_avatar, class: "mr-1" %>
-        画像を削除する
+        <%= t('profiles.form.remove_avatar') %>
         </label>
     <% end %>
-
-    <p class="text-[11px] text-gray-500 mt-1">
-        正方形の画像が推奨です（例: 400×400）。
-    </p>
     </div>
 
   <% if @profile.persisted? && @profile.join_token.present? %>
     <div class="mb-4">
       <label class="block text-xs mb-1 text-gray-500">
-        チーム招待ID
+        <%= t('profiles.form.profile_id') %>
       </label>
 
       <input type="text"
@@ -78,13 +76,13 @@
              class="border border-gray-300 rounded px-2 py-1 w-full bg-gray-50 text-gray-600 text-sm" />
 
       <p class="text-[11px] text-gray-400 mt-1">
-        このIDは編集できません。プロフィール参加申請に使います。
+        <%= t('profiles.form.profile_id_immutable_hint') %>
       </p>
     </div>
   <% end %>
 
   <div class="mb-4">
-    <p class="block mb-2 text-sm">テーマ（ヘッダー・左ナビの色）</p>
+    <p class="block mb-2 text-sm"><%= t('profiles.form.theme_title') %></p>
 
     <div class="flex flex-wrap gap-2">
       <% Profile::THEMES.each do |key| %>
@@ -96,10 +94,22 @@
     </div>
 
     <p class="text-[11px] text-gray-500 mt-2">
-      メイン画面とライトパネルは白のまま、ヘッダーと左ナビだけ色が変わります。
+      <%= t('profiles.form.theme_hint') %>
     </p>
   </div>
 
-  <%= f.submit(@profile.persisted? ? "プロフィール設定を更新する" : "プロフィールを作成する",
+  <div class="mb-4">
+    <%= f.label :locale, t('profiles.form.locale_title'), class: "block text-sm font-medium text-gray-700" %>
+    <%= f.select :locale, 
+        [
+          [t('profiles.locales.ja_en'), "ja_en"],
+          [t('profiles.locales.ja'), "ja"],
+          [t('profiles.locales.en'), "en"]
+        ], 
+        {}, 
+        class: "mt-1 block w-full  border border-gray-200 rounded-md px-3 py-2 text-sm" %>
+  </div>
+
+  <%= f.submit(@profile.persisted? ? t('profiles.form.submit_update') : t('profiles.form.submit_create'),
              class: "px-4 py-2 bg-blue-600 text-white text-sm rounded hover:bg-blue-700") %>
 <% end %>

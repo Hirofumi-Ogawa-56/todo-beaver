@@ -2,7 +2,7 @@
 <turbo-frame id="side-panel-frame">
   <% unless turbo_frame_request? %>
     <!-- 直接 /tasks/new にアクセスしたときだけページタイトルを出す -->
-    <h1 class="text-xl font-bold mb-4">タスク新規作成</h1>
+    <h1 class="text-xl font-bold mb-4"><%= t('tasks.new.title') %></h1>
   <% end %>
 
   <%= render "form", task: @task %>

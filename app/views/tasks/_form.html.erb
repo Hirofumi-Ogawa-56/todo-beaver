@@ -4,7 +4,9 @@
               data: (@task.new_record? ? { turbo_frame: "_top" } : {}) do |f| %>
   <% if @task.errors.any? %>
     <div class="mb-4 p-3 bg-red-50 text-red-700 rounded text-sm">
-      <p class="font-semibold"><%= @task.errors.count %>件のエラーがあります。</p>
+      <p class="font-semibold">
+        <%= t('errors.template.header', count: @task.errors.count, model: Task.model_name.human) %>
+      </p>
       <ul class="list-disc list-inside">
         <% @task.errors.full_messages.each do |msg| %>
           <li><%= msg %></li>
@@ -15,15 +17,15 @@
 
   <!-- タイトル -->
   <div class="mb-4">
-    <%= f.label :title, "タイトル", class: "block text-sm mb-1" %>
+    <%= f.label :title, t('tasks.form.title'), class: "block text-sm mb-1" %>
     <%= f.text_field :title,
                      class: "border border-gray-300 rounded px-2 py-1 w-full text-sm",
-                     placeholder: "タイトル" %>
+                     placeholder: t('tasks.form.title') %>
   </div>
 
   <!-- 期限 -->
   <div class="mb-4">
-    <%= f.label :due_date, "期限", class: "block text-sm mb-1" %>
+    <%= f.label :due_date, t('tasks.form.due_date'), class: "block text-sm mb-1" %>
 
     <div class="flex items-center gap-2">
       <!-- 日付：カレンダーで選ぶ -->
@@ -31,7 +33,7 @@
                        value: (@task.due_date || @task.due_at&.to_date),
                        class: "border border-gray-300 rounded px-2 py-1 text-sm" %>
 
-      <span class="text-sm text-gray-500">時間</span>
+      <span class="text-sm text-gray-500"><%= t('tasks.form.due_time') %></span>
 
       <!-- 時刻：テキスト入力のみ（30分単位を想定） -->
       <%= f.text_field :due_time,
@@ -43,13 +45,13 @@
     </div>
 
     <p class="text-[11px] text-gray-500 mt-1">
-      例）09:00, 13:30 のように 30分単位で入力してください。空の場合は期限なしになります。
+      <%= t('tasks.form.due_hint') %>
     </p>
   </div>
 
   <!-- 担当者 -->
     <div class="mb-4">
-      <%= f.label :assignee_ids, "担当者", class: "block text-sm mb-1" %>
+      <%= f.label :assignee_ids, t('tasks.form.assignees'), class: "block text-sm mb-1" %>
 
       <div class="flex flex-wrap gap-2">
         <%= f.collection_check_boxes :assignee_ids,
@@ -68,13 +70,13 @@
       </div>
 
       <p class="text-[11px] text-gray-500 mt-1">
-        担当者をクリックすると選択／解除できます（複数選択可）。
+        <%= t('tasks.form.assignee_hint') %>
       </p>
     </div>
 
   <!-- 詳細 -->
   <div class="mb-4">
-    <%= f.label :description, "詳細", class: "block text-sm mb-1" %>
+    <%= f.label :description, t('tasks.form.description'), class: "block text-sm mb-1" %>
     <%= f.text_area :description,
                     rows: 4,
                     class: "border border-gray-300 rounded px-2 py-1 w-full text-sm" %>
@@ -82,25 +84,25 @@
 
   <!-- タグ -->
   <div class="mb-4">
-    <%= f.label :tag_list, "タグ", class: "block text-sm mb-1" %>
+    <%= f.label :tag_list, t('tasks.form.tags'), class: "block text-sm mb-1" %>
     <%= f.text_field :tag_list,
                      value: @task.tag_list,
                      class: "border border-gray-300 rounded px-2 py-1 w-full text-sm",
-                     placeholder: "例）RUNTEQ, Rails, バグ修正" %>
+                     placeholder: t('tasks.form.tag_placeholder') %>
     <p class="text-[11px] text-gray-500 mt-1">
-      カンマ（,）区切りで複数タグを入力できます。
+      <%= t('tasks.form.tag_hint') %>
     </p>
   </div>
 
   <!-- ステータス -->
   <div class="mb-4">
-    <%= f.label :status, "ステータス", class: "block text-sm mb-1" %>
+    <%= f.label :status, t('tasks.form.status'), class: "block text-sm mb-1" %>
     <%= f.select :status,
                  Task.statuses.keys.map { |k| [k, k] },
                  {},
                  class: "border border-gray-300 rounded px-2 py-1 w-full text-sm" %>
   </div>
 
-  <%= f.submit (@task.new_record? ? "タスクを作成" : "タスクを更新"),
+  <%= f.submit (@task.new_record? ? t('tasks.form.submit_create') : t('tasks.form.submit_update')),
              class: "px-4 py-2 bg-blue-600 text-white text-sm rounded hover:bg-blue-700" %>
 <% end %>

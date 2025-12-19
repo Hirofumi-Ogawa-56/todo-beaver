@@ -22,7 +22,7 @@
   <body class="bg-white">
     <% if submit_mode? %>
       <div class="fixed top-0 inset-x-0 z-20 text-xs px-3 py-2 bg-amber-50 text-amber-800 border-b border-amber-200">
-        【提出モード】メール送信は無効です（ログインはデモアカウントをご利用ください）
+        <%= t('layouts.application.submit_mode') %>
       </div>
     <% end %>
     <!-- ヘッダー -->
@@ -47,10 +47,10 @@
 
                     <!-- ドロップダウンメニュー -->
                     <div class="absolute mt-2 left-0 w-40 bg-white border border-gray-300 rounded shadow text-sm z-50">
-                      <%= button_to "ログアウト",
+                      <%= button_to t('layouts.application.menu.logout'),
                         destroy_user_session_path,
                         method: :delete,
-                        form: { data: { turbo_confirm: "ログアウトしますか？" } }, 
+                        form: { data: { turbo_confirm: t('layouts.application.menu.confirm_logout') } }, 
                         class: "block w-full text-left px-3 py-2 text-gray-700 hover:bg-gray-100 bg-transparent border-0" %>
                     </div>
                   </details>
@@ -79,61 +79,61 @@
                   <!-- タスク -->
                   <%= link_to root_path,
                               class: "text-lg font-semibold px-3 py-1 rounded hover:bg-white/10 flex items-center gap-1" do %>
-                    <%#= image_tag "beaver_icon.png",
-                                  alt: "タスク",
+                    <%= image_tag "beaver_icon.png",
+                                  alt: "Task",
                                   class: "block",
                                   style: "height: 25px; width: auto;" %>
-                    <span>Task</span>
+                    <span><%= t('layouts.application.nav.task') %></span>
                   <% end %>
 
                   <!-- ワークス -->
-                  <%#= link_to root_path,
+                  <%= link_to root_path,
                               class: "text-lg font-semibold px-3 py-1 rounded hover:bg-white/10 flex items-center gap-1" do %>
-                    <%#= image_tag "owl_icon.png",
-                                  alt: "タスク",
+                    <%= image_tag "owl_icon.png",
+                                  alt: "Works",
                                   class: "block",
                                   style: "height: 25px; width: auto;" %>
-                    <%# <span>-Works</span> %>
-                  <%# end %>
+                    <span><%= t('layouts.application.nav.works') %></span>
+                  <% end %>
 
                   <!-- チャット -->
-                  <%#= link_to root_path,
+                  <%= link_to root_path,
                               class: "text-lg font-semibold px-3 py-1 rounded hover:bg-white/10 flex items-center gap-1" do %>
-                    <%#= image_tag "wolf_icon.png",
-                                  alt: "タスク",
+                    <%= image_tag "wolf_icon.png",
+                                  alt: "Chat",
                                   class: "block",
                                   style: "height: 27px; width: auto;" %>
-                    <%# <span>-Chat</span> %>
-                  <%# end %>
+                    <span><%= t('layouts.application.nav.chat') %></span>
+                  <% end %>
 
                   <!-- ソーシャル -->
-                  <%#= link_to root_path,
+                  <%= link_to root_path,
                               class: "text-lg font-semibold px-3 py-1 rounded hover:bg-white/10 flex items-center gap-1" do %>
-                    <%#= image_tag "rabbit_icon.png",
-                                  alt: "タスク",
+                    <%= image_tag "rabbit_icon.png",
+                                  alt: "Social",
                                   class: "block",
                                   style: "height: 25px; width: auto;" %>
-                    <%# <span>-Social</span> %>
-                  <%# end %>                  
+                    <span><%= t('layouts.application.nav.social') %></span>
+                  <% end %>                  
                   
                   <!-- プロフィール -->
                   <%= link_to edit_profile_settings_path,
                               class: "text-lg font-semibold px-3 py-1 rounded hover:bg-white/10 flex items-center gap-1" do %>
-                    <%#= image_tag "butterfly_icon.png",
-                                  alt: "プロフィール",
+                    <%= image_tag "butterfly_icon.png",
+                                  alt: "Profile",
                                   class: "block",
                                   style: "height: 25px; width: auto;" %>
-                    <span>Profile</span>
+                    <span><%= t('layouts.application.nav.profile') %></span>
                   <% end %>
 
                   <!-- チーム -->
                   <%= link_to edit_team_settings_path,
                               class: "text-lg font-semibold px-3 py-1 rounded hover:bg-white/10 flex items-center gap-1" do %>
-                    <%#= image_tag "elephant_icon.png",
-                                  alt: "チーム",
+                    <%= image_tag "elephant_icon.png",
+                                  alt: "Team",
                                   class: "block",
                                   style: "height: 33px; width: auto;" %>
-                    <span>Team</span>
+                    <span><%= t('layouts.application.nav.team') %></span>
                   <% end %>
               
 
@@ -154,7 +154,7 @@
                                             "1",
                                             params[:all_profiles] == "1",
                                             onchange: "this.form.submit();" %>
-                          <span>全てのプロフィールのタスクを表示</span>
+                          <span><%= t('layouts.application.nav.all_profiles_tasks') %></span>
                         </label>
                       <% end %>
                     </div>

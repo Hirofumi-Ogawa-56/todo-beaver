@@ -6,10 +6,10 @@
 <h1 class="text-xl font-bold mb-4"><%= @team.name %></h1>
 
 <p class="text-sm text-gray-600 mb-4">
-  作成日：<%= l(@team.created_at.to_date) %>
+  <%= t('common.created_at') %>：<%= l(@team.created_at.to_date) %>
 </p>
 
 <div class="flex gap-3 text-sm">
-  <%= link_to "編集", edit_team_path(@team), class: "px-3 py-1 bg-gray-100 rounded hover:bg-gray-200" %>
-  <%= link_to "一覧に戻る", teams_path, class: "px-3 py-1 bg-gray-100 rounded hover:bg-gray-200" %>
+  <%= link_to t('common.edit'), edit_team_path(@team), class: "px-3 py-1 bg-gray-100 rounded hover:bg-gray-200" %>
+  <%= link_to t('common.back'), teams_path, class: "px-3 py-1 bg-gray-100 rounded hover:bg-gray-200" %>
 </div>

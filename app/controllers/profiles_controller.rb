@@ -58,11 +58,13 @@ class ProfilesController < ApplicationController
   end
 
   def profile_params
-    params.require(:profile).permit(:label,
+    params.require(:profile).permit(
+      :label,
       :display_name,
       :theme,
       :avatar,
-      :remove_avatar
+      :remove_avatar,
+      :locale
     )
   end
 end

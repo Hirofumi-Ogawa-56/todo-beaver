@@ -18,13 +18,13 @@
       <%= text_field_tag :q,
                         @query,
                         class: "flex-1 border border-gray-300 rounded px-3 py-1 text-sm",
-                        placeholder: "タイトル・詳細・タグで検索（スペース区切りでAND検索）" %>
+                        placeholder: t('tasks.index.search_placeholder') %>
 
-      <%= submit_tag "検索",
+      <%= submit_tag t('common.search'),
                     class: "px-3 py-1 bg-gray-800 text-white text-sm rounded hover:bg-gray-900" %>
 
       <% if @query.present? %>
-        <%= link_to "クリア",
+        <%= link_to t('common.clear'),
                     tasks_path(
                       filter:      params[:filter],
                       all_profiles: params[:all_profiles]  # ★ ここでモード維持
@@ -50,7 +50,7 @@
               <%= text_field_tag :title_contains,
                                  params[:title_contains],
                                  class: "w-full border border-gray-300 rounded px-2 py-1",
-                                 placeholder: "部分一致" %>
+                                 placeholder: t('tasks.index.filter_title') %>
             </td>
 
             <!-- 期限（自由入力でもいいですが、UX的に date_field_tag おすすめ） -->
@@ -65,7 +65,7 @@
               <%= text_field_tag :status_keyword,
                                  params[:status_keyword],
                                  class: "w-full border border-gray-300 rounded px-2 py-1",
-                                 placeholder: "todo / prog / done" %>
+                                 placeholder: t('tasks.index.filter_placeholder_status') %>
             </td>
 
             <!-- 担当者 -->
@@ -73,7 +73,7 @@
               <%= text_field_tag :assignee_keyword,
                                  params[:assignee_keyword],
                                  class: "w-full border border-gray-300 rounded px-2 py-1",
-                                 placeholder: "担当者名の一部" %>
+                                 placeholder: t('tasks.index.filter_placeholder_assignee') %>
             </td>
 
             <!-- 作成者 -->
@@ -81,16 +81,16 @@
               <%= text_field_tag :owner_keyword,
                                  params[:owner_keyword],
                                  class: "w-full border border-gray-300 rounded px-2 py-1",
-                                 placeholder: "作成者名の一部" %>
+                                 placeholder: t('tasks.index.filter_placeholder_owner') %>
             </td>
 
             <!-- 右端：ボタン -->
             <td class="py-1 px-2">
               <div class="flex justify-end gap-2">
-                <%= submit_tag "フィルタ適用",
+                <%= submit_tag t('common.filter_apply'),
                                class: "px-3 py-1 bg-gray-100 text-gray-700 text-xs rounded border border-gray-300 hover:bg-gray-200" %>
 
-                <%= link_to "フィルタクリア",
+                <%= link_to t('common.filter_apply'),
                             tasks_path(
                               q:           @query,
                               filter:      params[:filter],
@@ -112,19 +112,19 @@
       <thead class="sticky top-0 bg-gray-50 z-10">
         <tr class="border-b">
           <th class="text-left py-2 px-2">
-            <%= sort_link("タイトル", "title") %>
+            <%= sort_link(t('tasks.index.column_title'), "title") %>
           </th>
           <th class="text-left py-2 px-2">
-            <%= sort_link("期限", "due_at") %>
+            <%= sort_link(t('tasks.index.column_due_at'), "due_at") %>
           </th>
           <th class="text-left py-2 px-2">
-            <%= sort_link("ステータス", "status") %>
+            <%= sort_link(t('tasks.index.column_status'), "status") %>
           </th>
           <th class="text-left py-2 px-2">
-            <%= sort_link("担当者", "assignee") %>
+            <%= sort_link(t('tasks.index.column_assignee'), "assignee") %>
           </th>
           <th class="text-left py-2 px-2">
-            <%= sort_link("作成者", "owner") %>
+            <%= sort_link(t('tasks.index.column_owner'), "owner") %>
           </th>
           <th class="text-left py-2 px-2"></th>
         </tr>
@@ -132,101 +132,13 @@
 
       <!-- ★ ここに id を付ける -->
       <tbody id="tasks-table-body">
-        <% @tasks.each do |task| %>
-          <tr id="<%= dom_id(task) %>" class="border-gray-50">
-            <!-- Taskのタイトル -->
-            <td class="py-2 px-2">
-              <%= link_to task.title,
-                          task_path(task),
-                          class: "font-semibold text-gray-600 underline",
-                          data: {
-                            turbo_frame: "side-panel-frame",
-                            action: "click->side-panel#open",
-                            side_panel_title_param: "タスクの詳細"
-                          } %>
-            </td>
-
-            <!-- Taskの期限 -->
-            <td class="py-2 px-2">
-              <%= due_badge(task) %>
-            </td>
-
-            <!-- Taskのステータス -->
-            <td class="py-2 px-2">
-              <div class="mb-1">
-                <%= status_badge(task) %>
-              </div>
-            </td>
-
-            <!-- Taskの担当者 -->
-            <td class="py-2">
-              <% if task.assignees.any? %>
-                <% task.assignees.each do |profile| %>
-                  <%= profile_chip(
-                        profile,
-                        size: :xs,
-                        wrapper_class: "px-2 py-1 mr-1 mb-1 rounded bg-gray-100 text-xs font-semibold"
-                      ) %>
-                <% end %>
-              <% else %>
-                <span class="text-xs text-gray-400">未設定</span>
-              <% end %>
-            </td>
-
-            <!-- Taskの作成者 -->
-            <td class="py-2 px-2">
-              <% if task.owner_profile %>
-                <%= profile_chip(
-                      task.owner_profile,
-                      size: :xs,
-                      wrapper_class: "px-2 py-1 rounded bg-gray-100 text-xs font-semibold"
-                    ) %>
-              <% else %>
-                <span class="text-xs text-gray-400">不明</span>
-              <% end %>
-            </td>
-
-            <!-- Taskのステータス変更 + 編集・削除 -->
-            <td class="py-2 px-2 text-right">
-              <div class="flex items-center justify-end gap-2">
-                <!-- ステータス変更プルダウン -->
-                <%= form_with model: task,
-                              url: task_path(task),
-                              method: :patch,
-                              local: true do |f| %>
-                  <%= f.select :status,
-                               Task.statuses.keys.map { |k| [k, k] },
-                               {},
-                               class: "border border-gray-300 rounded px-2 py-1 text-xs",
-                               onchange: "this.form.submit();" %>
-                <% end %>
-
-                <!-- 編集ボタン -->
-                <%= link_to "編集",
-                            edit_task_path(task),
-                            class: "text-xs text-gray-600 underline",
-                            data: {
-                              turbo_frame: "side-panel-frame",
-                              action: "click->side-panel#open",
-                              side_panel_title_param: "タスク編集"
-                            } %>
-
-                <!-- 削除ボタン -->
-                <%= button_to "削除",
-                            task_path(task),
-                            method: :delete,
-                            form: { data: { turbo_confirm: "このタスクを削除しますか？", turbo_stream: true } },
-                            class: "text-xs text-red-600 underline" %>
-              </div>
-            </td>
-          </tr>
-        <% end %>
+        <%= render partial: "tasks/task_row", collection: @tasks, as: :task %>
       </tbody>
     </table>
   <!-- ▼ もっと見る（次のページへ） -->
   <% if @tasks.next_page.present? %>
     <div id="load-more-tasks" class="mt-2 flex justify-center">
-      <%= link_to "もっと見る",
+      <%= link_to t('common.more'),
                   tasks_path(
                     request.query_parameters.merge(
                       page:   @tasks.next_page,
@@ -242,7 +154,7 @@
 
 <% else %>
   <p class="text-sm text-gray-500">
-    まだタスクがありません。「新規タスク作成」から追加してください。
+    <%= t('tasks.index.no_tasks') %>
   </p>
 <% end %>
 </div>

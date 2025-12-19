@@ -3,26 +3,28 @@
   <%= render "profile_settings/sidebar" %>
 <% end %>
 
-<h1 class="text-xl font-bold mb-4">プロフィール詳細</h1>
+<h1 class="text-xl font-bold mb-4">
+  <%= t('profiles.show.title') %>
+</h1>
 
 <div class="space-y-3 text-sm">
   <div>
-    <dt class="text-gray-500">プロフィール名（管理用）</dt>
+    <dt class="text-gray-500"><%= t('profiles.show.label_title') %></dt>
     <dd class="font-semibold"><%= @profile.label %></dd>
   </div>
 
   <div>
-    <dt class="text-gray-500">表示名（他ユーザーに見せる名前）</dt>
+    <dt class="text-gray-500"><%= t('profiles.show.display_name_title') %></dt>
     <dd class="font-semibold"><%= @profile.display_name %></dd>
   </div>
 
   <div>
-    <dt class="text-gray-500">テーマカラー</dt>
-    <dd><%= @profile.theme.presence || "未設定" %></dd>
+    <dt class="text-gray-500"><%= t('profiles.show.theme_title') %></dt>
+    <dd><%= @profile.theme.presence || t('common.not_set') %></dd>
   </div>
 
   <div class="pt-3">
-    <%= link_to "編集", edit_profile_path(@profile),
+    <%= link_to t('common.edit'), edit_profile_path(@profile),
                 class: "px-3 py-2 bg-blue-600 text-white rounded" %>
   </div>
 </div>

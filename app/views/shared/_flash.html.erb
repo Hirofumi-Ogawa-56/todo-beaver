@@ -1,0 +1,7 @@
+<!-- app/views/shared/_flash.html.erb -->
+<% flash.each do |flash_type, message| %>
+  <div class="flash-message p-4 mb-4 text-sm rounded-lg <%= flash_type == 'notice' ? 'bg-blue-50 text-blue-700' : 'bg-red-50 text-red-700' %>" 
+       data-controller="removable">
+    <%= message %>
+  </div>
+<% end %>

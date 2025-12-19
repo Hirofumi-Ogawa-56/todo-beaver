@@ -1,13 +1,15 @@
 <!-- app/views/users/confirmations/confirm_change_email.html.erb -->
-<h1 class="text-xl font-bold mb-4">メールアドレスの変更</h1>
+<h1 class="text-xl font-bold mb-4">
+  <%= t('users.confirmations.edit_email_title') %>
+</h1>
 
 <p class="mb-4">
-  新しいメールアドレス（確認用）：
+  <%= t('users.confirmations.new_email_label') %>：
   <span class="font-semibold"><%= resource.unconfirmed_email %></span>
 </p>
 
 <%= form_with url: user_confirmation_path, method: :post, local: true do %>
   <%= hidden_field_tag :confirmation_token, @confirmation_token %>
-  <%= submit_tag "上記のメールアドレスで確定する",
+  <%= submit_tag t('users.confirmations.submit_confirm'),
                  class: "px-4 py-2 rounded bg-blue-600 text-white" %>
 <% end %>
