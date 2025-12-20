@@ -1,12 +1,16 @@
 # app/controllers/teams_controller.rb
 class TeamsController < ApplicationController
   before_action :authenticate_user!
-  before_action :set_team, only: %i[show edit update destroy]
+  before_action :require_current_profile!
+  before_action :set_team, only: %i[show edit update destroy manage]
 
   def index
-    # いまは「自分が作ったチーム」という概念がないので、とりあえず全件
-    # 後で TeamMembership や owner_profile ができたら絞り込む
-    @teams = Team.order(created_at: :desc)
+    # current_profile が存在する場合のみ、そのプロフィールが所属するチームを取得
+    if current_profile
+      @teams = current_profile.teams.distinct
+    else
+      @teams = []
+    end
   end
 
   def show
@@ -50,17 +54,44 @@ class TeamsController < ApplicationController
     redirect_to teams_path, notice: "チームを削除しました"
   end
 
+  # ★ 旧 team_settings#members を統合したアクション
+  def manage
+    # set_team により、この時点で @team は取得済みです
+
+    @memberships = @team.team_memberships.includes(:profile)
+    @members     = @memberships.map(&:profile)
+
+    # 今のプロフィールがこのチームの管理者かどうか
+    @current_membership = @memberships.find { |m| m.profile_id == current_profile.id }
+    @can_manage_members = @current_membership&.admin?
+
+    # プロフィール検索用（招待用トークン）
+    @profile_invite_token = params[:profile_invite_token].to_s.strip.upcase
+    if @profile_invite_token.present?
+      @found_profile = Profile.where(join_token: @profile_invite_token)
+                              .where.not(id: @members.map(&:id))
+                              .first
+    end
+
+    # このチームに届いている参加申請（プロフィールからチームへ）
+    @incoming_join_requests = @team.membership_requests
+                                   .profile_to_team
+                                   .pending
+                                   .includes(:requester_profile)
+  end
+
   private
 
   def set_team
     @team = Team.find(params[:id])
   end
 
+  def require_current_profile!
+    return if current_profile
+    redirect_to profiles_path, alert: "プロフィールを選択してください。"
+  end
+
   def team_params
-    params.require(:team).permit(
-      :name,
-      :avatar,
-      :remove_avatar
-      )
+    params.require(:team).permit(:name, :avatar, :remove_avatar)
   end
 end

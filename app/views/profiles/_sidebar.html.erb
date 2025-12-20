@@ -1,15 +1,14 @@
-<!-- app/views/profile_settings/_sidebar.html.erb -->
+<!-- app/views/profiles/_sidebar.html.erb -->
 <h2 class="font-semibold text-sm mb-3"><%= t('profile_settings.sidebar.title') %></h2>
 <nav class="space-y-1">
 
-<!-- ホームをコメントアウト -->
 <%= link_to t('profile_settings.sidebar.home'),
-            home_profile_settings_path,
-            class: nav_class(home_profile_settings_path) %>
+            edit_profile_path(@profile),
+            class: nav_class(edit_profile_path(@profile)) %>
 
 <%= link_to t('profile_settings.sidebar.edit'),
-            edit_profile_settings_path,
-            class: nav_class(edit_profile_settings_path) %>
+            edit_profile_path(@profile),
+            class: nav_class(edit_profile_path(@profile)) %>
 
 <%= link_to t('profile_settings.sidebar.new'),
             new_profile_path,

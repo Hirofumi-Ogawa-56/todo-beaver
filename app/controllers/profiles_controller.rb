@@ -1,7 +1,7 @@
 # app/controllers/profiles_controller.rb
 class ProfilesController < ApplicationController
   before_action :authenticate_user!
-  before_action :set_profile, only: %i[show edit update destroy]
+  before_action :set_profile, only: %i[show edit update destroy settings]
 
   skip_before_action :verify_authenticity_token, only: :switch
 
@@ -49,6 +49,17 @@ class ProfilesController < ApplicationController
     profile = current_user.profiles.find(params[:profile_id])
     session[:current_profile_id] = profile.id
     redirect_back fallback_location: profiles_path
+  end
+
+  def settings
+    @incoming_team_invites = @profile.received_membership_requests
+                                     .team_to_profile
+                                     .pending
+                                     .includes(:team, :requester_profile)
+
+
+    @team_invite_token = params[:team_invite_token].to_s.strip.upcase
+    @invite_teams = @team_invite_token.present? ? Team.where(join_token: @team_invite_token) : Team.none
   end
 
   private

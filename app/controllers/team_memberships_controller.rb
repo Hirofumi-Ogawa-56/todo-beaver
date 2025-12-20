@@ -15,10 +15,10 @@ class TeamMembershipsController < ApplicationController
     )
 
     if membership.save
-      redirect_back fallback_location: members_team_settings_path(team_id: team.id),
+      redirect_back fallback_location: manage_team_path(@team)(team_id: team.id),
                     notice: "メンバーを追加しました"
     else
-      redirect_back fallback_location: members_team_settings_path(team_id: team.id),
+      redirect_back fallback_location: manage_team_path(@team)(team_id: team.id),
                    alert: "メンバーを追加できませんでした"
     end
   end
@@ -31,10 +31,10 @@ class TeamMembershipsController < ApplicationController
     new_role = params.require(:team_membership)[:role].presence
 
     if @team_membership.update(role: new_role)
-      redirect_back fallback_location: members_team_settings_path(team_id: team.id),
+      redirect_back fallback_location: manage_team_path(@team)(team_id: team.id),
                     notice: "メンバーの役割を更新しました"
     else
-      redirect_back fallback_location: members_team_settings_path(team_id: team.id),
+      redirect_back fallback_location: manage_team_path(@team)(team_id: team.id),
                     alert:  "役割を更新できませんでした"
     end
   end
@@ -43,7 +43,7 @@ class TeamMembershipsController < ApplicationController
     team = @team_membership.team
     @team_membership.destroy
 
-    redirect_back fallback_location: members_team_settings_path(team_id: team.id),
+    redirect_back fallback_location: manage_team_path(@team)(team_id: team.id),
                   notice: "メンバーを削除しました"
   end
 

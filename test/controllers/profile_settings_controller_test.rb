@@ -7,12 +7,12 @@ class ProfileSettingsControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "should get home" do
-    get home_profile_settings_path
+    get edit_profile_path(current_profile)
     assert_response :success
   end
 
   test "should get edit" do
-    get edit_profile_settings_path
+    get edit_profile_path(current_profile)
     assert_response :success
   end
 

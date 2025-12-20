@@ -185,6 +185,7 @@ ja_en:
       edit_settings_title: "Edit Team"
       new_team: "Create Team"
       no_teams_html: "まだチームがありません。"
+      not_joined_team: "参加しているチームはありません。"
     new:
       title: "New Team"
     members:
