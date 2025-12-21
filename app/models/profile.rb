@@ -72,11 +72,6 @@ class Profile < ApplicationRecord
     end
   end
 
-  def purge_avatar_if_requested
-    return unless ActiveModel::Type::Boolean.new.cast(remove_avatar)
-    avatar.purge_later if avatar.attached?
-  end
-
   def set_default_theme
     self.theme = "default" if theme.blank?
   end

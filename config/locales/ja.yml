@@ -182,12 +182,19 @@ ja:
     index:
       title: "チーム一覧"
       edit_settings_title: "チーム編集"
-      new_team: "チームを作成する"
-      no_teams_heml: "まだチームがありません。"
+      new_team: "新規チーム作成"
+      no_teams_html: "まだチームがありません。"
+      not_joined_team: "参加しているチームはありません。"
+    settings:
+      sidebar:
+       title: "チーム管理"
+       show: "チーム詳細"
+       manage: "メンバー・招待管理"
+       edit: "チーム情報の編集"
     new:
       title: "新規チーム作成"
     members:
-      title: "メンバー管理"
+      title: "メンバー"
       select_team: "管理するチームを選択:"
       suffix_of_team: "のメンバー"
       role: "権限"

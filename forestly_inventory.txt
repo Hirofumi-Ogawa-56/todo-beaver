@@ -1,11 +1,12 @@
---- FILE: app/mailers/application_mailer.rb ---
+app/mailers/application_mailer.rb
+--- START OF FILE ---
 class ApplicationMailer < ActionMailer::Base
   default from: "from@example.com"
   layout "mailer"
 end
-
-
---- FILE: app/models/reaction.rb ---
+-e \n--- END OF FILE ---\n
+app/models/reaction.rb
+--- START OF FILE ---
 # app/models/reaction.rb
 class Reaction < ApplicationRecord
   belongs_to :comment
@@ -17,9 +18,9 @@ class Reaction < ApplicationRecord
             presence: true,
             inclusion: { in: KINDS }
 end
-
-
---- FILE: app/models/tag.rb ---
+-e \n--- END OF FILE ---\n
+app/models/tag.rb
+--- START OF FILE ---
 # app/models/tag.rb
 class Tag < ApplicationRecord
   has_many :task_tags, dependent: :destroy
@@ -27,9 +28,9 @@ class Tag < ApplicationRecord
 
   validates :name, presence: true, uniqueness: true, length: { maximum: 20 }
 end
-
-
---- FILE: app/models/task_tag.rb ---
+-e \n--- END OF FILE ---\n
+app/models/task_tag.rb
+--- START OF FILE ---
 # app/models/task_tag.rb
 class TaskTag < ApplicationRecord
   belongs_to :task
@@ -37,9 +38,9 @@ class TaskTag < ApplicationRecord
 
   validates :tag_id, uniqueness: { scope: :task_id }
 end
-
-
---- FILE: app/models/membership_request.rb ---
+-e \n--- END OF FILE ---\n
+app/models/membership_request.rb
+--- START OF FILE ---
 # app/models/membership_request.rb
 class MembershipRequest < ApplicationRecord
   # 関連
@@ -80,9 +81,9 @@ class MembershipRequest < ApplicationRecord
     end
   end
 end
-
-
---- FILE: app/models/task_assignment.rb ---
+-e \n--- END OF FILE ---\n
+app/models/task_assignment.rb
+--- START OF FILE ---
 # app/models/task_assignment.rb
 class TaskAssignment < ApplicationRecord
   belongs_to :task
@@ -90,9 +91,9 @@ class TaskAssignment < ApplicationRecord
 
   validates :profile_id, uniqueness: { scope: :task_id }
 end
-
-
---- FILE: app/models/team.rb ---
+-e \n--- END OF FILE ---\n
+app/models/team.rb
+--- START OF FILE ---
 # app/models/team.rb
 class Team < ApplicationRecord
   has_many :team_memberships, dependent: :destroy
@@ -113,7 +114,7 @@ class Team < ApplicationRecord
 
   attr_accessor :remove_avatar
 
-  before_save :purge_avatar_if_requested
+  before_save :purge_avatar_if_needed
 
   private
 
@@ -128,17 +129,15 @@ class Team < ApplicationRecord
     end
   end
 
-  def purge_avatar_if_requested
-    return if remove_avatar.blank?
-
-    # "0" / "1" が来るので boolean キャスト
-    flag = ActiveModel::Type::Boolean.new.cast(remove_avatar)
-    avatar.purge if flag && avatar.attached?
+  def purge_avatar_if_needed
+    if ActiveModel::Type::Boolean.new.cast(remove_avatar)
+      avatar.purge
+    end
   end
 end
-
-
---- FILE: app/models/team_membership.rb ---
+-e \n--- END OF FILE ---\n
+app/models/team_membership.rb
+--- START OF FILE ---
 # app/models/team_membership.rb
 class TeamMembership < ApplicationRecord
   belongs_to :team
@@ -168,9 +167,9 @@ class TeamMembership < ApplicationRecord
     team.team_memberships.update_all(role: ADMIN_ROLE)
   end
 end
-
-
---- FILE: app/models/profile.rb ---
+-e \n--- END OF FILE ---\n
+app/models/profile.rb
+--- START OF FILE ---
 # app/models/profile.rb
 class Profile < ApplicationRecord
   belongs_to :user
@@ -205,18 +204,20 @@ class Profile < ApplicationRecord
   before_create :set_join_token
   before_save :purge_avatar_if_needed
 
-    THEMES = %w[
-    default
-    slate
-    indigo
-    emerald
-    rose
-    amber
-    ].freeze
+  THEMES = %w[
+  default
+  slate
+  indigo
+  emerald
+  rose
+  amber
+  ].freeze
+  before_validation :set_default_theme
+  validates :theme, inclusion: { in: THEMES }, allow_nil: true
 
-  validates :theme, inclusion: { in: THEMES }, allow_blank: true
+  LOCALES = %w[ja en ja_en].freeze
+  validates :locale, inclusion: { in: LOCALES }, allow_blank: true
 
-  before_validation :set_default_theme, on: :create
 
 
   def display_initials
@@ -243,18 +244,13 @@ class Profile < ApplicationRecord
     end
   end
 
-  def purge_avatar_if_requested
-    return unless ActiveModel::Type::Boolean.new.cast(remove_avatar)
-    avatar.purge_later if avatar.attached?
-  end
-
   def set_default_theme
     self.theme = "default" if theme.blank?
   end
 end
-
-
---- FILE: app/models/comment.rb ---
+-e \n--- END OF FILE ---\n
+app/models/comment.rb
+--- START OF FILE ---
 # app/models/comment.rb
 class Comment < ApplicationRecord
   belongs_to :task
@@ -271,15 +267,15 @@ class Comment < ApplicationRecord
 
   validates :body, presence: true, length: { maximum: 2000 }
 end
-
-
---- FILE: app/models/application_record.rb ---
+-e \n--- END OF FILE ---\n
+app/models/application_record.rb
+--- START OF FILE ---
 class ApplicationRecord < ActiveRecord::Base
   primary_abstract_class
 end
-
-
---- FILE: app/models/user.rb ---
+-e \n--- END OF FILE ---\n
+app/models/user.rb
+--- START OF FILE ---
 # app/models/user.rb
 
 # Userクラスの定義
@@ -295,9 +291,9 @@ class User < ApplicationRecord
   # Userの関連を定義
   has_many :profiles, dependent: :destroy # 一人のUserはたくさんのProfileを持てる
 end
-
-
---- FILE: app/models/task.rb ---
+-e \n--- END OF FILE ---\n
+app/models/task.rb
+--- START OF FILE ---
 # app/models/task.rb
 class Task < ApplicationRecord
   belongs_to :owner_profile,    class_name: "Profile"
@@ -367,9 +363,9 @@ class Task < ApplicationRecord
     errors.add(:due_at, "は今日以降を指定してください")
   end
 end
-
-
---- FILE: app/jobs/application_job.rb ---
+-e \n--- END OF FILE ---\n
+app/jobs/application_job.rb
+--- START OF FILE ---
 class ApplicationJob < ActiveJob::Base
   # Automatically retry jobs that encountered a deadlock
   # retry_on ActiveRecord::Deadlocked
@@ -377,15 +373,20 @@ class ApplicationJob < ActiveJob::Base
   # Most jobs are safe to ignore if the underlying records are no longer available
   # discard_on ActiveJob::DeserializationError
 end
-
-
---- FILE: app/controllers/application_controller.rb ---
+-e \n--- END OF FILE ---\n
+app/controllers/application_controller.rb
+--- START OF FILE ---
 # app/controllers/application_controller.rb
 class ApplicationController < ActionController::Base
   allow_browser versions: :modern
   before_action :authenticate_user!, unless: :devise_controller?
   before_action :set_current_profile
+  before_action :set_locale
   helper_method :current_profile
+
+  def set_locale
+    I18n.locale = current_profile&.locale || I18n.default_locale
+  end
 
   private
 
@@ -421,50 +422,9 @@ class ApplicationController < ActionController::Base
                 alert: "タスクを利用するにはプロフィールを選択してください。"
   end
 end
-
-
---- FILE: app/controllers/profile_settings_controller.rb ---
-# app/controllers/profile_settings_controller.rb
-class ProfileSettingsController < ApplicationController
-  before_action :authenticate_user!
-
-  def home
-    @profile = current_profile
-
-    if @profile
-      @incoming_team_invites =
-        @profile.received_membership_requests
-                .team_to_profile
-                .pending
-                .includes(:team, :requester_profile)
-    else
-      @incoming_team_invites = MembershipRequest.none
-    end
-  end
-
-  def edit
-    @profile = current_profile
-    unless @profile
-      redirect_to edit_profile_path(current_profile), alert: "編集中のプロフィールが選択されていません。"
-      return
-    end
-
-    @incoming_team_invites =
-      @profile.received_membership_requests
-              .team_to_profile
-              .pending
-              .includes(:team, :requester_profile)
-
-    # ▼ 参加IDでチーム検索（GET）
-    @team_invite_token = params[:team_invite_token].to_s.strip.upcase
-    @invite_teams = @team_invite_token.present? ? Team.where(join_token: @team_invite_token) : Team.none
-  end
-
-  def theme; end
-end
-
-
---- FILE: app/controllers/reactions_controller.rb ---
+-e \n--- END OF FILE ---\n
+app/controllers/reactions_controller.rb
+--- START OF FILE ---
 # app/controllers/reaction_controller.rb
 class ReactionsController < ApplicationController
   before_action :authenticate_user!
@@ -497,17 +457,16 @@ class ReactionsController < ApplicationController
     @comment = Comment.find(params[:comment_id])
   end
 end
-
-
---- FILE: app/controllers/teams_controller.rb ---
+-e \n--- END OF FILE ---\n
+app/controllers/teams_controller.rb
+--- START OF FILE ---
 # app/controllers/teams_controller.rb
 class TeamsController < ApplicationController
   before_action :authenticate_user!
-  before_action :set_team, only: %i[show edit update destroy]
+  before_action :require_current_profile!
+  before_action :set_team, only: %i[show edit update destroy manage]
 
   def index
-    # いまは「自分が作ったチーム」という概念がないので、とりあえず全件
-    # 後で TeamMembership や owner_profile ができたら絞り込む
     @teams = Team.order(created_at: :desc)
   end
 
@@ -552,23 +511,49 @@ class TeamsController < ApplicationController
     redirect_to teams_path, notice: "チームを削除しました"
   end
 
+  # ★ 旧 team_settings#members を統合したアクション
+  def manage
+    # set_team により、この時点で @team は取得済みです
+    
+    @memberships = @team.team_memberships.includes(:profile)
+    @members     = @memberships.map(&:profile)
+
+    # 今のプロフィールがこのチームの管理者かどうか
+    @current_membership = @memberships.find { |m| m.profile_id == current_profile.id }
+    @can_manage_members = @current_membership&.admin?
+
+    # プロフィール検索用（招待用トークン）
+    @profile_invite_token = params[:profile_invite_token].to_s.strip.upcase
+    if @profile_invite_token.present?
+      @found_profile = Profile.where(join_token: @profile_invite_token)
+                              .where.not(id: @members.map(&:id))
+                              .first
+    end
+
+    # このチームに届いている参加申請（プロフィールからチームへ）
+    @incoming_join_requests = @team.membership_requests
+                                   .profile_to_team
+                                   .pending
+                                   .includes(:requester_profile)
+  end
+
   private
 
   def set_team
     @team = Team.find(params[:id])
   end
 
-  def team_params
-    params.require(:team).permit(
-      :name,
-      :avatar,
-      :remove_avatar
-      )
+  def require_current_profile!
+    return if current_profile
+    redirect_to profiles_path, alert: "プロフィールを選択してください。"
   end
-end
 
-
---- FILE: app/controllers/account_settings_controller.rb ---
+  def team_params
+    params.require(:team).permit(:name, :avatar, :remove_avatar)
+  end
+end-e \n--- END OF FILE ---\n
+app/controllers/account_settings_controller.rb
+--- START OF FILE ---
 # app/controllers/account_settings_controller.rb
 class AccountSettingsController < ApplicationController
   before_action :authenticate_user!
@@ -596,9 +581,9 @@ class AccountSettingsController < ApplicationController
                   notice: "パスワード変更用のメールを送信しました。"
   end
 end
-
-
---- FILE: app/controllers/tasks_controller.rb ---
+-e \n--- END OF FILE ---\n
+app/controllers/tasks_controller.rb
+--- START OF FILE ---
 # app/controllers/tasks_controller.rb
 class TasksController < ApplicationController
   before_action :authenticate_user!
@@ -750,10 +735,8 @@ class TasksController < ApplicationController
   def update
     @task.assign_attributes(task_params)
 
-    # 期限系のフィールドが送られてきたときだけ due_at を組み立てる
     if task_params.key?(:due_date) || task_params.key?(:due_time)
       build_due_at_from_virtual_fields(@task)
-
       if @task.errors.any?
         set_collections
         render :edit, status: :unprocessable_entity
@@ -763,19 +746,20 @@ class TasksController < ApplicationController
 
     Task.transaction do
       if @task.save
-        # tag_list が送られてきたときだけタグ再作成（一覧からの status 更新では呼ばれない）
         @task.update_tags_from_list! if task_params.key?(:tag_list)
       end
     end
 
     if @task.errors.empty?
-      # ★ ここで分岐させる
-      if turbo_frame_request?
-        # ライトパネルからの更新 → そのままタスク詳細をライトパネルに表示
-        redirect_to task_path(@task), notice: "タスクを更新しました。"
-      else
-        # 通常のページ（一覧など）からの更新 → 一覧へ戻る
-        redirect_to tasks_path, notice: "タスクを更新しました。"
+      respond_to do |format|
+        format.html do
+          if turbo_frame_request?
+            redirect_to task_path(@task), notice: "タスクを更新しました。"
+          else
+            redirect_to tasks_path, notice: "タスクを更新しました。"
+          end
+        end
+        format.turbo_stream # update.turbo_stream.erb を探す
       end
     else
       set_collections
@@ -1022,9 +1006,9 @@ class TasksController < ApplicationController
     Arel.sql("#{column} #{direction}, tasks.created_at ASC")
   end
 end
-
-
---- FILE: app/controllers/comments_controller.rb ---
+-e \n--- END OF FILE ---\n
+app/controllers/comments_controller.rb
+--- START OF FILE ---
 # app/controllers/comments_controller.rb
 class CommentsController < ApplicationController
   before_action :authenticate_user!
@@ -1087,13 +1071,13 @@ class CommentsController < ApplicationController
     @task.update!(status: new_status)
   end
 end
-
-
---- FILE: app/controllers/profiles_controller.rb ---
+-e \n--- END OF FILE ---\n
+app/controllers/profiles_controller.rb
+--- START OF FILE ---
 # app/controllers/profiles_controller.rb
 class ProfilesController < ApplicationController
   before_action :authenticate_user!
-  before_action :set_profile, only: %i[show edit update destroy]
+  before_action :set_profile, only: %i[show edit update destroy settings]
 
   skip_before_action :verify_authenticity_token, only: :switch
 
@@ -1143,6 +1127,17 @@ class ProfilesController < ApplicationController
     redirect_back fallback_location: profiles_path
   end
 
+  def settings
+    @incoming_team_invites = @profile.received_membership_requests
+                                     .team_to_profile
+                                     .pending
+                                     .includes(:team, :requester_profile)
+
+
+    @team_invite_token = params[:team_invite_token].to_s.strip.upcase
+    @invite_teams = @team_invite_token.present? ? Team.where(join_token: @team_invite_token) : Team.none
+  end
+
   private
 
   def set_profile
@@ -1150,97 +1145,19 @@ class ProfilesController < ApplicationController
   end
 
   def profile_params
-    params.require(:profile).permit(:label,
+    params.require(:profile).permit(
+      :label,
       :display_name,
       :theme,
       :avatar,
-      :remove_avatar
+      :remove_avatar,
+      :locale
     )
   end
 end
-
-
---- FILE: app/controllers/team_settings_controller.rb ---
-# app/controllers/team_settings_controller.rb
-class TeamSettingsController < ApplicationController
-  before_action :authenticate_user!
-  before_action :require_current_profile!
-  before_action :set_my_teams, only: [ :edit, :members ]
-
-  def home
-  end
-
-  def edit
-    # @teams は set_my_teams で
-    # 「自分が所属しているチームだけ」に絞られています
-  end
-
-  def members
-    @selected_team =
-      if params[:team_id].present?
-        @teams.find_by(id: params[:team_id])   # ← 自分のチームの中からだけ探す
-      else
-        @teams.first
-      end
-
-    if @selected_team
-      @memberships = @selected_team.team_memberships.includes(:profile)
-      @members      = @memberships.map(&:profile)
-
-      # ✅ 今のプロフィールがこのチームでどんな membership を持っているか
-      @current_membership =
-        @memberships.find { |m| m.profile_id == current_profile.id }
-
-      # ✅ この画面を見ている人が管理者かどうか
-      @can_manage_members = @current_membership&.admin?
-
-      # ▼ ここから：申請IDでプロフィール検索用 ▼
-      @invite_token = params[:invite_token].to_s.strip.upcase
-
-      @invite_profiles =
-        if @invite_token.present?
-          Profile.where(join_token: @invite_token)
-                 .where.not(id: @members.map(&:id)) # すでにメンバーなら候補から除外
-        else
-          Profile.none
-        end
-      # ▲ ここまで ▼
-
-    else
-      @memberships        = []
-      @members            = []
-      @invite_token       = nil
-      @invite_profiles    = Profile.none
-      @current_membership = nil
-      @can_manage_members = false
-    end
-
-    @incoming_join_requests =
-      if @selected_team
-        MembershipRequest
-          .where(team: @selected_team, direction: "profile_to_team", status: "pending")
-          .includes(:requester_profile)
-      else
-        MembershipRequest.none
-      end
-  end
-
-  # プロフィールが選択されていないユーザーはチーム設定を見せない
-  def require_current_profile!
-    return if current_profile
-
-    redirect_to profiles_path,
-                alert: "チーム設定を利用するにはプロフィールを選択してください。"
-  end
-
-  # 「自分が所属しているチーム」だけを取得
-  def set_my_teams
-    @teams = current_profile.teams.order(:name)
-  end
-end
-
-
---- FILE: app/controllers/team_memberships_controller.rb ---
+-e \n--- END OF FILE ---\n
+app/controllers/team_memberships_controller.rb
+--- START OF FILE ---
 # app/controllers/team_memberships_controller.rb
 class TeamMembershipsController < ApplicationController
   before_action :authenticate_user!
@@ -1311,9 +1228,9 @@ class TeamMembershipsController < ApplicationController
                 alert: "このチームのメンバー管理を行う権限がありません"
   end
 end
-
-
---- FILE: app/controllers/users/passwords_controller.rb ---
+-e \n--- END OF FILE ---\n
+app/controllers/users/passwords_controller.rb
+--- START OF FILE ---
 # app/controllers/users/passwords_controller.rb
 class Users::PasswordsController < Devise::PasswordsController
   skip_before_action :authenticate_user!, only: %i[new create edit update]
@@ -1396,9 +1313,9 @@ class Users::PasswordsController < Devise::PasswordsController
     sign_out(current_user) if user_signed_in?
   end
 end
-
-
---- FILE: app/controllers/users/confirmations_controller.rb ---
+-e \n--- END OF FILE ---\n
+app/controllers/users/confirmations_controller.rb
+--- START OF FILE ---
 # app/controllers/users/confirmations_controller.rb
 class Users::ConfirmationsController < Devise::ConfirmationsController
   def create
@@ -1420,9 +1337,9 @@ class Users::ConfirmationsController < Devise::ConfirmationsController
     super
   end
 end
-
-
---- FILE: app/controllers/membership_requests_controller.rb ---
+-e \n--- END OF FILE ---\n
+app/controllers/membership_requests_controller.rb
+--- START OF FILE ---
 # app/controllers/membership_requests_controller.rb
 class MembershipRequestsController < ApplicationController
   before_action :authenticate_user!
@@ -1449,7 +1366,8 @@ class MembershipRequestsController < ApplicationController
         direction: "profile_to_team",
         team: team,
         requester_profile: current_profile,
-        status: :pending
+        status: :pending,
+        admin: params[:admin] == "1"
       )
 
       if req.save
@@ -1572,15 +1490,15 @@ class MembershipRequestsController < ApplicationController
     end
   end
 end
-
-
---- FILE: app/views/comments/edit.html.erb ---
+-e \n--- END OF FILE ---\n
+app/views/comments/edit.html.erb
+--- START OF FILE ---
 <!-- app/views/comments/edit.html.erb -->
 <h1 class="text-sm font-semibold mb-3">コメント編集</h1>
 
-<%= render "form", task: @task, comment: @comment %>
-
---- FILE: app/views/comments/_comment.html.erb ---
+<%= render "form", task: @task, comment: @comment %>-e \n--- END OF FILE ---\n
+app/views/comments/_comment.html.erb
+--- START OF FILE ---
 <!-- app/views/comments/_comment.html.erb -->
 <% profile = comment.author_profile %>
 
@@ -1611,7 +1529,7 @@ end
     <div class="flex items-center gap-1 text-[11px] text-gray-500 pr-1">
       <% if comment.pinned? %>
         <span class="inline-flex items-center px-2 py-0.5 rounded-full bg-yellow-50 text-[10px] text-yellow-700 border border-yellow-200">
-          PIN
+          <%= t('tasks.show.pin') %>
         </span>
       <% end %>
 
@@ -1635,14 +1553,16 @@ end
   </div>
 </div>
 
-
-
---- FILE: app/views/comments/_form.html.erb ---
+-e \n--- END OF FILE ---\n
+app/views/comments/_form.html.erb
+--- START OF FILE ---
 <!-- app/views/comments/_form.html.erb -->
 <%= form_with model: [@task, comment], local: true do |f| %>
   <% if comment.errors.any? %>
     <div class="mb-2 p-2 bg-red-50 text-red-700 rounded text-xs">
-      <p class="font-semibold"><%= comment.errors.count %>件のエラーがあります。</p>
+      <p class="font-semibold">
+        <%= t('errors.template.header', count: comment.errors.count, model: t('activerecord.models.comment')) %>
+      </p>
       <ul class="list-disc list-inside">
         <% comment.errors.full_messages.each do |msg| %>
           <li><%= msg %></li>
@@ -1655,7 +1575,7 @@ end
     <%= f.text_area :body,
                     rows: 3,
                     class: "w-full border rounded px-2 py-1 text-sm",
-                    placeholder: "コメントを入力..." %>
+                    placeholder: t('activerecord.placeholders.comment.body') %>
   </div>
 
   <!-- ★ ピン留め + ステータス変更 -->
@@ -1663,18 +1583,18 @@ end
     <!-- ピン留め -->
     <label class="inline-flex items-center gap-1">
       <%= f.check_box :pinned %>
-      <span>このコメントをピン留めする</span>
+      <span><%= t('activerecord.attributes.comment.pinned') %></span>
     </label>
   </div>
 
   <div class="flex justify-end">
-    <%= f.submit "コメント送信",
-                 class: "px-3 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700" %>
+    <%= f.submit t('helpers.submit.comment.create', model: t('activerecord.models.comment')),
+                 class: "px-3 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700 cursor-pointer" %>
   </div>
 <% end %>
-
-
---- FILE: app/views/devise/unlocks/new.html.erb ---
+-e \n--- END OF FILE ---\n
+app/views/devise/unlocks/new.html.erb
+--- START OF FILE ---
 <h2>Resend unlock instructions</h2>
 
 <%= form_for(resource, as: resource_name, url: unlock_path(resource_name), html: { method: :post }) do |f| %>
@@ -1691,9 +1611,9 @@ end
 <% end %>
 
 <%= render "devise/shared/links" %>
-
-
---- FILE: app/views/devise/passwords/edit.html.erb ---
+-e \n--- END OF FILE ---\n
+app/views/devise/passwords/edit.html.erb
+--- START OF FILE ---
 <!-- app/views/devise/passwords/edit.html.erb -->
 <div class="min-h-screen flex items-center justify-center bg-white px-4">
   <div class="w-full max-w-md">
@@ -1704,7 +1624,7 @@ end
                     class: "block",
                     style: "height: 128px; width: auto;" %>
       <p class="mt-0 text-sm text-gray-600">
-        多様なあなたのTaskアプリ
+        <%= t('common.tagline') %>
       </p>
     </div>
 
@@ -1722,11 +1642,11 @@ end
 
     <!-- タイトル -->
     <h1 class="text-lg font-semibold text-center mb-4">
-      パスワードを設定（再設定）
+      <%= t('devise.passwords.edit.title') %>
     </h1>
 
     <p class="text-sm text-gray-600 text-center mb-6">
-      新しいパスワードを入力してください。
+      <%= t('devise.passwords.edit.instruction') %>
     </p>
 
     <%= form_for(resource,
@@ -1749,34 +1669,34 @@ end
 
       <div class="space-y-3">
         <div class="flex items-center gap-3">
-          <%= f.label :password, "パスワード", class: "w-28 text-sm text-gray-700" %>
+          <%= f.label :password, t('activerecord.attributes.user.password'), class: "w-28 text-sm text-gray-700" %>
           <%= f.password_field :password,
                                autocomplete: "new-password",
                                class: "flex-1 border border-gray-200 rounded px-3 py-2 text-sm" %>
         </div>
 
         <div class="flex items-center gap-3">
-          <%= f.label :password_confirmation, "パスワード再入力", class: "w-28 text-sm text-gray-700" %>
+          <%= f.label :password_confirmation, t('activerecord.attributes.user.password_confirmation'), class: "w-28 text-sm text-gray-700" %>
           <%= f.password_field :password_confirmation,
                                autocomplete: "new-password",
                                class: "flex-1 border border-gray-200 rounded px-3 py-2 text-sm" %>
         </div>
 
         <div class="pt-2">
-          <%= f.submit "確定する",
+          <%= f.submit t('common.submit_confirm'),
                       class: "w-full px-4 py-2 bg-blue-600 text-white text-sm rounded hover:bg-blue-700" %>
         </div>
       </div>
     <% end %>
 
     <div class="mt-6 text-center text-sm">
-      <%= link_to "ログインへ戻る", new_user_session_path, class: "text-gray-600 underline" %>
+      <%= link_to t('devise.sessions.new.back_to_login', default: "ログインへ戻る"), new_user_session_path, class: "text-gray-600 underline" %>
     </div>
   </div>
 </div>
-
-
---- FILE: app/views/devise/passwords/new.html.erb ---
+-e \n--- END OF FILE ---\n
+app/views/devise/passwords/new.html.erb
+--- START OF FILE ---
 <h2>Forgot your password?</h2>
 
 <%= form_for(resource, as: resource_name, url: password_path(resource_name), html: { method: :post }) do |f| %>
@@ -1793,40 +1713,54 @@ end
 <% end %>
 
 <%= render "devise/shared/links" %>
-
-
---- FILE: app/views/devise/mailer/confirmation_instructions.html.erb ---
+-e \n--- END OF FILE ---\n
+app/views/devise/mailer/confirmation_instructions.html.erb
+--- START OF FILE ---
 <!-- app/views/devise/mailer/confirmation_instructions.html.erb -->
-<p>Forestly</p>
-<p>メールアドレス変更の確認です。</p>
-<p>以下のリンクを開いて、メールアドレスの変更を確定してください。</p>
-
 <p>
-  <%= link_to "メールアドレス変更を進める", user_confirmation_url(confirmation_token: @token) %>
-</p>
-
-
---- FILE: app/views/devise/mailer/reset_password_instructions.html.erb ---
-<p>Forestly</p>
-<p>パスワード変更のご案内です。</p>
-
-<p>
-  以下のリンクを開いて、新しいパスワードを設定してください。
+  <%= t('common.app_name') %>
 </p>
 
 <p>
-  <%= link_to "パスワード変更を進める",
+  <%= t('devise.mailer.confirmation_instructions.instruction_title') %>
+</p>
+
+<p>
+  <%= t('devise.mailer.confirmation_instructions.instruction_body') %>
+</p>
+
+<p>
+  <%= link_to t('devise.mailer.confirmation_instructions.action_link'), 
+              user_confirmation_url(confirmation_token: @token) %>
+</p>
+-e \n--- END OF FILE ---\n
+app/views/devise/mailer/reset_password_instructions.html.erb
+--- START OF FILE ---
+<!-- app/views/devise/mailer/reset_password_instructions.html.erb -->
+<p>
+  <%= t('common.app_name') %>
+</p>
+
+<p>
+  <%= t('devise.mailer.reset_password_instructions.instruction_title') %>
+</p>
+
+<p>
+  <%= t('devise.mailer.reset_password_instructions.instruction_body') %>
+</p>
+
+<p>
+  <%= link_to t('devise.mailer.reset_password_instructions.action_link'),
               edit_user_password_url(reset_password_token: @token) %>
-</p>
-
-
---- FILE: app/views/devise/mailer/password_change.html.erb ---
+</p>-e \n--- END OF FILE ---\n
+app/views/devise/mailer/password_change.html.erb
+--- START OF FILE ---
 <p>Hello <%= @resource.email %>!</p>
 
 <p>We're contacting you to notify you that your password has been changed.</p>
-
-
---- FILE: app/views/devise/mailer/email_changed.html.erb ---
+-e \n--- END OF FILE ---\n
+app/views/devise/mailer/email_changed.html.erb
+--- START OF FILE ---
 <p>Hello <%= @email %>!</p>
 
 <% if @resource.try(:unconfirmed_email?) %>
@@ -1834,9 +1768,9 @@ end
 <% else %>
   <p>We're contacting you to notify you that your email has been changed to <%= @resource.email %>.</p>
 <% end %>
-
-
---- FILE: app/views/devise/mailer/unlock_instructions.html.erb ---
+-e \n--- END OF FILE ---\n
+app/views/devise/mailer/unlock_instructions.html.erb
+--- START OF FILE ---
 <p>Hello <%= @resource.email %>!</p>
 
 <p>Your account has been locked due to an excessive number of unsuccessful sign in attempts.</p>
@@ -1844,9 +1778,9 @@ end
 <p>Click the link below to unlock your account:</p>
 
 <p><%= link_to 'Unlock my account', unlock_url(@resource, unlock_token: @token) %></p>
-
-
---- FILE: app/views/devise/shared/_error_messages.html.erb ---
+-e \n--- END OF FILE ---\n
+app/views/devise/shared/_error_messages.html.erb
+--- START OF FILE ---
 <% if resource.errors.any? %>
   <div id="error_explanation" data-turbo-cache="false">
     <h2>
@@ -1862,9 +1796,9 @@ end
     </ul>
   </div>
 <% end %>
-
-
---- FILE: app/views/devise/shared/_links.html.erb ---
+-e \n--- END OF FILE ---\n
+app/views/devise/shared/_links.html.erb
+--- START OF FILE ---
 <%- if controller_name != 'sessions' %>
   <%= link_to "Log in", new_session_path(resource_name) %><br />
 <% end %>
@@ -1890,20 +1824,20 @@ end
     <%= button_to "Sign in with #{OmniAuth::Utils.camelize(provider)}", omniauth_authorize_path(resource_name, provider), data: { turbo: false } %><br />
   <% end %>
 <% end %>
-
-
---- FILE: app/views/devise/sessions/new.html.erb ---
+-e \n--- END OF FILE ---\n
+app/views/devise/sessions/new.html.erb
+--- START OF FILE ---
 <!-- app/views/devise/sessions/new.html.erb -->
 <div class="min-h-screen flex items-center justify-center bg-white px-4">
   <div class="w-full max-w-md">
     <!-- ロゴ -->
     <div class="flex flex-col items-center text-center mb-8">
       <%= image_tag "forestly_logo.png",
-                    alt: "forestly",
+                    alt: t('common.app_name'),
                     class: "block",
                     style: "height: 128px; width: auto;" %>
       <p class="mt-0 text-sm text-gray-600">
-        多様なあなたのTaskアプリ
+        <%= t('common.tagline') %>
       </p>
     </div>
 
@@ -1920,10 +1854,10 @@ end
     <% end %>
 
     <!-- ログイン -->
-    <h1 class="text-lg font-semibold text-center mb-4">ログイン</h1>
+    <h1 class="text-lg font-semibold text-center mb-4"><%= t('devise.sessions.new.title') %></h1>
     <% if submit_mode? %>
       <div class="mb-4 rounded border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-        <p class="font-semibold">【提出モード】デモアカウント</p>
+        <p class="font-semibold"><%= t('devise.sessions.new.demo_mode.header') %></p>
         <p class="mt-1">
           Email (A):
           <code class="px-1 py-0.5 bg-white/60 rounded select-all"><%= ENV.fetch("DEMO_EMAIL", "demo@example.com") %></code>
@@ -1931,11 +1865,11 @@ end
           Email (B):
           <code class="px-1 py-0.5 bg-white/60 rounded select-all"><%= ENV.fetch("DEMO_EMAIL_2", "demo2@example.com") %></code>
           <br>
-          Password (共通):
+          <%= t('activerecord.attributes.user.password') %> (<%= t('devise.sessions.new.demo_mode.common') %>):
           <code class="px-1 py-0.5 bg-white/60 rounded select-all"><%= ENV.fetch("DEMO_PASSWORD", "password") %></code>
         </p>
         <p class="mt-2 text-xs text-amber-800">
-          ※メール送信は無効です。ログイン後にMVP機能をご確認ください。
+          <%= t('devise.sessions.new.demo_mode.note') %>
         </p>
       </div>
     <% end %>
@@ -1947,7 +1881,7 @@ end
       <div class="space-y-3">
         <!-- Email 横並び -->
         <div class="flex items-center gap-3">
-          <%= f.label :email, "メール", class: "w-28 text-sm text-gray-700" %>
+          <%= f.label :email, t('activerecord.attributes.user.email'), class: "w-28 text-sm text-gray-700" %>
           <%= f.email_field :email,
                             autofocus: true,
                             autocomplete: "email",
@@ -1957,7 +1891,7 @@ end
 
         <!-- Password 横並び -->
         <div class="flex items-center gap-3">
-          <%= f.label :password, "パスワード", class: "w-28 text-sm text-gray-700" %>
+          <%= f.label :password, t('activerecord.attributes.user.password'), class: "w-28 text-sm text-gray-700" %>
           <%= f.password_field :password,
                                autocomplete: "current-password",
                                class: "flex-1 border border-gray-200 rounded px-3 py-2 text-sm" %>
@@ -1965,7 +1899,7 @@ end
 
         <!-- ログインボタン -->
         <div class="pt-2">
-          <%= f.submit "ログイン",
+          <%= f.submit t('devise.sessions.new.title'),
                        class: "w-full px-4 py-2 bg-blue-600 text-white text-sm rounded hover:bg-blue-700" %>
         </div>
       </div>
@@ -1974,7 +1908,7 @@ end
     <!-- 区切り -->
     <div class="my-8 flex items-center gap-3">
       <div class="h-px flex-1 bg-gray-200"></div>
-      <div class="text-xs text-gray-500 whitespace-nowrap">新規ユーザー登録</div>
+      <div class="text-xs text-gray-500 whitespace-nowrap"><%= t('devise.sessions.new.sign_up_link') %></div>
       <div class="h-px flex-1 bg-gray-200"></div>
     </div>
 
@@ -1986,7 +1920,7 @@ end
                 html: { data: { turbo: false } }) do |f| %>
       <div class="space-y-3">
         <div class="flex items-center gap-3">
-          <%= f.label :email, "メール", class: "w-28 text-sm text-gray-700" %>
+          <%= f.label :email, t('activerecord.attributes.user.email'), class: "w-28 text-sm text-gray-700" %>
           <%= f.email_field :email,
                             autocomplete: "email",
                             placeholder: "email@domain.com",
@@ -1994,19 +1928,15 @@ end
         </div>
 
         <div class="pt-2">
-          <%= f.submit "登録用メールの送信",
+          <%= f.submit t('devise.sessions.new.send_sign_up_email'),
                       class: "w-full px-4 py-2 bg-gray-900 text-white text-sm rounded hover:bg-gray-800" %>
         </div>
       </div>
     <% end %>
-
-    <%# <p class="mt-6 text-[11px] text-gray-500 text-center leading-relaxed">
-      続行することで、利用規約とプライバシーポリシーに同意したことになります。
-    </p> %>
   </div>
-</div>
-
---- FILE: app/views/devise/confirmations/new.html.erb ---
+</div>-e \n--- END OF FILE ---\n
+app/views/devise/confirmations/new.html.erb
+--- START OF FILE ---
 <h2>Resend confirmation instructions</h2>
 
 <%= form_for(resource, as: resource_name, url: confirmation_path(resource_name), html: { method: :post }) do |f| %>
@@ -2023,9 +1953,9 @@ end
 <% end %>
 
 <%= render "devise/shared/links" %>
-
-
---- FILE: app/views/devise/registrations/edit.html.erb ---
+-e \n--- END OF FILE ---\n
+app/views/devise/registrations/edit.html.erb
+--- START OF FILE ---
 <!-- app/views/devise/registrations/edit.erb -->
 <% if user_signed_in? && current_user.profiles.any? %>
   <% content_for :sidebar do %>
@@ -2033,46 +1963,46 @@ end
   <% end %>
 <% end %>
 
-<h1 class="text-xl font-bold mb-6">アカウント設定</h1>
+<h1 class="text-xl font-bold mb-6"><%= t('devise.registrations.edit.title') %></h1>
 
 <!-- 1) 現在のメール -->
 <div class="mb-8 p-4 rounded">
-  <h2 class="font-semibold mb-2">現在のメールアドレス</h2>
+  <h2 class="font-semibold mb-2"><%= t('devise.registrations.edit.current_email') %></h2>
   <p class="text-sm text-gray-700"><%= current_user.email %></p>
 
   <% if current_user.respond_to?(:unconfirmed_email) && current_user.unconfirmed_email.present? %>
     <p class="text-xs text-amber-700 mt-2">
-      変更申請中： <%= current_user.unconfirmed_email %>（確認待ち）
+      <%= t('devise.registrations.edit.unconfirmed_email_msg', email: current_user.unconfirmed_email) %>
     </p>
   <% end %>
 </div>
 
 <!-- 2) メール変更申請（新しいメールに確認メールを送る） -->
 <div class="mb-8 p-4 rounded" id="email">
-  <h2 class="font-semibold mb-2">メールアドレスの変更</h2>
+  <h2 class="font-semibold mb-2"><%= t('devise.registrations.edit.change_email_title') %></h2>
 
   <%= form_with url: send_change_email_path, method: :post, local: true do |f| %>
     <div class="mb-3">
-      <%= label_tag :email, "新しいメールアドレス", class: "block text-sm mb-1" %>
+      <%= label_tag :email, t('activerecord.attributes.user.new_email'), class: "block text-sm mb-1" %>
       <%= email_field_tag :email, "", class: "w-full border border-gray-300 rounded px-3 py-2" %>
     </div>
 
-    <%= submit_tag "新しいメールアドレスに変更用メールを送信する",
+    <%= submit_tag t('devise.registrations.edit.send_email_change_instructions'),
                    class: "px-4 py-2 rounded bg-blue-600 text-white" %>
   <% end %>
 </div>
 
 <!-- 3) パスワード変更メール送信（リセットメール） -->
 <div class="p-4 rounded" id="password">
-  <h2 class="font-semibold mb-2">パスワードの変更</h2>
+  <h2 class="font-semibold mb-2"><%= t('devise.registrations.edit.change_password_title') %></h2>
 
-  <%= button_to "パスワードの変更用メールを送信する",
+  <%= button_to t('devise.registrations.edit.send_password_reset_instructions'),
                 send_password_reset_path,
                 method: :post,
                 class: "px-4 py-2 rounded bg-blue-600 text-white" %>
-</div>
-
---- FILE: app/views/devise/registrations/new.html.erb ---
+</div>-e \n--- END OF FILE ---\n
+app/views/devise/registrations/new.html.erb
+--- START OF FILE ---
 <h2>Sign up</h2>
 
 <%= form_for(resource, as: resource_name, url: registration_path(resource_name)) do |f| %>
@@ -2102,9 +2032,9 @@ end
 <% end %>
 
 <%= render "devise/shared/links" %>
-
-
---- FILE: app/views/tasks/index.html.erb ---
+-e \n--- END OF FILE ---\n
+app/views/tasks/index.html.erb
+--- START OF FILE ---
 <!-- app/views/tasks/index.html.erb -->
 <% content_for :sidebar do %>
   <%= render "tasks/sidebar" %>
@@ -2125,13 +2055,13 @@ end
       <%= text_field_tag :q,
                         @query,
                         class: "flex-1 border border-gray-300 rounded px-3 py-1 text-sm",
-                        placeholder: "タイトル・詳細・タグで検索（スペース区切りでAND検索）" %>
+                        placeholder: t('tasks.index.search_placeholder') %>
 
-      <%= submit_tag "検索",
+      <%= submit_tag t('common.search'),
                     class: "px-3 py-1 bg-gray-800 text-white text-sm rounded hover:bg-gray-900" %>
 
       <% if @query.present? %>
-        <%= link_to "クリア",
+        <%= link_to t('common.clear'),
                     tasks_path(
                       filter:      params[:filter],
                       all_profiles: params[:all_profiles]  # ★ ここでモード維持
@@ -2157,7 +2087,7 @@ end
               <%= text_field_tag :title_contains,
                                  params[:title_contains],
                                  class: "w-full border border-gray-300 rounded px-2 py-1",
-                                 placeholder: "部分一致" %>
+                                 placeholder: t('tasks.index.filter_title') %>
             </td>
 
             <!-- 期限（自由入力でもいいですが、UX的に date_field_tag おすすめ） -->
@@ -2172,7 +2102,7 @@ end
               <%= text_field_tag :status_keyword,
                                  params[:status_keyword],
                                  class: "w-full border border-gray-300 rounded px-2 py-1",
-                                 placeholder: "todo / prog / done" %>
+                                 placeholder: t('tasks.index.filter_placeholder_status') %>
             </td>
 
             <!-- 担当者 -->
@@ -2180,7 +2110,7 @@ end
               <%= text_field_tag :assignee_keyword,
                                  params[:assignee_keyword],
                                  class: "w-full border border-gray-300 rounded px-2 py-1",
-                                 placeholder: "担当者名の一部" %>
+                                 placeholder: t('tasks.index.filter_placeholder_assignee') %>
             </td>
 
             <!-- 作成者 -->
@@ -2188,16 +2118,16 @@ end
               <%= text_field_tag :owner_keyword,
                                  params[:owner_keyword],
                                  class: "w-full border border-gray-300 rounded px-2 py-1",
-                                 placeholder: "作成者名の一部" %>
+                                 placeholder: t('tasks.index.filter_placeholder_owner') %>
             </td>
 
             <!-- 右端：ボタン -->
             <td class="py-1 px-2">
               <div class="flex justify-end gap-2">
-                <%= submit_tag "フィルタ適用",
+                <%= submit_tag t('common.filter_apply'),
                                class: "px-3 py-1 bg-gray-100 text-gray-700 text-xs rounded border border-gray-300 hover:bg-gray-200" %>
 
-                <%= link_to "フィルタクリア",
+                <%= link_to t('common.filter_apply'),
                             tasks_path(
                               q:           @query,
                               filter:      params[:filter],
@@ -2219,19 +2149,19 @@ end
       <thead class="sticky top-0 bg-gray-50 z-10">
         <tr class="border-b">
           <th class="text-left py-2 px-2">
-            <%= sort_link("タイトル", "title") %>
+            <%= sort_link(t('tasks.index.column_title'), "title") %>
           </th>
           <th class="text-left py-2 px-2">
-            <%= sort_link("期限", "due_at") %>
+            <%= sort_link(t('tasks.index.column_due_at'), "due_at") %>
           </th>
           <th class="text-left py-2 px-2">
-            <%= sort_link("ステータス", "status") %>
+            <%= sort_link(t('tasks.index.column_status'), "status") %>
           </th>
           <th class="text-left py-2 px-2">
-            <%= sort_link("担当者", "assignee") %>
+            <%= sort_link(t('tasks.index.column_assignee'), "assignee") %>
           </th>
           <th class="text-left py-2 px-2">
-            <%= sort_link("作成者", "owner") %>
+            <%= sort_link(t('tasks.index.column_owner'), "owner") %>
           </th>
           <th class="text-left py-2 px-2"></th>
         </tr>
@@ -2239,101 +2169,13 @@ end
 
       <!-- ★ ここに id を付ける -->
       <tbody id="tasks-table-body">
-        <% @tasks.each do |task| %>
-          <tr id="<%= dom_id(task) %>" class="border-gray-50">
-            <!-- Taskのタイトル -->
-            <td class="py-2 px-2">
-              <%= link_to task.title,
-                          task_path(task),
-                          class: "font-semibold text-gray-600 underline",
-                          data: {
-                            turbo_frame: "side-panel-frame",
-                            action: "click->side-panel#open",
-                            side_panel_title_param: "タスクの詳細"
-                          } %>
-            </td>
-
-            <!-- Taskの期限 -->
-            <td class="py-2 px-2">
-              <%= due_badge(task) %>
-            </td>
-
-            <!-- Taskのステータス -->
-            <td class="py-2 px-2">
-              <div class="mb-1">
-                <%= status_badge(task) %>
-              </div>
-            </td>
-
-            <!-- Taskの担当者 -->
-            <td class="py-2">
-              <% if task.assignees.any? %>
-                <% task.assignees.each do |profile| %>
-                  <%= profile_chip(
-                        profile,
-                        size: :xs,
-                        wrapper_class: "px-2 py-1 mr-1 mb-1 rounded bg-gray-100 text-xs font-semibold"
-                      ) %>
-                <% end %>
-              <% else %>
-                <span class="text-xs text-gray-400">未設定</span>
-              <% end %>
-            </td>
-
-            <!-- Taskの作成者 -->
-            <td class="py-2 px-2">
-              <% if task.owner_profile %>
-                <%= profile_chip(
-                      task.owner_profile,
-                      size: :xs,
-                      wrapper_class: "px-2 py-1 rounded bg-gray-100 text-xs font-semibold"
-                    ) %>
-              <% else %>
-                <span class="text-xs text-gray-400">不明</span>
-              <% end %>
-            </td>
-
-            <!-- Taskのステータス変更 + 編集・削除 -->
-            <td class="py-2 px-2 text-right">
-              <div class="flex items-center justify-end gap-2">
-                <!-- ステータス変更プルダウン -->
-                <%= form_with model: task,
-                              url: task_path(task),
-                              method: :patch,
-                              local: true do |f| %>
-                  <%= f.select :status,
-                               Task.statuses.keys.map { |k| [k, k] },
-                               {},
-                               class: "border border-gray-300 rounded px-2 py-1 text-xs",
-                               onchange: "this.form.submit();" %>
-                <% end %>
-
-                <!-- 編集ボタン -->
-                <%= link_to "編集",
-                            edit_task_path(task),
-                            class: "text-xs text-gray-600 underline",
-                            data: {
-                              turbo_frame: "side-panel-frame",
-                              action: "click->side-panel#open",
-                              side_panel_title_param: "タスク編集"
-                            } %>
-
-                <!-- 削除ボタン -->
-                <%= button_to "削除",
-                            task_path(task),
-                            method: :delete,
-                            form: { data: { turbo_confirm: "このタスクを削除しますか？", turbo_stream: true } },
-                            class: "text-xs text-red-600 underline" %>
-              </div>
-            </td>
-          </tr>
-        <% end %>
+        <%= render partial: "tasks/task_row", collection: @tasks, as: :task %>
       </tbody>
     </table>
   <!-- ▼ もっと見る（次のページへ） -->
   <% if @tasks.next_page.present? %>
     <div id="load-more-tasks" class="mt-2 flex justify-center">
-      <%= link_to "もっと見る",
+      <%= link_to t('common.more'),
                   tasks_path(
                     request.query_parameters.merge(
                       page:   @tasks.next_page,
@@ -2349,24 +2191,138 @@ end
 
 <% else %>
   <p class="text-sm text-gray-500">
-    まだタスクがありません。「新規タスク作成」から追加してください。
+    <%= t('tasks.index.no_tasks') %>
   </p>
 <% end %>
 </div>
+-e \n--- END OF FILE ---\n
+app/views/tasks/destroy.turbo_stream.erb
+--- START OF FILE ---
+<!-- app/views/tasks/destroy.turbo_stream.erb -->
+<%= turbo_stream.remove dom_id(@task) %>-e \n--- END OF FILE ---\n
+app/views/tasks/_task_row.html.erb
+--- START OF FILE ---
+<!-- app/views/tasks/_task_row.html.erb -->
+    <tr id="<%= dom_id(task) %>" class="border-gray-50">
+    <!-- Taskのタイトル -->
+    <td class="py-2 px-2">
+        <%= link_to task.title,
+                    task_path(task),
+                    class: "font-semibold text-gray-600 underline",
+                    data: {
+                    turbo_frame: "side-panel-frame",
+                    action: "click->side-panel#open",
+                    side_panel_title_param: t('tasks.show.title')
+                    } %>
+    </td>
 
+    <!-- Taskの期限 -->
+    <td class="py-2 px-2">
+        <%= due_badge(task) %>
+    </td>
 
---- FILE: app/views/tasks/slot_tasks.html.erb ---
+    <!-- Taskのステータス -->
+    <td class="py-2 px-2">
+        <div class="mb-1">
+        <%= status_badge(task) %>
+        </div>
+    </td>
+
+    <!-- Taskの担当者 -->
+    <td class="py-2">
+        <% if task.assignees.any? %>
+        <% task.assignees.each do |profile| %>
+            <%= profile_chip(
+                profile,
+                size: :xs,
+                wrapper_class: "px-2 py-1 mr-1 mb-1 rounded bg-gray-100 text-xs font-semibold"
+                ) %>
+        <% end %>
+        <% else %>
+        <span class="text-xs text-gray-400"><%= t('common.not_set') %></span>
+        <% end %>
+    </td>
+
+    <!-- Taskの作成者 -->
+    <td class="py-2 px-2">
+        <% if task.owner_profile %>
+        <%= profile_chip(
+                task.owner_profile,
+                size: :xs,
+                wrapper_class: "px-2 py-1 rounded bg-gray-100 text-xs font-semibold"
+            ) %>
+        <% else %>
+        <span class="text-xs text-gray-400"><%= t('common.unknown') %></span>
+        <% end %>
+    </td>
+
+    <!-- Taskのステータス変更 + 編集・削除 -->
+    <td class="py-2 px-2 text-right">
+        <div class="flex items-center justify-end gap-2">
+        <!-- ステータス変更プルダウン -->
+        <%= form_with model: task,
+                        url: task_path(task),
+                        method: :patch,
+                        local: true do |f| %>
+            <%= f.select :status,
+                        Task.statuses.keys.map { |k| [k, k] },
+                        {},
+                        class: "border border-gray-300 rounded px-2 py-1 text-xs",
+                        onchange: "this.form.submit();" %>
+        <% end %>
+
+        <!-- 編集ボタン -->
+        <%= link_to t('common.edit'),
+                    edit_task_path(task),
+                    class: "text-xs text-gray-600 underline",
+                    data: {
+                        turbo_frame: "side-panel-frame",
+                        action: "click->side-panel#open",
+                        side_panel_title_param: t('tasks.show.edit_title')
+                    } %>
+
+        <!-- 削除ボタン -->
+        <%= button_to t('common.delete'),
+                    task_path(task),
+                    method: :delete,
+                    form: { data: { turbo_confirm: t('tasks.index.confirm_delete'), turbo_stream: true } },
+                    class: "text-xs text-red-600 underline" %>
+        </div>
+    </td>
+    </tr>-e \n--- END OF FILE ---\n
+app/views/tasks/index.turbo_stream.erb
+--- START OF FILE ---
+<!-- app/views/tasks/index.turbo_stream.erb -->
+<%= turbo_stream.append "tasks-table-body" do %>
+  <%= render partial: "tasks/task_row", collection: @tasks, as: :task %>
+<% end %>
+
+<%# 「もっと見る」ボタンの制御（ここは現状のままでOKです） %>
+<% if @tasks.next_page.present? %>
+  <%= turbo_stream.replace "load-more-tasks" do %>
+    <div id="load-more-tasks" class="mt-2 flex justify-center">
+      <%= link_to "もっと見る",
+                  tasks_path(request.query_parameters.merge(page: @tasks.next_page, format: :turbo_stream)),
+                  class: "px-4 py-2 text-xs bg-gray-100 border border-gray-300 rounded hover:bg-gray-200" %>
+    </div>
+  <% end %>
+<% else %>
+  <%= turbo_stream.remove "load-more-tasks" %>
+<% end %>-e \n--- END OF FILE ---\n
+app/views/tasks/slot_tasks.html.erb
+--- START OF FILE ---
 <!-- app/views/tasks/slot_tasks.html.erb -->
 <turbo-frame id="side-panel-frame">
   <div class="space-y-3 text-sm">
     <div class="flex items-center justify-between">
       <div>
         <div class="text-xs text-gray-500">
-          <%= @slot_date.strftime("%Y/%m/%d") %>
-          <%= "%02d:00" % @slot_hour %> のタスク
+            <%= t('tasks.calendar.slot_time_header', 
+                            date: l(@slot_date, format: :short), 
+                            time: "%02d:00" % @slot_hour) %>
         </div>
         <div class="text-lg font-semibold text-gray-800">
-          この時間帯のタスク一覧
+          <%= t('tasks.calendar.slot_title_list') %>
         </div>
       </div>
     </div>
@@ -2381,11 +2337,11 @@ end
                   <%= task.title %>
                 </div>
                 <div class="text-[11px] text-gray-500 mt-0.5">
-                  期限:
+                  <%= t('tasks.show.due_date') %>:
                   <% if task.due_at %>
                     <%= task.due_at.strftime("%m/%d %H:%M") %>
                   <% else %>
-                    未設定
+                    <%= t('common.not_set') %>
                   <% end %>
                 </div>
                 <div class="text-[11px] text-gray-500 mt-0.5 flex flex-wrap gap-1">
@@ -2398,7 +2354,9 @@ end
                           ) %>
                     <% end %>
                   <% else %>
-                    <span class="text-gray-400">担当: 未設定</span>
+                    <span class="text-gray-400">
+                      <%= t('tasks.show.assignee') %>: <%= t('common.not_set') %>
+                    </span>
                   <% end %>
                 </div>
               </div>
@@ -2412,7 +2370,7 @@ end
                             data: {
                               turbo_frame: "side-panel-frame",
                               action: "click->side-panel#open",
-                              side_panel_title_param: "タスク詳細"
+                              side_panel_title_param: t('tasks.show.title')
                             } %>
               </div>
             </div>
@@ -2421,14 +2379,14 @@ end
       </ul>
     <% else %>
       <p class="text-xs text-gray-500">
-        この時間帯のタスクはありません。
+        <%= t('tasks.calendar.no_tasks_in_slot') %>
       </p>
     <% end %>
   </div>
 </turbo-frame>
-
-
---- FILE: app/views/tasks/calendar.html.erb ---
+-e \n--- END OF FILE ---\n
+app/views/tasks/calendar.html.erb
+--- START OF FILE ---
 <!-- app/views/tasks/calendar.html.erb -->
 <% content_for :sidebar do %>
   <%= render "tasks/sidebar" %>
@@ -2437,7 +2395,7 @@ end
 <div>
   <!-- 週移動ナビ -->
   <div class="flex items-center gap-2 text-xs text-gray-600 mb-3">
-    <%= link_to "＜ 前の週",
+    <%= link_to t('common.prev_week'),
                 tasks_path(view: :calendar, date: (@week_start - 7.days).to_s),
                 class: "px-2 py-1 rounded border border-gray-300 hover:bg-gray-50" %>
 
@@ -2445,11 +2403,11 @@ end
       <%= @week_start.strftime("%Y/%m/%d") %> 〜 <%= @week_end.strftime("%Y/%m/%d") %>
     </span>
 
-    <%= link_to "次の週 ＞",
+    <%= link_to t('common.next_week'),
                 tasks_path(view: :calendar, date: (@week_start + 7.days).to_s),
                 class: "px-2 py-1 rounded border border-gray-300 hover:bg-gray-50" %>
 
-    <%= link_to "今日",
+    <%= link_to t('common.today'),
                 tasks_path(view: :calendar),
                 class: "px-2 py-1 rounded border border-gray-300 hover:bg-gray-50" %>
   </div>
@@ -2472,7 +2430,7 @@ end
             <!-- 上のヘッダー（右の日付ヘッダーと高さを揃える） -->
             <div class="border-b border-gray-300 flex items-center justify-center text-[11px] text-gray-400"
                 style="height: <%= header_height %>px;">
-                時間
+                <%= t('common.time') %>
             </div>
 
             <!-- 時間軸エリア -->
@@ -2608,9 +2566,9 @@ end
         </div>
         </div>
     </div>
-</div>
-
---- FILE: app/views/tasks/_sidebar.html.erb ---
+</div>-e \n--- END OF FILE ---\n
+app/views/tasks/_sidebar.html.erb
+--- START OF FILE ---
 <!-- app/views/tasks/_sidebar.html.erb -->
 
 <h2 class="font-semibold text-lg mb-3">Task</h2>
@@ -2618,14 +2576,14 @@ end
 <!-- ▼表示切り替え（リスト/カレンダー）+新規作成ボタン -->
 <div class="mb-4 flex justify-between items-center text-sm">
   <div class="inline-flex items-center rounded-full border border-gray-300 bg-gray-50 p-0.5">
-    <%= link_to "List",
+    <%= link_to t('tasks.sidebar.view_list'),
                 tasks_path,
                 class: "px-3 py-1 text-xs rounded-full " +
                         (@view_mode == "calendar" ?
                           "text-gray-500 hover:bg-white" :
                           "bg-white shadow text-gray-900") %>
 
-    <%= link_to "Calendar",
+    <%= link_to t('tasks.sidebar.view_calendar'),
                 tasks_path(view: :calendar),
                 class: "px-3 py-1 text-xs rounded-full " +
                         (@view_mode == "calendar" ?
@@ -2635,58 +2593,58 @@ end
 </div>
 
 <div class="mb-4 flex justify-between items-center text-sm">
-  <%= link_to "新規タスク作成",
+  <%= link_to t('tasks.sidebar.new_task'),
               new_task_path,
               class: "text-xs px-3 py-2 bg-blue-600 text-white rounded hover:bg-blue-700",
               data: {
                 turbo_frame: "side-panel-frame",
                 action: "click->side-panel#open",
-                side_panel_title_param: "新規タスク"
+                side_panel_title_param: t('tasks.sidebar.new_task')
               } %>
 </div>
 
 <nav class="space-y-1">
   <!-- 全体 -->
-  <%= link_to "すべてのタスク",
+  <%= link_to t('tasks.sidebar.all_tasks'),
               tasks_path,
               class: nav_class(tasks_path) %>
 
   <!-- よくある絞り込み（あとで実装予定でもOK） -->
-  <%= link_to "今日のタスク",
+  <%= link_to t('tasks.sidebar.today_tasks'),
               tasks_path(filter: :today),
               class: nav_class(tasks_path(filter: :today)) %>
 
-  <%= link_to "今週のタスク",
+  <%= link_to t('tasks.sidebar.week_tasks'),
               tasks_path(filter: :this_week),
               class: nav_class(tasks_path(filter: :this_week)) %>
 
-  <%= link_to "未完了タスク",
+  <%= link_to t('tasks.sidebar.incomplete_tasks'),
               tasks_path(filter: :incomplete),
               class: nav_class(tasks_path(filter: :incomplete)) %>
 
-  <%= link_to "完了タスク",
+  <%= link_to t('tasks.sidebar.done_tasks'),
               tasks_path(filter: :done),
               class: nav_class(tasks_path(filter: :done)) %>
 
   <hr class="my-3">
   
-</nav>
-
---- FILE: app/views/tasks/edit.html.erb ---
+</nav>-e \n--- END OF FILE ---\n
+app/views/tasks/edit.html.erb
+--- START OF FILE ---
 <!-- app/views/tasks/edit.html.erb -->
 <turbo-frame id="side-panel-frame">
   <% unless turbo_frame_request? %>
     <% content_for :sidebar do %>
       <%= render "tasks/sidebar" %>
     <% end %>
-    <h1 class="text-xl font-bold mb-4">タスク編集</h1>
+    <h1 class="text-xl font-bold mb-4"><%= t('tasks.edit.title') %></h1>
   <% end %>
 
   <%= render "form", task: @task %>
 </turbo-frame>
-
-
---- FILE: app/views/tasks/show.html.erb ---
+-e \n--- END OF FILE ---\n
+app/views/tasks/show.html.erb
+--- START OF FILE ---
 <!-- app/views/tasks/show.html.erb -->
 
 <turbo-frame id="side-panel-frame">
@@ -2703,7 +2661,7 @@ end
   <div class="flex flex-wrap items-center text-sm text-gray-700 mb-1">
     <!-- 期限 -->
       <div class="flex items-center gap-1">
-        <span class="text-gray-500">期限</span>
+        <span class="text-gray-500"><%= t('tasks.show.due_date') %></span>
         <span>
           <%= due_badge(@task) %>
         </span>
@@ -2714,7 +2672,7 @@ end
 
     <!-- 担当者 -->
     <div class="flex items-center gap-1 flex-wrap">
-      <span class="text-gray-500">担当者</span>
+      <span class="text-gray-500"><%= t('tasks.show.assignee') %></span>
       <% if @task.assignees.any? %>
         <% @task.assignees.each do |profile| %>
           <%= profile_chip(
@@ -2724,7 +2682,7 @@ end
               ) %>
         <% end %>
       <% else %>
-        <span class="text-xs text-gray-400">未設定</span>
+        <span class="text-xs text-gray-400"><%= t('common.not_set') %></span>
       <% end %>
     </div>
 
@@ -2733,7 +2691,7 @@ end
 
     <!-- 作成者 -->
     <div class="flex items-center gap-1">
-      <span class="text-gray-500">作成者</span>
+      <span class="text-gray-500"><%= t('tasks.show.owner') %></span>
       <% if @task.owner_profile %>
         <%= profile_chip(
               @task.owner_profile,
@@ -2741,7 +2699,7 @@ end
               wrapper_class: "inline-flex items-center px-2 py-0.5 rounded bg-gray-100 text-xs"
             ) %>
       <% else %>
-        <span class="text-xs text-gray-400">不明</span>
+        <span class="text-xs text-gray-400"><%= t('common.unknown') %></span>
       <% end %>
     </div>
   </div>
@@ -2750,7 +2708,7 @@ end
   <div class="flex flex-wrap items-center gap-4 text-sm text-gray-700 mb-3">
     <!-- ステータス -->
       <div class="flex items-center gap-1">
-        <span class="text-gray-500">ステータス</span>
+        <span class="text-gray-500"><%= t('tasks.show.status') %></span>
         <span class="ml-1">
           <%= status_badge(@task) %>
         </span>
@@ -2800,25 +2758,25 @@ end
 
   <!-- 操作ボタン -->
   <div class="mt-2 flex flex-wrap items-center gap-2 text-xs">
-    <%= link_to "編集",
+    <%= link_to t('common.edit'),
                 edit_task_path(@task),
                 class: "px-2 py-1 bg-gray-50 border border-gray-300 rounded hover:bg-gray-100",
                 data: {
                   turbo_frame: "side-panel-frame",
                   action: "click->side-panel#open",
-                  side_panel_title_param: "タスク編集"
+                  side_panel_title_param: t('tasks.show.edit_title')
                 } %>
 
     <%= button_to "削除",
                 task_path(@task),
                 method: :delete,
-                form: {data: { turbo_confirm: "このタスクを削除しますか？" }},
+                form: {data: { turbo_confirm: t('tasks.index.confirm_delete') }},
                 class: "ml-auto px-2 py-1 bg-red-50 text-red-700 border border-red-200 rounded hover:bg-red-100" %>
   </div>
 
   <!-- コメント一覧 -->
   <div class="mt-4 pt-3 border-t border-gray-300">
-    <h2 class="text-sm font-semibold mb-2">コメント</h2>
+    <h2 class="text-sm font-semibold mb-2"><%= t('tasks.show.comment_title') %></h2>
 
     <div class="space-y-3 mb-3">
       <%= render partial: "comments/comment",
@@ -2826,27 +2784,40 @@ end
                   as: :comment %>
 
       <% if @task.comments.empty? %>
-        <p class="text-xs text-gray-400">まだコメントはありません。</p>
+        <p class="text-xs text-gray-400"><%= t('tasks.show.no_comments') %></p>
       <% end %>
     </div>
 
     <!-- 新規コメントフォーム -->
     <div class="mt-3">
-      <h3 class="text-xs text-gray-500 mb-1">新規コメント</h3>
+      <h3 class="text-xs text-gray-500 mb-1"><%= t('tasks.show.new_comment') %></h3>
       <%= render "comments/form", task: @task, comment: @task.comments.build %>
     </div>
   </div>
 </turbo-frame>
+-e \n--- END OF FILE ---\n
+app/views/tasks/update.turbo_stream.erb
+--- START OF FILE ---
+<!-- app/views/tasks/update.turbo_stream.erb -->
+<%# 一覧画面の該当行だけを最新のパーシャルで差し替える %>
+<%= turbo_stream.replace dom_id(@task), partial: "tasks/task_row", locals: { task: @task } %>
 
+<%# サイドパネルが開いている場合、その中身も最新にする %>
+<%= turbo_stream.replace "side-panel-frame", template: "tasks/show" %>
 
---- FILE: app/views/tasks/_form.html.erb ---
+<%# 通知（フラッシュメッセージ）を更新する %>
+<%= turbo_stream.prepend "flash", partial: "shared/flash" %>-e \n--- END OF FILE ---\n
+app/views/tasks/_form.html.erb
+--- START OF FILE ---
 <!-- app/views/tasks/_form.html.erb -->
 <%= form_with model: @task,
               local: true,
               data: (@task.new_record? ? { turbo_frame: "_top" } : {}) do |f| %>
   <% if @task.errors.any? %>
     <div class="mb-4 p-3 bg-red-50 text-red-700 rounded text-sm">
-      <p class="font-semibold"><%= @task.errors.count %>件のエラーがあります。</p>
+      <p class="font-semibold">
+        <%= t('errors.template.header', count: @task.errors.count, model: Task.model_name.human) %>
+      </p>
       <ul class="list-disc list-inside">
         <% @task.errors.full_messages.each do |msg| %>
           <li><%= msg %></li>
@@ -2857,15 +2828,15 @@ end
 
   <!-- タイトル -->
   <div class="mb-4">
-    <%= f.label :title, "タイトル", class: "block text-sm mb-1" %>
+    <%= f.label :title, t('tasks.form.title'), class: "block text-sm mb-1" %>
     <%= f.text_field :title,
                      class: "border border-gray-300 rounded px-2 py-1 w-full text-sm",
-                     placeholder: "タイトル" %>
+                     placeholder: t('tasks.form.title') %>
   </div>
 
   <!-- 期限 -->
   <div class="mb-4">
-    <%= f.label :due_date, "期限", class: "block text-sm mb-1" %>
+    <%= f.label :due_date, t('tasks.form.due_date'), class: "block text-sm mb-1" %>
 
     <div class="flex items-center gap-2">
       <!-- 日付：カレンダーで選ぶ -->
@@ -2873,7 +2844,7 @@ end
                        value: (@task.due_date || @task.due_at&.to_date),
                        class: "border border-gray-300 rounded px-2 py-1 text-sm" %>
 
-      <span class="text-sm text-gray-500">時間</span>
+      <span class="text-sm text-gray-500"><%= t('tasks.form.due_time') %></span>
 
       <!-- 時刻：テキスト入力のみ（30分単位を想定） -->
       <%= f.text_field :due_time,
@@ -2885,13 +2856,13 @@ end
     </div>
 
     <p class="text-[11px] text-gray-500 mt-1">
-      例）09:00, 13:30 のように 30分単位で入力してください。空の場合は期限なしになります。
+      <%= t('tasks.form.due_hint') %>
     </p>
   </div>
 
   <!-- 担当者 -->
     <div class="mb-4">
-      <%= f.label :assignee_ids, "担当者", class: "block text-sm mb-1" %>
+      <%= f.label :assignee_ids, t('tasks.form.assignees'), class: "block text-sm mb-1" %>
 
       <div class="flex flex-wrap gap-2">
         <%= f.collection_check_boxes :assignee_ids,
@@ -2910,13 +2881,13 @@ end
       </div>
 
       <p class="text-[11px] text-gray-500 mt-1">
-        担当者をクリックすると選択／解除できます（複数選択可）。
+        <%= t('tasks.form.assignee_hint') %>
       </p>
     </div>
 
   <!-- 詳細 -->
   <div class="mb-4">
-    <%= f.label :description, "詳細", class: "block text-sm mb-1" %>
+    <%= f.label :description, t('tasks.form.description'), class: "block text-sm mb-1" %>
     <%= f.text_area :description,
                     rows: 4,
                     class: "border border-gray-300 rounded px-2 py-1 w-full text-sm" %>
@@ -2924,255 +2895,51 @@ end
 
   <!-- タグ -->
   <div class="mb-4">
-    <%= f.label :tag_list, "タグ", class: "block text-sm mb-1" %>
+    <%= f.label :tag_list, t('tasks.form.tags'), class: "block text-sm mb-1" %>
     <%= f.text_field :tag_list,
                      value: @task.tag_list,
                      class: "border border-gray-300 rounded px-2 py-1 w-full text-sm",
-                     placeholder: "例）RUNTEQ, Rails, バグ修正" %>
+                     placeholder: t('tasks.form.tag_placeholder') %>
     <p class="text-[11px] text-gray-500 mt-1">
-      カンマ（,）区切りで複数タグを入力できます。
+      <%= t('tasks.form.tag_hint') %>
     </p>
   </div>
 
   <!-- ステータス -->
   <div class="mb-4">
-    <%= f.label :status, "ステータス", class: "block text-sm mb-1" %>
+    <%= f.label :status, t('tasks.form.status'), class: "block text-sm mb-1" %>
     <%= f.select :status,
                  Task.statuses.keys.map { |k| [k, k] },
                  {},
                  class: "border border-gray-300 rounded px-2 py-1 w-full text-sm" %>
   </div>
 
-  <%= f.submit (@task.new_record? ? "タスクを作成" : "タスクを更新"),
+  <%= f.submit (@task.new_record? ? t('tasks.form.submit_create') : t('tasks.form.submit_update')),
              class: "px-4 py-2 bg-blue-600 text-white text-sm rounded hover:bg-blue-700" %>
-<% end %>
-
---- FILE: app/views/tasks/new.html.erb ---
+<% end %>-e \n--- END OF FILE ---\n
+app/views/tasks/new.html.erb
+--- START OF FILE ---
 <!-- app/views/tasks/new.html.erb -->
 <turbo-frame id="side-panel-frame">
   <% unless turbo_frame_request? %>
     <!-- 直接 /tasks/new にアクセスしたときだけページタイトルを出す -->
-    <h1 class="text-xl font-bold mb-4">タスク新規作成</h1>
+    <h1 class="text-xl font-bold mb-4"><%= t('tasks.new.title') %></h1>
   <% end %>
 
   <%= render "form", task: @task %>
 </turbo-frame>
-
-
---- FILE: app/views/profile_settings/theme.html.erb ---
-<!-- app/views/profile_settings/theme.html.erb -->
-<div>
-  <h1 class="font-bold text-4xl">ProfileSettings#theme</h1>
-  <p>Find me in app/views/profile_settings/theme.html.erb</p>
-</div>
-
-
---- FILE: app/views/profile_settings/_sidebar.html.erb ---
-<!-- app/views/profile_settings/_sidebar.html.erb -->
-<h2 class="font-semibold text-sm mb-3">プロフィール設定</h2>
-<nav class="space-y-1">
-
-<!-- ホームをコメントアウト -->
-<%#= link_to "ホーム",
-            edit_profile_path(current_profile),
-            class: nav_class(edit_profile_path(current_profile)) %>
-
-<%= link_to "プロフィール編集",
-            edit_profile_path(current_profile),
-            class: nav_class(edit_profile_path(current_profile)) %>
-
-<%= link_to "新規プロフィール作成",
-            new_profile_path,
-            class: nav_class(new_profile_path) %>
-
-<%= link_to "メール・パスワード変更",
-            edit_user_registration_path,
-            class: nav_class(edit_user_registration_path) %>
-</nav>
-
---- FILE: app/views/profile_settings/edit.html.erb ---
-<!-- app/views/profile_settings/edit.html.erb -->
-<% content_for :sidebar do %>
-  <%= render "profiles/sidebar" %>
-<% end %>
-
-<h1 class="text-xl font-bold mb-4">プロフィール編集</h1>
-
-<% if @profile %>
-  <%= render "profiles/form", profile: @profile %>
-
-  <!-- ▼ 参加IDでチームに参加申請する ▼ -->
-  <div class="mt-6 border-t pt-4">
-    <h3 class="text-sm font-semibold mb-2">プロフィール参加IDでチームに参加申請</h3>
-
-    <!-- 1) 参加IDでチーム検索（GET） -->
-    <%= form_with url: edit_profile_path(current_profile), method: :get, local: true,
-                  class: "flex flex-wrap items-end gap-2 mb-3" do %>
-      <div>
-        <label class="block text-xs mb-1">参加ID</label>
-        <%= text_field_tag :team_invite_token,
-                           @team_invite_token,
-                           class: "border rounded px-2 py-1 text-sm",
-                           placeholder: "例）AB12CD34" %>
-      </div>
-
-      <div class="mb-1">
-        <%= submit_tag "チームを検索",
-                       class: "px-3 py-2 text-xs bg-gray-100 rounded border hover:bg-gray-200" %>
-      </div>
-    <% end %>
-
-    <% if @team_invite_token.present? %>
-      <% if @invite_teams.any? %>
-        <!-- 2) 検索結果から参加申請（POST） -->
-        <%= form_with url: membership_requests_path, method: :post, local: true,
-                      class: "flex flex-wrap items-end gap-2" do %>
-          <%= hidden_field_tag :direction, "profile_to_team" %>
-
-          <div>
-            <label class="block text-xs mb-1">参加申請するチーム</label>
-            <%= select_tag :team_id,
-                           options_from_collection_for_select(@invite_teams, :id, :name),
-                           class: "border rounded px-2 py-1 text-sm" %>
-          </div>
-
-          <div class="mb-1">
-            <%= submit_tag "参加申請を送る",
-                           class: "px-4 py-2 text-xs bg-blue-100 text-blue-700 rounded border border-blue-300 hover:bg-blue-200" %>
-          </div>
-        <% end %>
-      <% else %>
-        <p class="text-xs text-red-500 mt-2">入力された参加IDに該当するチームが見つかりませんでした。</p>
-      <% end %>
-    <% end %>
+-e \n--- END OF FILE ---\n
+app/views/shared/_flash.html.erb
+--- START OF FILE ---
+<!-- app/views/shared/_flash.html.erb -->
+<% flash.each do |flash_type, message| %>
+  <div class="flash-message p-4 mb-4 text-sm rounded-lg <%= flash_type == 'notice' ? 'bg-blue-50 text-blue-700' : 'bg-red-50 text-red-700' %>" 
+       data-controller="removable">
+    <%= message %>
   </div>
- 
-
-  <%# ---- 招待一覧 ---- %>
-  <% if @incoming_team_invites.present? && @incoming_team_invites.any? %>
-    <div class="mt-6 border-t pt-4">
-      <h2 class="text-sm font-semibold mb-2">このプロフィール宛のチーム招待</h2>
-
-      <table class="w-full text-xs">
-        <thead>
-          <tr class="border-b">
-            <th class="text-left py-1">チーム名</th>
-            <th class="text-left py-1">招待元プロフィール</th>
-            <th class="text-left py-1"></th>
-          </tr>
-        </thead>
-        <tbody>
-          <% @incoming_team_invites.each do |req| %>
-            <tr class="border-b">
-              <td class="py-1">
-                <%= team_chip(
-                      req.team,
-                      size: :xs,
-                      wrapper_class: "px-2 py-1 rounded bg-gray-100 text-xs font-semibold"
-                      ) %>
-              </td>
-              <td class="py-1">
-                <% if req.requester_profile.present? %>
-                  <%= profile_chip(
-                    req.requester_profile,
-                    size: :xs,
-                    wrapper_class: "px-2 py-1 rounded bg-gray-100 text-xs font-semibold"
-                    ) %>
-                <% else %>
-                  <span class="text-s text-gray-400">不明</span>
-                <% end %>
-              </td>
-              <td class="py-1 text-right">
-                <%= button_to "承認",
-                              approve_membership_request_path(req),
-                              method: :patch,
-                              class: "px-3 py-1 text-[11px] bg-blue-100 text-blue-700 rounded border border-blue-300 hover:bg-blue-200" %>
-              </td>
-            </tr>
-          <% end %>
-        </tbody>
-      </table>
-    </div>
-  <% else %>
-    <p class="text-xs text-gray-500 mt-4">このプロフィール宛のチーム招待はありません。</p>
-  <% end %>
-
-<% else %>
-  <p class="text-sm text-red-600">
-    編集対象のプロフィールが見つかりませんでした。
-  </p>
-<% end %>
-
-
-
---- FILE: app/views/profile_settings/home.html.erb ---
-<!-- app/views/profile_settings/home.html.erb -->
-
-<% content_for :sidebar do %>
-  <%= render "profiles/sidebar" %>
-<% end %>
-
-<h1 class="text-xl font-bold mb-4">プロフィール設定ホーム</h1>
-
-<% if @profile %>
-  <p class="text-sm text-gray-600 mb-4">
-    現在のプロフィールの概要です。
-  </p>
-
-  <dl class="text-sm space-y-3">
-    <div>
-      <dt class="text-gray-500">プロフィール名</dt>
-      <dd class="font-semibold"><%= @profile.label %></dd>
-    </div>
-
-    <div>
-      <dt class="text-gray-500">テーマカラー</dt>
-      <dd><%= @profile.theme.presence || "未設定" %></dd>
-    </div>
-  </dl>
-
-  <% if @incoming_team_invites.any? %>
-    <div class="mt-6 border-t pt-4">
-      <h2 class="text-sm font-semibold mb-2">このプロフィール宛のチーム招待</h2>
-
-      <table class="w-full text-xs">
-        <thead>
-          <tr class="border-b">
-            <th class="text-left py-1">チーム名</th>
-            <th class="text-left py-1">招待元プロフィール</th>
-            <th class="text-left py-1"></th>
-          </tr>
-        </thead>
-        <tbody>
-          <% @incoming_team_invites.each do |req| %>
-            <tr class="border-b">
-              <td class="py-1"><%= req.team.name %></td>
-              <td class="py-1"><%= req.requester_profile&.display_name || "不明" %></td>
-              <td class="py-1 text-right">
-                <%= button_to "承認",
-                              approve_membership_request_path(req),
-                              method: :patch,
-                              class: "px-3 py-1 text-[11px] bg-blue-100 text-blue-700 rounded border border-blue-300 hover:bg-blue-200" %>
-              </td>
-            </tr>
-          <% end %>
-        </tbody>
-      </table>
-    </div>
-  <% else %>
-    <p class="text-xs text-gray-500 mt-4">
-      このプロフィール宛のチーム招待はありません。
-    </p>
-  <% end %>
-
-<% else %>
-  <p class="text-sm text-red-600">
-    現在のプロフィールが選択されていません。
-  </p>
-<% end %>
-
-
---- FILE: app/views/shared/_side_panel.html.erb ---
+<% end %>-e \n--- END OF FILE ---\n
+app/views/shared/_side_panel.html.erb
+--- START OF FILE ---
 <!-- app/views/shared/_side_panel.html.erb -->
 
 <div
@@ -3211,9 +2978,9 @@ end
       </p>
     </turbo-frame>
   </div>
-</div>
-
---- FILE: app/views/layouts/application.html.erb ---
+</div>-e \n--- END OF FILE ---\n
+app/views/layouts/application.html.erb
+--- START OF FILE ---
 <!-- app/views/layouts/application.html.erb -->
 <!DOCTYPE html>
 <html>
@@ -3238,7 +3005,7 @@ end
   <body class="bg-white">
     <% if submit_mode? %>
       <div class="fixed top-0 inset-x-0 z-20 text-xs px-3 py-2 bg-amber-50 text-amber-800 border-b border-amber-200">
-        【提出モード】メール送信は無効です（ログインはデモアカウントをご利用ください）
+        <%= t('layouts.application.submit_mode') %>
       </div>
     <% end %>
     <!-- ヘッダー -->
@@ -3263,10 +3030,10 @@ end
 
                     <!-- ドロップダウンメニュー -->
                     <div class="absolute mt-2 left-0 w-40 bg-white border border-gray-300 rounded shadow text-sm z-50">
-                      <%= button_to "ログアウト",
+                      <%= button_to t('layouts.application.menu.logout'),
                         destroy_user_session_path,
                         method: :delete,
-                        form: { data: { turbo_confirm: "ログアウトしますか？" } }, 
+                        form: { data: { turbo_confirm: t('layouts.application.menu.confirm_logout') } }, 
                         class: "block w-full text-left px-3 py-2 text-gray-700 hover:bg-gray-100 bg-transparent border-0" %>
                     </div>
                   </details>
@@ -3295,61 +3062,66 @@ end
                   <!-- タスク -->
                   <%= link_to root_path,
                               class: "text-lg font-semibold px-3 py-1 rounded hover:bg-white/10 flex items-center gap-1" do %>
-                    <%#= image_tag "beaver_icon.png",
-                                  alt: "タスク",
+                    <%= image_tag "beaver_icon.png",
+                                  alt: "Task",
                                   class: "block",
                                   style: "height: 25px; width: auto;" %>
-                    <span>Task</span>
+                    <span><%= t('layouts.application.nav.task') %></span>
                   <% end %>
 
                   <!-- ワークス -->
-                  <%#= link_to root_path,
+                  <%= link_to root_path,
                               class: "text-lg font-semibold px-3 py-1 rounded hover:bg-white/10 flex items-center gap-1" do %>
-                    <%#= image_tag "owl_icon.png",
-                                  alt: "タスク",
+                    <%= image_tag "owl_icon.png",
+                                  alt: "Works",
                                   class: "block",
                                   style: "height: 25px; width: auto;" %>
-                    <%# <span>-Works</span> %>
-                  <%# end %>
+                    <span><%= t('layouts.application.nav.works') %></span>
+                  <% end %>
 
                   <!-- チャット -->
-                  <%#= link_to root_path,
+                  <%= link_to root_path,
                               class: "text-lg font-semibold px-3 py-1 rounded hover:bg-white/10 flex items-center gap-1" do %>
-                    <%#= image_tag "wolf_icon.png",
-                                  alt: "タスク",
+                    <%= image_tag "wolf_icon.png",
+                                  alt: "Chat",
                                   class: "block",
                                   style: "height: 27px; width: auto;" %>
-                    <%# <span>-Chat</span> %>
-                  <%# end %>
+                    <span><%= t('layouts.application.nav.chat') %></span>
+                  <% end %>
 
                   <!-- ソーシャル -->
-                  <%#= link_to root_path,
+                  <%= link_to root_path,
                               class: "text-lg font-semibold px-3 py-1 rounded hover:bg-white/10 flex items-center gap-1" do %>
-                    <%#= image_tag "rabbit_icon.png",
-                                  alt: "タスク",
+                    <%= image_tag "rabbit_icon.png",
+                                  alt: "Social",
                                   class: "block",
                                   style: "height: 25px; width: auto;" %>
-                    <%# <span>-Social</span> %>
-                  <%# end %>                  
+                    <span><%= t('layouts.application.nav.social') %></span>
+                  <% end %>                  
                   
                   <!-- プロフィール -->
                   <%= link_to edit_profile_path(current_profile),
                               class: "text-lg font-semibold px-3 py-1 rounded hover:bg-white/10 flex items-center gap-1" do %>
-                    <%#= image_tag "butterfly_icon.png",
-                                  alt: "プロフィール",
+                    <%= image_tag "butterfly_icon.png",
+                                  alt: "Profile",
                                   class: "block",
                                   style: "height: 25px; width: auto;" %>
-                    <span>Profile</span>
+                    <span><%= t('layouts.application.nav.profile') %></span>
                   <% end %>
 
                   <!-- チーム -->
-                  <%= link_to edit_team_path(@team),
-                              class: "text-lg font-semibold px-3 py-1 rounded hover:bg-white/10 flex items-center gap-1" do %>
-                    <%#= image_tag "elephant_icon.png",
-                                  alt: "チーム",
-                                  class: "block",
-                                  style: "height: 33px; width: auto;" %>
-                    <span>Team</span>
+                  <% if @team.present? && @team.persisted? %>
+                    <%= link_to edit_team_path(@team),
+                                class: "text-lg font-semibold px-3 py-1 rounded hover:bg-white/10 flex items-center gap-1" do %>
+                      <%= image_tag "elephant_icon.png", alt: "Team", class: "w-5 h-5" %>
+                      <span class="truncate max-w-[150px]"><%= @team.name %></span>
+                    <% end %>
+                  <% else %>
+                    <%# チームが未選択、または新規作成画面などの場合の表示 %>
+                    <div class="text-lg font-semibold px-3 py-1 flex items-center gap-1 opacity-50">
+                      <%= image_tag "elephant_icon.png", alt: "Team", class: "w-5 h-5" %>
+                      <span>Team</span>
+                    </div>
                   <% end %>
               
 
@@ -3370,7 +3142,7 @@ end
                                             "1",
                                             params[:all_profiles] == "1",
                                             onchange: "this.form.submit();" %>
-                          <span>全てのプロフィールのタスクを表示</span>
+                          <span><%= t('layouts.application.nav.all_profiles_tasks') %></span>
                         </label>
                       <% end %>
                     </div>
@@ -3443,9 +3215,9 @@ end
   </body>
 </html>
 
-
-
---- FILE: app/views/layouts/mailer.html.erb ---
+-e \n--- END OF FILE ---\n
+app/views/layouts/mailer.html.erb
+--- START OF FILE ---
 <!-- app/views/layouts/miler.html.erb -->
 <!DOCTYPE html>
 <html>
@@ -3460,34 +3232,65 @@ end
     <%= yield %>
   </body>
 </html>
-
-
---- FILE: app/views/users/confirmations/confirm_change_email.html.erb ---
+-e \n--- END OF FILE ---\n
+app/views/layouts/mailer.text.erb
+--- START OF FILE ---
+<%= yield %>
+-e \n--- END OF FILE ---\n
+app/views/users/confirmations/confirm_change_email.html.erb
+--- START OF FILE ---
 <!-- app/views/users/confirmations/confirm_change_email.html.erb -->
-<h1 class="text-xl font-bold mb-4">メールアドレスの変更</h1>
+<h1 class="text-xl font-bold mb-4">
+  <%= t('users.confirmations.edit_email_title') %>
+</h1>
 
 <p class="mb-4">
-  新しいメールアドレス（確認用）：
+  <%= t('users.confirmations.new_email_label') %>：
   <span class="font-semibold"><%= resource.unconfirmed_email %></span>
 </p>
 
 <%= form_with url: user_confirmation_path, method: :post, local: true do %>
   <%= hidden_field_tag :confirmation_token, @confirmation_token %>
-  <%= submit_tag "上記のメールアドレスで確定する",
+  <%= submit_tag t('users.confirmations.submit_confirm'),
                  class: "px-4 py-2 rounded bg-blue-600 text-white" %>
 <% end %>
-
-
---- FILE: app/views/teams/index.html.erb ---
+-e \n--- END OF FILE ---\n
+app/views/pwa/manifest.json.erb
+--- START OF FILE ---
+{
+  "name": "TodoBeaver",
+  "icons": [
+    {
+      "src": "/icon.png",
+      "type": "image/png",
+      "sizes": "512x512"
+    },
+    {
+      "src": "/icon.png",
+      "type": "image/png",
+      "sizes": "512x512",
+      "purpose": "maskable"
+    }
+  ],
+  "start_url": "/",
+  "display": "standalone",
+  "scope": "/",
+  "description": "TodoBeaver.",
+  "theme_color": "red",
+  "background_color": "red"
+}
+-e \n--- END OF FILE ---\n
+app/views/teams/index.html.erb
+--- START OF FILE ---
 <!-- app/views/teams/index.html.erb -->
 <% content_for :sidebar do %>
   <%= render "teams/sidebar" %>
 <% end %>
 
-<h1 class="text-xl font-bold mb-4">チーム一覧</h1>
+<h1 class="text-xl font-bold mb-4"><%= t('teams.index.title') %></h1>
 
 <div class="mb-4">
-  <%= link_to "新規チーム作成",
+  <%= link_to t('teams.index.new_team'),
               new_team_path,
               class: "text-sm px-3 py-2 bg-blue-600 text-white rounded hover:bg-blue-700" %>
 </div>
@@ -3495,8 +3298,8 @@ end
 <table class="w-full text-sm">
   <thead>
     <tr class="border-b">
-      <th class="text-left py-2">チーム名</th>
-      <th class="text-left py-2">作成日</th>
+      <th class="text-left py-2"><%= t('activerecord.attributes.team.name') %></th>
+      <th class="text-left py-2"><%= t('common.created_at') %></th>
       <th class="text-left py-2"></th>
     </tr>
   </thead>
@@ -3512,344 +3315,215 @@ end
                 ) %>
           <% end %>
         </td>
-        <td class="py-2"><%= l(team.created_at.to_date) %></td>
+        <td class="py-2"><%= t(team.created_at.to_date) %></td>
         <td class="py-2">
-          <%= link_to "編集", edit_team_path(team), class: "text-xs text-gray-600 underline mr-2" %>
-        <%= button_to "削除",
+          <%= link_to t('common.edit'), edit_team_path(team), class: "text-xs text-gray-600 underline mr-2" %>
+        <%= button_to t('common.delete'),
           team_path(team),
           method: :delete,
-          form: { data: { turbo_confirm: "本当に削除しますか？" } },
+          form: { data: { turbo_confirm: t('common.confirm_delete') } },
           class: "text-xs text-red-600 underline bg-transparent border-0 p-0 inline" %>
         </td>
       </tr>
     <% end %>
   </tbody>
 </table>
-
-
---- FILE: app/views/teams/edit.html.erb ---
-<!-- app/views/teams/edit.html.erb -->
+-e \n--- END OF FILE ---\n
+app/views/teams/manage.html.erb
+--- START OF FILE ---
+<!-- app/views/teams/manage.html.erb -->
 <% content_for :sidebar do %>
   <%= render "teams/sidebar" %>
 <% end %>
 
-<h1 class="text-xl font-bold mb-4">チーム編集</h1>
-<%= render "form", team: @team %>
+<h1 class="text-xl font-bold mb-4"><%= t('teams.members.title') %></h1>
 
---- FILE: app/views/teams/show.html.erb ---
-<!-- app/views/teams/show.html.erb -->
-<% content_for :sidebar do %>
-  <%= render "teams/sidebar" %>
-<% end %>
-
-<h1 class="text-xl font-bold mb-4"><%= @team.name %></h1>
-
-<p class="text-sm text-gray-600 mb-4">
-  作成日：<%= l(@team.created_at.to_date) %>
-</p>
-
-<div class="flex gap-3 text-sm">
-  <%= link_to "編集", edit_team_path(@team), class: "px-3 py-1 bg-gray-100 rounded hover:bg-gray-200" %>
-  <%= link_to "一覧に戻る", teams_path, class: "px-3 py-1 bg-gray-100 rounded hover:bg-gray-200" %>
+<div class="flex items-center mb-6">
+  <%= team_chip(
+        @team,
+        size: :sm,
+        wrapper_class: "px-2 py-1 rounded bg-gray-100 text-sm"
+      ) %>
+  <span class="ml-2 text-sm text-gray-500"><%= t('teams.members.suffix_of_team') %></span>
 </div>
 
---- FILE: app/views/teams/_form.html.erb ---
-<!-- app/views/teams/_form.html.erb -->
-<%= form_with model: @team, local: true do |f| %>
-  <% if @team.errors.any? %>
-    <div class="mb-4 text-sm text-red-700 bg-red-50 px-3 py-2 rounded">
-      <p class="font-semibold"><%= @team.errors.count %>件のエラーがあります。</p>
-      <ul class="list-disc list-inside">
-        <% @team.errors.full_messages.each do |msg| %>
-          <li><%= msg %></li>
-        <% end %>
-      </ul>
-    </div>
-  <% end %>
-
-  <div class="mb-4 max-w-md">
-    <%= f.label :name, "チーム名", class: "block text-sm mb-1" %>
-    <%= f.text_field :name,
-                     class: "w-full border border-gray-300 rounded px-3 py-2 text-sm",
-                     placeholder: "チーム名を入力してください" %>
-  </div>
-
-  <div class="mb-4">
-    <%= f.label :avatar, "チームアイコン", class: "block text-sm mb-1" %>
-
-    <% if @team.avatar.attached? %>
-      <div class="mb-2">
-        <%= team_avatar(@team, size: :md) %>
-      </div>
-    <% end %>
-
-    <%= f.file_field :avatar,
-                     accept: "image/*",
-                     class: "block w-full text-sm" %>
-
-    <% if @team.avatar.attached? %>
-      <label class="mt-2 inline-flex items-center text-xs text-red-600">
-        <%= f.check_box :remove_avatar, class: "mr-1" %>
-        画像を削除する
-      </label>
-    <% end %>
-
-    <p class="text-[11px] text-gray-500 mt-1">
-      正方形の画像がおすすめです（例: 400×400）。
-    </p>
-  </div>
-  
-  <%= f.submit "チームを作成する",
-               class: "px-4 py-2 bg-blue-600 text-white text-sm rounded hover:bg-blue-700" %>
-<% end %>
-
-
---- FILE: app/views/teams/new.html.erb ---
-<!-- app/views/teams/new.html.erb -->
-<% content_for :sidebar do %>
-  <%= render "teams/sidebar" %>
-<% end %>
-
-<h1 class="text-xl font-bold mb-4">新規チーム作成</h1>
-<%= render "form", team: @team %>
-
-
---- FILE: app/views/team_settings/_sidebar.html.erb ---
-<!-- app/views/team_settings/_sidebar.html.erb -->
-<h2 class="font-semibold text-sm mb-3">チーム設定</h2>
-<nav class="space-y-1">
-<%#= link_to "ホーム",
-            team_path(@team),
-            class: nav_class(team_path(@team)) %>
-
-<%= link_to "チーム編集",
-            edit_team_path(@team),
-            class: nav_class(edit_team_path(@team)) %>
-
-<%= link_to "メンバー管理",
-            manage_team_path(@team),
-            class: nav_class(manage_team_path(@team)) %>
-
-<%= link_to "新規チーム作成",
-            new_team_path,
-            class: nav_class(new_team_path) %>
-</nav>
-
---- FILE: app/views/team_settings/members.html.erb ---
-<!-- app/views/team_settings/members.html.erb -->
-<% content_for :sidebar do %>
-  <%= render "teams/sidebar" %>
-<% end %>
-
-<h1 class="text-xl font-bold mb-4">メンバー管理</h1>
-
-<% if @teams.any? %>
-  <!-- チーム選択 -->
-  <div class="mb-4">
-    <%= form_with url: manage_team_path(@team), method: :get, local: true, class: "inline-block" do |f| %>
-      <label class="text-sm mr-2">チームを選択：</label>
-      <%= f.select :team_id,
-                   options_from_collection_for_select(@teams, :id, :name, @selected_team&.id),
-                   {},
-                   class: "border border-gray-300 rounded px-2 py-1 text-sm",
-                   onchange: "this.form.submit();" %>
-    <% end %>
-  </div>
-
-  <% if @selected_team %>
-    <div class="flex items-center mb-2">
-      <%= team_chip(
-            @selected_team,
-            size: :sm,
-            wrapper_class: "px-2 py-1 rounded bg-gray-100 text-sm"
-          ) %>
-      <span class="ml-2 text-sm text-gray-500">のメンバー</span>
-    </div>
-
-    <!-- メンバー一覧 -->
-    <% if @memberships.any? %>
-      <table class="w-full text-sm mb-4">
-        <thead>
-          <tr class="border-b">
-            <th class="text-left py-2">プロフィール名</th>
-            <th class="text-left py-2">役割</th>
-            <th class="text-left py-2"></th>
-          </tr>
-        </thead>
-        <tbody>
-          <% @memberships.each do |membership| %>
-            <tr>
-              <td class="py-1">
-                <%= profile_chip(
-                  membership.profile,
-                  size: :xs,
-                  wrapper_class: "px-2 py-1 rounded bg-gray-100 text-xs"
-                ) %>
-              </td>
-
-              <td class="py-2">
-                <% if @can_manage_members %>
-                  <!-- ✅ 管理者の場合だけ、プルダウンで変更できる -->
-                  <%= form_with model: membership,
-                                url: team_membership_path(membership),
-                                method: :patch,
-                                local: true,
-                                class: "inline-block" do |f| %>
-                    <%= f.select :role,
-                                options_for_select(
-                                  [
-                                    ["管理者", TeamMembership::ADMIN_ROLE],
-                                    ["メンバー", ""]
-                                  ],
-                                  membership.admin? ? TeamMembership::ADMIN_ROLE : ""
-                                ),
-                                {},
-                                class: "border border-gray-300 rounded px-2 py-1 text-xs",
-                                onchange: "this.form.submit();" %>
-                  <% end %>
-                <% else %>
-                  <!-- ✅ メンバーは「表示だけ」 -->
-                  <% if membership.admin? %>
-                    管理者
-                  <% else %>
-                    メンバー
-                  <% end %>
-                <% end %>
-              </td>
-
-              <td class="py-2 text-right">
-                <% if @can_manage_members %>
-                  <%= button_to "削除",
-                                team_membership_path(membership),
-                                method: :delete,
-                                form: { data: { turbo_confirm: "このメンバーを削除しますか？" }},
-                                class: "text-xs px-3 py-1 bg-red-50 text-red-700 rounded border border-red-200 hover:bg-red-100" %>
-                <% end %>
-              </td>
-            </tr>
-          <% end %>
-        </tbody>
-      </table>
-      
-    <% else %>
-      <p class="text-sm text-gray-500 mb-4">
-        まだこのチームにはメンバーがいません。
-      </p>
-    <% end %>
-
-    <!-- ▼ 申請IDでプロフィールを招待するセクション ▼ -->
-      <div class="mt-6 border-t pt-4">
-        <h3 class="text-sm font-semibold mb-2">参加申請一覧</h3>
-
-        <% if @incoming_join_requests.any? %>
-          <table class="w-full text-xs">
-            <thead>
-              <tr class="border-b">
-                <th class="text-left py-1">申請プロフィール</th>
-                <th class="text-left py-1"></th>
-              </tr>
-            </thead>
-            <tbody>
-              <% @incoming_join_requests.each do |req| %>
-                <tr class="border-b">
-                  <td class="py-1">
-                    <% if req.requester_profile %>
-                      <%= profile_chip(
-                            req.requester_profile,
-                            size: :xs,
-                            wrapper_class: "px-2 py-1 rounded bg-gray-100 text-xs"
-                          ) %>
-                    <% else %>
-                      <span class="text-xs text-gray-400">不明</span>
-                    <% end %>
-                  </td>
-                  <td class="py-1 text-right">
-                    <%= button_to "承認",
-                                  approve_membership_request_path(req),
-                                  method: :patch,
-                                  class: "px-3 py-1 text-[11px] bg-blue-100 text-blue-700 rounded border border-blue-300 hover:bg-blue-200" %>
-                  </td>
-                </tr>
-              <% end %>
-            </tbody>
-          </table>
-        <% else %>
-          <p class="text-xs text-gray-500 mt-2">参加申請はありません。</p>
-        <% end %>
-      </div>
-
-
-  <% end %>
-<% else %>
-  <p class="text-sm text-gray-500">
-    まだチームがありません。「チームを作成する」から追加してください。
-  </p>
-<% end %>
-
-
---- FILE: app/views/team_settings/edit.html.erb ---
-<!-- app/views/team_settings/edit.html.erb -->
-<% content_for :sidebar do %>
-  <%= render "teams/sidebar" %>
-<% end %>
-
-<h1 class="text-xl font-bold mb-4">チーム編集</h1>
-
-<div class="mb-4">
-  <%= link_to "チームを作成する",
-              new_team_path,
-              class: "text-sm px-3 py-2 bg-blue-100 text-blue-700 rounded border border-blue-300 hover:bg-blue-200" %>
-</div>
-
-<% if @teams.any? %>
-  <table class="w-full text-sm">
+<% if @memberships.any? %>
+  <table class="w-full text-sm mb-4">
     <thead>
       <tr class="border-b">
-        <th class="text-left py-2">チーム名</th>
-        <th class="text-left py-2">プロフィール参加ID</th>
-        <th class="text-left py-2">作成日</th>
+        <th class="text-left py-2"><%= t('activerecord.models.profile') %></th>
+        <th class="text-left py-2"><%= t('teams.members.role') %></th>
         <th class="text-left py-2"></th>
       </tr>
     </thead>
     <tbody>
-      <% @teams.each do |team| %>
-        <tr class="border-b">
+      <% @memberships.each do |membership| %>
+        <tr>
+          <td class="py-1">
+            <%= profile_chip(
+              membership.profile,
+              size: :xs,
+              wrapper_class: "px-2 py-1 rounded bg-gray-100 text-xs"
+            ) %>
+          </td>
+
           <td class="py-2">
-            <%= link_to team_path(team), class: "inline-block" do %>
-              <%= team_chip(
-                    team,
-                    size: :xs,
-                    wrapper_class: "px-2 py-1 rounded bg-gray-100 text-xs"
-                  ) %>
+            <% if @can_manage_members %>
+              <%= form_with model: membership,
+                            url: team_membership_path(membership),
+                            method: :patch,
+                            local: true,
+                            class: "inline-block" do |f| %>
+                <%= f.select :role,
+                            options_for_select(
+                              [
+                                [t('teams.members.roles.admin'), TeamMembership::ADMIN_ROLE],
+                                [t('teams.members.roles.member'), ""]
+                              ],
+                              membership.admin? ? TeamMembership::ADMIN_ROLE : ""
+                            ),
+                            {},
+                            class: "border border-gray-300 rounded px-2 py-1 text-xs",
+                            onchange: "this.form.submit();" %>
+              <% end %>
+            <% else %>
+              <%= membership.admin? ? t('teams.members.roles.admin') : t('teams.members.roles.member') %>
             <% end %>
           </td>
-          <td class="py-2 font-mono text-xs text-gray-600">
-            <%= team.join_token.presence || "-" %>
-          </td>
-          <td class="py-2"><%= l(team.created_at.to_date) %></td>
-          <td class="py-2 text-right">
-            <%= link_to "編集",
-                        edit_team_path(team),
-                        class: "text-xs text-blue-600 underline mr-3" %>
 
-            <%= button_to "削除",
-              team_path(team),
-              method: :delete,
-              form: { data: { turbo_confirm: "本当に削除しますか？" } },
-              class: "text-xs text-red-600 underline bg-transparent border-0 p-0 inline" %>
+          <td class="py-2 text-right">
+            <% if @can_manage_members %>
+              <%= button_to t('common.delete'),
+                            team_membership_path(membership),
+                            method: :delete,
+                            form: { data: { turbo_confirm: t('teams.members.confirm_remove') }},
+                            class: "text-xs px-3 py-1 bg-red-50 text-red-700 rounded border border-red-200 hover:bg-red-100" %>
+            <% end %>
           </td>
         </tr>
       <% end %>
     </tbody>
   </table>
 <% else %>
-  <p class="text-sm text-gray-500">
-    まだチームがありません。「チームを作成する」から追加してください。
+  <p class="text-sm text-gray-500 mb-4">
+    <%= t('teams.members.no_members') %>
   </p>
 <% end %>
 
---- FILE: app/views/team_settings/home.html.erb ---
-<!-- app/views/team_settings/home.html.erb -->
+<div class="mt-6 border-t pt-4">
+  <h3 class="text-sm font-semibold mb-2"><%= t('teams.members.invite_section_title') %></h3>
+
+  <%# 送信先を manage_team_path(@team) に変更 %>
+  <%= form_with url: manage_team_path(@team), method: :get, local: true, class: "flex items-end gap-2 mb-3" do %>
+    <div>
+      <label class="block text-xs mb-1"><%= t('teams.members.invite_id_label') %></label>
+      <%= text_field_tag :profile_invite_token, @profile_invite_token, 
+                        class: "border rounded px-2 py-1 text-sm", placeholder: "個人のIDを入力" %>
+    </div>
+    <div class="mb-1">
+      <%= submit_tag t('common.search'), class: "px-3 py-2 text-xs bg-gray-100 rounded border hover:bg-gray-200" %>
+    </div>
+  <% end %>
+
+  <% if @found_profile %>
+    <div class="p-3 bg-blue-50 border border-blue-200 rounded flex items-center justify-between">
+      <div class="flex items-center gap-2">
+        <%= profile_chip(@found_profile, size: :xs) %>
+        <span class="text-xs text-gray-600"><%= t('teams.members.invite_confirm_msg') %></span>
+      </div>
+      <%= form_with url: membership_requests_path, method: :post, local: true do %>
+        <%= hidden_field_tag :direction, "team_to_profile" %>
+        <%= hidden_field_tag :team_id, @team.id %>
+        <%= hidden_field_tag :target_profile_id, @found_profile.id %>
+
+        <label class="inline-flex items-center gap-1 cursor-pointer">
+          <%= check_box_tag :admin, "1", false, class: "rounded border-gray-300 text-blue-600 focus:ring-blue-500" %>
+          <span class="text-xs text-gray-700 font-medium"><%= t('teams.members.invite_as_admin') %></span>
+        </label>
+
+        <%= submit_tag t('teams.members.send_invite'), class: "px-4 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700" %>
+      <% end %>
+    </div>
+  <% end %>
+</div>
+
+<div class="mt-6 border-t pt-4">
+  <h3 class="text-sm font-semibold mb-2"><%= t('teams.members.join_requests_title') %></h3>
+
+  <% if @incoming_join_requests.any? %>
+    <table class="w-full text-xs">
+      <thead>
+        <tr class="border-b">
+          <th class="text-left py-1"><%= t('teams.members.requester') %></th>
+          <th class="text-left py-1"></th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @incoming_join_requests.each do |req| %>
+          <tr class="border-b">
+            <td class="py-1">
+              <% if req.requester_profile %>
+                <%= profile_chip(
+                      req.requester_profile,
+                      size: :xs,
+                      wrapper_class: "px-2 py-1 rounded bg-gray-100 text-xs"
+                    ) %>
+              <% else %>
+                <span class="text-xs text-gray-400"><%= t('common.unknown') %></span>
+              <% end %>
+            </td>
+            <td class="py-1 text-right">
+              <%= button_to t('common.approve'),
+                            approve_membership_request_path(req),
+                            method: :patch,
+                            class: "px-3 py-1 text-[11px] bg-blue-100 text-blue-700 rounded border border-blue-300 hover:bg-blue-200" %>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  <% else %>
+    <p class="text-xs text-gray-500 mt-2"><%= t('teams.members.no_requests') %></p>
+  <% end %>
+</div>-e \n--- END OF FILE ---\n
+app/views/teams/_sidebar.html.erb
+--- START OF FILE ---
+<!-- app/views/teams/_sidebar.html.erb -->
+<h2 class="font-semibold text-sm mb-3"><%= t('teams.settings.sidebar.title') %></h2>
+<nav class="space-y-1">
+  <%# チームのトップページ（show） %>
+  <%= link_to t('teams.settings.sidebar.show'), 
+              team_path(@team), 
+              class: nav_class(team_path(@team)) %>
+
+  <%# メンバー管理（manage） %>
+  <%= link_to t('teams.settings.sidebar.manage'), 
+              manage_team_path(@team), 
+              class: nav_class(manage_team_path(@team)) %>
+
+  <%# チーム編集（edit） %>
+  <%= link_to t('teams.settings.sidebar.edit'), 
+              edit_team_path(@team), 
+              class: nav_class(edit_team_path(@team)) %>
+
+  <div class="pt-4 border-t border-gray-100 mt-4">
+    <%= link_to t('teams.index.new_team'), 
+                new_team_path, 
+                class: nav_class(new_team_path) %>
+  </div>
+</nav>-e \n--- END OF FILE ---\n
+app/views/teams/edit.html.erb
+--- START OF FILE ---
+<!-- app/views/teams/edit.html.erb -->
+<% content_for :sidebar do %>
+  <%= render "teams/sidebar" %>
+<% end %>
+
+<h1 class="text-xl font-bold mb-4">チーム編集</h1>
+<%= render "form", team: @team %>-e \n--- END OF FILE ---\n
+app/views/teams/home.html.erb
+--- START OF FILE ---
+<!-- app/views/teams/home.html.erb -->
 <% content_for :sidebar do %>
   <%= render "teams/sidebar" %>
 <% end %>
@@ -3858,15 +3532,105 @@ end
 
 <p class="text-sm text-gray-600">
   所属チームの一覧や設定への入口をここに配置していく想定です。
+</p>-e \n--- END OF FILE ---\n
+app/views/teams/show.html.erb
+--- START OF FILE ---
+<!-- app/views/teams/show.html.erb -->
+<% content_for :sidebar do %>
+  <%= render "teams/sidebar" %>
+<% end %>
+
+<h1 class="text-xl font-bold mb-4"><%= @team.name %></h1>
+
+<p class="text-sm text-gray-600 mb-4">
+  <%= t('common.created_at') %>：<%= l(@team.created_at.to_date) %>
 </p>
 
---- FILE: app/views/profiles/index.html.erb ---
+<div class="flex gap-3 text-sm">
+  <%= link_to t('common.edit'), edit_team_path(@team), class: "px-3 py-1 bg-gray-100 rounded hover:bg-gray-200" %>
+  <%= link_to t('common.back'), teams_path, class: "px-3 py-1 bg-gray-100 rounded hover:bg-gray-200" %>
+</div>-e \n--- END OF FILE ---\n
+app/views/teams/_form.html.erb
+--- START OF FILE ---
+<!-- app/views/teams/_form.html.erb -->
+<%= form_with model: @team, local: true do |f| %>
+  <% if @team.errors.any? %>
+    <div class="mb-4 text-sm text-red-700 bg-red-50 px-3 py-2 rounded border border-red-200">
+      <p class="font-semibold mb-1">
+        <%= t('errors.template.header', count: @team.errors.count, model: t('activerecord.models.team')) %>
+      </p>
+      <ul class="list-disc list-inside">
+        <% @team.errors.full_messages.each do |msg| %>
+          <li><%= msg %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <div class="mb-6 max-w-md">
+    <%= f.label :name, class: "block text-sm font-medium mb-1" %>
+    <%= f.text_field :name,
+                     class: "w-full border border-gray-300 rounded px-3 py-2 text-sm focus:ring-blue-500 focus:border-blue-500",
+                     placeholder: t('activerecord.placeholders.team.name') %>
+  </div>
+
+  <div class="mb-6">
+    <%= f.label :avatar, class: "block text-sm font-medium mb-1" %>
+
+    <% if @team.avatar.attached? %>
+      <div class="mb-3">
+        <%= team_avatar(@team, size: :md) %>
+      </div>
+    <% end %>
+
+    <div class="flex items-center gap-3">
+      <%= f.label :avatar,
+                  class: "px-3 py-1.5 border border-gray-300 rounded text-sm bg-white cursor-pointer hover:bg-gray-50 transition" do %>
+        <%= t('profiles.form.choose_file') %>
+      <% end %>
+
+      <span id="team-avatar-filename" class="text-xs text-gray-500">
+        <%= t('profiles.form.no_file_selected') %>
+      </span>
+
+      <%= f.file_field :avatar,
+                       accept: "image/*",
+                       class: "hidden",
+                       onchange: "document.getElementById('team-avatar-filename').textContent = this.files[0]?.name || '#{t('profiles.form.no_file_selected')}';" %>
+    </div>
+
+    <% if @team.avatar.attached? %>
+      <label class="mt-3 inline-flex items-center text-xs text-red-600 cursor-pointer">
+        <%= f.check_box :remove_avatar, class: "mr-1 rounded border-gray-300 text-red-600 focus:ring-red-500" %>
+        <%= t('common.remove_image') %>
+      </label>
+    <% end %>
+  </div>
+  
+  <div class="pt-2">
+    <%= f.submit t("helpers.submit.#{@team.new_record? ? 'create' : 'update'}", model: t('activerecord.models.team')),
+                 class: "px-6 py-2 bg-blue-600 text-white text-sm font-medium rounded shadow-sm hover:bg-blue-700 transition cursor-pointer" %>
+  </div>
+<% end %>
+-e \n--- END OF FILE ---\n
+app/views/teams/new.html.erb
+--- START OF FILE ---
+<!-- app/views/teams/new.html.erb -->
+<% content_for :sidebar do %>
+  <%= render "teams/sidebar" %>
+<% end %>
+
+<h1 class="text-xl font-bold mb-4"><%= t('teams.new.title') %></h1>
+<%= render "form", team: @team %>
+-e \n--- END OF FILE ---\n
+app/views/profiles/index.html.erb
+--- START OF FILE ---
 <!-- app/views/profiles/index.html.erb -->
 <div class="p-8">
-  <h1 class="text-2xl font-bold mb-4">プロフィール一覧</h1>
+  <h1 class="text-2xl font-bold mb-4"><%= t('profiles.index.title') %></h1>
 
   <div class="mb-4">
-    <%= link_to "新規プロフィール作成", new_profile_path,
+    <%= link_to t('profiles.index.new_link'), new_profile_path,
                 class: "inline-block px-3 py-1 bg-blue-600 text-white rounded" %>
   </div>
 
@@ -3874,9 +3638,9 @@ end
     <table class="min-w-full text-sm">
       <thead>
         <tr>
-          <th class="text-left p-2">名前</th>
-          <th class="text-left p-2">テーマ</th>
-          <th class="text-left p-2">操作</th>
+          <th class="text-left p-2"><%= t('profiles.index.column_name') %></th>
+          <th class="text-left p-2"><%= t('profiles.index.column_theme') %></th>
+          <th class="text-left p-2"><%= t('profiles.index.column_actions') %></th>
         </tr>
       </thead>
       <tbody>
@@ -3885,12 +3649,12 @@ end
             <td class="p-2"><%= link_to profile.label, profile %></td>
             <td class="p-2"><%= profile.theme.presence || "-" %></td>
             <td class="p-2 space-x-2">
-              <%= link_to "編集", edit_profile_path(profile),
+              <%= link_to t('common.edit'), edit_profile_path(profile),
                           class: "text-blue-600 underline" %>
-              <%= button_to "削除",
+              <%= button_to t('common.delete'),
                 profile_path(profile),
                 method: :delete,
-                form: { data: { turbo_confirm: "削除してよいですか？" } },
+                form: { data: { turbo_confirm: t('common.confirm_delete') } },
                 class: "text-red-600 underline text-xs bg-transparent border-0 p-0 inline" %>
             </td>
           </tr>
@@ -3898,58 +3662,201 @@ end
       </tbody>
     </table>
   <% else %>
-    <p>まだプロフィールがありません。</p>
+    <p><%= t('profiles.index.no_profiles') %></p>
   <% end %>
-</div>
+</div>-e \n--- END OF FILE ---\n
+app/views/profiles/_sidebar.html.erb
+--- START OF FILE ---
+<!-- app/views/profiles/_sidebar.html.erb -->
+<h2 class="font-semibold text-sm mb-3"><%= t('profile_settings.sidebar.title') %></h2>
+<nav class="space-y-1">
 
---- FILE: app/views/profiles/edit.html.erb ---
+<%= link_to t('profile_settings.sidebar.home'),
+            edit_profile_path(@profile),
+            class: nav_class(edit_profile_path(@profile)) %>
+
+<%= link_to t('profile_settings.sidebar.edit'),
+            edit_profile_path(@profile),
+            class: nav_class(edit_profile_path(@profile)) %>
+
+<%= link_to t('profile_settings.sidebar.new'),
+            new_profile_path,
+            class: nav_class(new_profile_path) %>
+
+<%= link_to t('profile_settings.sidebar.auth'),
+            edit_user_registration_path,
+            class: nav_class(edit_user_registration_path) %>
+</nav>-e \n--- END OF FILE ---\n
+app/views/profiles/edit.html.erb
+--- START OF FILE ---
 <!-- app/views/profiles/edit.html.erb -->
 <% content_for :sidebar do %>
   <%= render "profiles/sidebar" %>
 <% end %>
 
-<h1 class="text-xl font-bold mb-4">プロフィール編集</h1>
+<h1 class="text-xl font-bold mb-4"><%= t('profile_settings.edit.title') %></h1>
 
-<%= render "form", profile: @profile %>
+<% if @profile %>
+  <%= render "profiles/form", profile: @profile %>
 
---- FILE: app/views/profiles/show.html.erb ---
+  <!-- ▼ チームIDでチームに参加申請する ▼ -->
+  <div class="mt-6 border-t pt-4">
+    <h3 class="text-sm font-semibold mb-2"><%= t('profile_settings.edit.search_team_title') %></h3>
+
+    <%= form_with url: edit_profile_path(current_profile), method: :get, local: true,
+                  class: "flex flex-wrap items-end gap-2 mb-3" do %>
+      <div>
+        <label class="block text-xs mb-1"><%= t('profile_settings.edit.team_invite_token') %></label>
+        <%= text_field_tag :team_invite_token,
+                          @team_invite_token,
+                          class: "border rounded px-2 py-1 text-sm",
+                          placeholder: "例）AB12CD34" %>
+      </div>
+      <div class="mb-1">
+        <%= submit_tag t('profile_settings.edit.search_button'),
+                      class: "px-3 py-2 text-xs bg-gray-100 rounded border hover:bg-gray-200" %>
+      </div>
+    <% end %>
+
+    <% if @team_invite_token.present? %>
+      <% if @invite_teams.any? %>
+        <div class="p-3 bg-blue-50 border border-blue-200 rounded">
+          <% @invite_teams.each do |team| %>
+            <div class="flex flex-wrap items-center justify-between gap-4">
+              <div class="flex items-center gap-2">
+                <%= team_chip(team, size: :xs) %>
+                <span class="text-xs text-gray-600 font-medium">
+                  <%= t('profile_settings.edit.ask_membership_request') %>
+                </span>
+              </div>
+
+              <%= form_with url: membership_requests_path, method: :post, local: true, class: "flex items-center gap-4" do %>
+                <%= hidden_field_tag :direction, "profile_to_team" %>
+                <%= hidden_field_tag :team_id, team.id %>
+                
+                <label class="inline-flex items-center gap-1 cursor-pointer">
+                  <%= check_box_tag :admin, "1", false, class: "rounded border-gray-300 text-blue-600 focus:ring-blue-500" %>
+                  <span class="text-xs text-gray-700">
+                    <%= t('profile_settings.edit.apply_as_admin') %>
+                  </span>
+                </label>
+
+                <%= submit_tag t('common.filter_apply'),
+                              class: "px-4 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700 shadow-sm" %>
+              <% end %>
+            </div>
+          <% end %>
+        </div>
+      <% else %>
+        <p class="text-xs text-red-500 mt-2">
+          <%= t('profile_settings.edit.team_not_found') %>
+        </p>
+      <% end %>
+    <% end %>
+  </div>
+ 
+
+  <%# ---- 招待一覧 ---- %>
+  <% if @incoming_team_invites.present? && @incoming_team_invites.any? %>
+    <div class="mt-6 border-t pt-4">
+      <h2 class="text-sm font-semibold mb-2"><%= t('profile_settings.edit.incoming_invites_title') %></h2>
+
+      <table class="w-full text-xs">
+        <thead>
+          <tr class="border-b">
+            <th class="text-left py-1"><%= t('profile_settings.edit.column_team_name') %></th>
+            <th class="text-left py-1"><%= t('profile_settings.edit.column_requester') %></th>
+            <th class="text-left py-1"></th>
+          </tr>
+        </thead>
+        <tbody>
+          <% @incoming_team_invites.each do |req| %>
+            <tr class="border-b">
+              <td class="py-1">
+                <%= team_chip(
+                      req.team,
+                      size: :xs,
+                      wrapper_class: "px-2 py-1 rounded bg-gray-100 text-xs font-semibold"
+                      ) %>
+              </td>
+              <td class="py-1">
+                <% if req.requester_profile.present? %>
+                  <%= profile_chip(
+                    req.requester_profile,
+                    size: :xs,
+                    wrapper_class: "px-2 py-1 rounded bg-gray-100 text-xs font-semibold"
+                    ) %>
+                <% else %>
+                  <span class="text-s text-gray-400">不明</span>
+                <% end %>
+              </td>
+              <td class="py-1 text-right">
+                <%= button_to t('common.approve'),
+                              approve_membership_request_path(req),
+                              method: :patch,
+                              class: "px-3 py-1 text-[11px] bg-blue-100 text-blue-700 rounded border border-blue-300 hover:bg-blue-200" %>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  <% else %>
+    <p class="text-xs text-gray-500 mt-4">
+     <%= t('profile_settings.edit.no_invites') %>
+    </p>
+  <% end %>
+
+<% else %>
+  <p class="text-sm text-red-600">
+    <%= t('profile_settings.edit.not_found') %>
+  </p>
+<% end %>
+
+-e \n--- END OF FILE ---\n
+app/views/profiles/show.html.erb
+--- START OF FILE ---
 <!-- app/views/profiles/show.html.erb -->
 <% content_for :sidebar do %>
   <%= render "profiles/sidebar" %>
 <% end %>
 
-<h1 class="text-xl font-bold mb-4">プロフィール詳細</h1>
+<h1 class="text-xl font-bold mb-4">
+  <%= t('profiles.show.title') %>
+</h1>
 
 <div class="space-y-3 text-sm">
   <div>
-    <dt class="text-gray-500">プロフィール名（管理用）</dt>
+    <dt class="text-gray-500"><%= t('profiles.show.label_title') %></dt>
     <dd class="font-semibold"><%= @profile.label %></dd>
   </div>
 
   <div>
-    <dt class="text-gray-500">表示名（他ユーザーに見せる名前）</dt>
+    <dt class="text-gray-500"><%= t('profiles.show.display_name_title') %></dt>
     <dd class="font-semibold"><%= @profile.display_name %></dd>
   </div>
 
   <div>
-    <dt class="text-gray-500">テーマカラー</dt>
-    <dd><%= @profile.theme.presence || "未設定" %></dd>
+    <dt class="text-gray-500"><%= t('profiles.show.theme_title') %></dt>
+    <dd><%= @profile.theme.presence || t('common.not_set') %></dd>
   </div>
 
   <div class="pt-3">
-    <%= link_to "編集", edit_profile_path(@profile),
+    <%= link_to t('common.edit'), edit_profile_path(@profile),
                 class: "px-3 py-2 bg-blue-600 text-white rounded" %>
   </div>
 </div>
 
-
-
---- FILE: app/views/profiles/_form.html.erb ---
+-e \n--- END OF FILE ---\n
+app/views/profiles/_form.html.erb
+--- START OF FILE ---
 <!-- app/views/profiles/_form.html.erb -->
 <%= form_with model: @profile, local: true do |f| %>
   <% if @profile.errors.any? %>
     <div class="mb-4 p-3 bg-red-50 text-red-700 rounded">
-      <p><%= @profile.errors.count %>件のエラーがあります：</p>
+      <p>
+        <%= t('errors.template.header', count: @profile.errors.count, model: Profile.model_name.human) %>
+      </p>
       <ul class="list-disc list-inside">
         <% @profile.errors.full_messages.each do |msg| %>
           <li><%= msg %></li>
@@ -3959,21 +3866,21 @@ end
   <% end %>
 
   <div class="mb-4">
-    <%= f.label :label, "プロフィール管理名（プロフィール切り替えに利用する名前）", class: "block mb-1 text-sm" %>
+    <%= f.label :label, t('profiles.form.label_title'), class: "block mb-1 text-sm" %>
     <%= f.text_field :label,
                      class: "border border-gray-300 rounded px-2 py-1 w-full",
-                     placeholder: "株式会社〇〇 / 副業 / プライベート など" %>
+                     placeholder: t('profiles.form.label_placeholder') %>
   </div>
 
   <div class="mb-4">
-    <%= f.label :display_name, "表示名（他のユーザーに表示される名前）", class: "block mb-1 text-sm" %>
+    <%= f.label :display_name, t('profiles.form.display_name_title'), class: "block mb-1 text-sm" %>
     <%= f.text_field :display_name,
                     class: "border border-gray-300 rounded px-2 py-1 w-full",
-                    placeholder: "例）田中太郎 / Tanaka Taro など" %>
+                    placeholder: t('profiles.form.display_name_placeholder') %>
   </div>
 
   <div class="mb-4">
-    <%= f.label :avatar, "アイコン画像", class: "block text-sm mb-1" %>
+    <%= f.label :avatar, t('profiles.form.avatar_title'), class: "block text-sm mb-1" %>
 
     <% if @profile.avatar.attached? %>
         <div class="mb-2">
@@ -3985,12 +3892,12 @@ end
       <!-- 見た目用のボタン（label） -->
       <%= f.label :avatar,
                   class: "px-3 py-1 border border-gray-300 rounded text-sm bg-white cursor-pointer hover:bg-gray-50" do %>
-        ファイルを選択
+        <%= t('profiles.form.choose_file') %>
       <% end %>
 
       <!-- 選択されたファイル名を表示する所 -->
       <span id="avatar-filename" class="text-xs text-gray-500">
-        選択されていません
+        <%= t('profiles.form.no_file_selected') %>
       </span>
 
       <!-- 本体の file input は隠す -->
@@ -4004,19 +3911,15 @@ end
     <% if @profile.avatar.attached? %>
         <label class="mt-2 inline-flex items-center text-xs text-red-600">
         <%= f.check_box :remove_avatar, class: "mr-1" %>
-        画像を削除する
+        <%= t('profiles.form.remove_avatar') %>
         </label>
     <% end %>
-
-    <p class="text-[11px] text-gray-500 mt-1">
-        正方形の画像が推奨です（例: 400×400）。
-    </p>
     </div>
 
   <% if @profile.persisted? && @profile.join_token.present? %>
     <div class="mb-4">
       <label class="block text-xs mb-1 text-gray-500">
-        チーム招待ID
+        <%= t('profiles.form.profile_id') %>
       </label>
 
       <input type="text"
@@ -4025,13 +3928,13 @@ end
              class="border border-gray-300 rounded px-2 py-1 w-full bg-gray-50 text-gray-600 text-sm" />
 
       <p class="text-[11px] text-gray-400 mt-1">
-        このIDは編集できません。プロフィール参加申請に使います。
+        <%= t('profiles.form.profile_id_immutable_hint') %>
       </p>
     </div>
   <% end %>
 
   <div class="mb-4">
-    <p class="block mb-2 text-sm">テーマ（ヘッダー・左ナビの色）</p>
+    <p class="block mb-2 text-sm"><%= t('profiles.form.theme_title') %></p>
 
     <div class="flex flex-wrap gap-2">
       <% Profile::THEMES.each do |key| %>
@@ -4043,16 +3946,28 @@ end
     </div>
 
     <p class="text-[11px] text-gray-500 mt-2">
-      メイン画面とライトパネルは白のまま、ヘッダーと左ナビだけ色が変わります。
+      <%= t('profiles.form.theme_hint') %>
     </p>
   </div>
 
-  <%= f.submit(@profile.persisted? ? "プロフィール設定を更新する" : "プロフィールを作成する",
+  <div class="mb-4">
+    <%= f.label :locale, t('profiles.form.locale_title'), class: "block text-sm font-medium text-gray-700" %>
+    <%= f.select :locale, 
+        [
+          [t('profiles.locales.ja_en'), "ja_en"],
+          [t('profiles.locales.ja'), "ja"],
+          [t('profiles.locales.en'), "en"]
+        ], 
+        {}, 
+        class: "mt-1 block w-full  border border-gray-200 rounded-md px-3 py-2 text-sm" %>
+  </div>
+
+  <%= f.submit(@profile.persisted? ? t('profiles.form.submit_update') : t('profiles.form.submit_create'),
              class: "px-4 py-2 bg-blue-600 text-white text-sm rounded hover:bg-blue-700") %>
 <% end %>
-
-
---- FILE: app/views/profiles/new.html.erb ---
+-e \n--- END OF FILE ---\n
+app/views/profiles/new.html.erb
+--- START OF FILE ---
 <!-- app/views/profiles/new.html.erb -->
 
 <% if user_signed_in? && current_user.profiles.any? %>
@@ -4061,24 +3976,26 @@ end
   <% end %>
 <% end %>
 
-<h1 class="text-xl font-bold mb-4">プロフィール作成</h1>
+<h1 class="text-xl font-bold mb-4">
+  <%= t('profiles.new.title') %>
+</h1>
 
 <%= render "form", profile: @profile %>
-
-
---- FILE: app/helpers/team_settings_helper.rb ---
+-e \n--- END OF FILE ---\n
+app/helpers/team_settings_helper.rb
+--- START OF FILE ---
 # app/helpers/team_settings_hepler.rb
 module TeamSettingsHelper
 end
-
-
---- FILE: app/helpers/avatars_helper.rb ---
+-e \n--- END OF FILE ---\n
+app/helpers/avatars_helper.rb
+--- START OF FILE ---
 # app/helpers/avatars_helper.rb
 module AvatarsHelper
 end
-
-
---- FILE: app/helpers/tasks_helper.rb ---
+-e \n--- END OF FILE ---\n
+app/helpers/tasks_helper.rb
+--- START OF FILE ---
 # app/helper/tasks_helper.rb
 module TasksHelper
   def status_badge(task)
@@ -4174,39 +4091,39 @@ module TasksHelper
     )
   end
 end
-
-
---- FILE: app/helpers/team_memberships_helper.rb ---
+-e \n--- END OF FILE ---\n
+app/helpers/team_memberships_helper.rb
+--- START OF FILE ---
 # app/helpers/team_memberships_helper.rb
 module TeamMembershipsHelper
 end
-
-
---- FILE: app/helpers/home_helper.rb ---
+-e \n--- END OF FILE ---\n
+app/helpers/home_helper.rb
+--- START OF FILE ---
 # app/helper/home_helper.rb
 module HomeHelper
 end
-
-
---- FILE: app/helpers/profile_settings_helper.rb ---
+-e \n--- END OF FILE ---\n
+app/helpers/profile_settings_helper.rb
+--- START OF FILE ---
 # app/helpers/profile_settings/helper.rb
 module ProfileSettingsHelper
 end
-
-
---- FILE: app/helpers/teams_helper.rb ---
+-e \n--- END OF FILE ---\n
+app/helpers/teams_helper.rb
+--- START OF FILE ---
 # app/helpers/team_helper.rb
 module TeamsHelper
 end
-
-
---- FILE: app/helpers/profiles_helper.rb ---
+-e \n--- END OF FILE ---\n
+app/helpers/profiles_helper.rb
+--- START OF FILE ---
 # app/helpers/profiles_helper.rb
 module ProfilesHelper
 end
-
-
---- FILE: app/helpers/application_helper.rb ---
+-e \n--- END OF FILE ---\n
+app/helpers/application_helper.rb
+--- START OF FILE ---
 # app/helpers/application_helper.rb
 module ApplicationHelper
   # ナビ用クラス（前と同じ役割）
@@ -4341,23 +4258,938 @@ module ApplicationHelper
     end
   end
 end
-
-
---- FILE: app/channels/application_cable/connection.rb ---
+-e \n--- END OF FILE ---\n
+app/channels/application_cable/connection.rb
+--- START OF FILE ---
 module ApplicationCable
   class Connection < ActionCable::Connection::Base
   end
 end
-
-
---- FILE: app/channels/application_cable/channel.rb ---
+-e \n--- END OF FILE ---\n
+app/channels/application_cable/channel.rb
+--- START OF FILE ---
 module ApplicationCable
   class Channel < ActionCable::Channel::Base
   end
 end
+-e \n--- END OF FILE ---\n
+config/locales/ja_en.yml
+--- START OF FILE ---
+# config/locales/ja_en.yml
+ja_en:
+  common:
+    app_name: "Forestly"
+    tagline: "多様なあなたのTaskアプリ"
+    edit: "Edit"
+    delete: "Delete"
+    confirm_delete: "本当に削除しますか？"
+    approve: "Approve"
+    unknown: "Unknown"
+    not_set: "Not set"
+    search: "Search"
+    clear: "Clear"
+    filter_apply: "Apply Filter"
+    filter_clear: "Clear Filter"
+    more: "More"
+    today: "Today"
+    prev_week: "＜ Prev Week"
+    next_week: "Next Week ＞"
+    time: "Time"
+    load_more: "Load More"
+    created_at: "Created at"
+    remove_image: "Remove image"
+    back: "Back"
+  error:
+    template:
+      header: "%{count}件のエラーがあります。"
+  devise:
+    sessions:
+      new:
+        title: "Log in"
+        sign_up_link: "新規ユーザー登録"
+        send_sign_up_email: "登録用メールの送信"
+        demo_mode:
+          header: "【提出モード】Demo Accounts"
+          common: "Common"
+          note: "※メール送信は無効です。ログイン後にMVP機能をご確認ください。"
+    mailer:
+      confirmation_instructions:
+        subject: "Confirmation: Email Change"
+        instruction_title: "メールアドレス変更の確認です。"
+        instruction_body: "以下のリンクを開いて、メールアドレスの変更を確定してください。"
+        action_link: "Confirm Email Change"
+      reset_password_instructions:
+        subject: "Reset Password Instructions"
+        instruction_title: "パスワード変更のご案内です。"
+        instruction_body: "以下のリンクを開いて、新しいパスワードを設定してください。"
+        action_link: "Change Password"
+    registrations:
+      edit:
+        title: "Account Settings"
+        current_email: "現在のメールアドレス"
+        unconfirmed_email_msg: "変更申請中： %{email}（確認待ち）"
+        change_email_title: "Change Email"
+        send_email_change_instructions: "新しいメールアドレスに変更用メールを送信する"
+        change_password_title: "Change Password"
+        send_password_reset_instructions: "パスワードの変更用メールを送信する"
+  date:
+    formats:
+      default: "%Y/%m/%d"
+      short: "%Y/%m/%d"
+      md: "%m/%d"
+  time:
+      formats:
+        default: "%Y/%m/%d %H:%M:%S"
+        ja_short: "%m/%d %H:%M"
+  activerecord:
+    attributes:
+      user:
+        email: "Email"
+        password: "Password"
+        new_email: "New Email Address"
+      team:
+        name: "Team Name"
+        join_token: "Team ID"
+        avatar: "Team Icon"
+      comment:
+        body: "Body"
+        pinned: "Pin this comment"
+    errors:
+      template:
+        header: "%{count}件のエラーがあります："
+    models:
+      team: "Team"
+      profile: "Profile"
+      membership_request:
+        attributes:
+          team_id:
+            taken: "このプロフィールへの招待はすでに送信済み・承認待ちです。"
+      comment: "Comment"
+    placeholders:
+      team:
+        name: "チーム名を入力してください"
+      comment:
+        body: "コメントを入力..."
+  users:
+    confirmations:
+      edit_email_title: "Confirm Email Change"
+      new_email_label: "新しいメールアドレス（確認用）"
+      submit_confirm: "Confirm"
+  helpers:
+    submit:
+      create: "Create %{model}"
+      update: "Update %{model}"
+      comment:
+        create: "Post Comment"
+  time:
+    formats:
+      ja_short: "%m/%d %H:%M" 
+  layouts:
+    application:
+      nav:
+        task: "Tasks"
+        works: "Works"
+        chat: "Chat"
+        social: "Social"
+        profile: "Profiles"
+        team: "Teams"
+        all_profiles_tasks: "全てのプロフィールのタスクを表示"
+      menu:
+        logout: "Log out"
+        confirm_logout: "ログアウトしますか？"
+      submit_mode: "【提出モード】メール送信は無効です"
+  profiles:
+    form:
+      label_title: "Profile Management Name（切り替えに利用する名前）"
+      label_placeholder: "e.g. Company / Side Project / Private"
+      display_name_title: "Display Name（他ユーザーに表示される名前）"
+      display_name_placeholder: "e.g. John Doe"
+      avatar_title: "Avatar Image"
+      choose_file: "Choose file"
+      no_file_selected: "選択されていません"
+      remove_avatar: "Remove avatar"
+      avatar_hint: "正方形の画像が推奨です（例: 400×400）。"
+      profile_id: "Profile ID"
+      profile_id_immutable_hint: "このIDは編集できません。"
+      theme_title: "Theme（ヘッダー・左ナビの色）"
+      theme_hint: "メイン画面は白のまま、ヘッダーと左ナビの色が変わります。"
+      locale_title: "Language"
+      submit_create: "Create Profile"
+      submit_update: "Update Profile"
+    index:
+      title: "Profiles"
+      new_link: "Create New Profile"
+      column_name: "Name"
+      column_theme: "Theme"
+      column_actions: "Actions"
+      no_profiles: "まだプロフィールがありません。"
+    show:
+      title: "Profile Details"
+      label_title: "Profile Name（管理用）"
+      display_name_title: "Display Name（公開用）"
+      theme_title: "Theme Color"
+    new:
+      title: "Create Profile"
+    edit:
+      title: "Edit Profile"
+    locales:
+      ja: "日本語 (Full Japanese)"
+      en: "English (Full English)"
+      ja_en: "主に日本語 キーワードのみ英語 (Japanese with English Keywords)"
+  profile_settings:
+    sidebar:
+      title: "Profile Settings"
+      home: "Home"
+      edit: "Edit Profile"
+      new: "New Profile"
+      auth: "Auth Settings"
+    edit:
+      title: "Edit Profile"
+      search_team_title: "Join Team"
+      search_button: "Search Team"
+      team_invite_token: "Team ID"
+      ask_membership_request: "へ参加申請を送りますか？"
+      apply_as_admin: "Apply as Admin"
+      team_not_found: "該当するチームが見つかりませんでした。"
+      column_team_name: "Team Name"
+      column_requester: "Inviter"
+      incoming_invites_title: "Incoming Invitations"
+      no_invites: "招待はありません。"
+      not_found: "プロフィールが見つかりませんでした。"
+  teams:
+    index:
+      title: "Teams"
+      edit_settings_title: "Edit Team"
+      new_team: "Create Team"
+      no_teams_html: "まだチームがありません。"
+    new:
+      title: "New Team"
+    members:
+      title: "Members"
+      select_team: "管理するチームを選択:"
+      suffix_of_team: "のメンバー"
+      role: "Role"
+      roles:
+        admin: "Admin"
+        member: "Member"
+      confirm_remove: "このメンバーをチームから削除しますか？"
+      no_members: "メンバーがいません。"
+      invite_section_title: "Invite Member"
+      invite_id_label: "Profile ID"
+      invite_confirm_msg: "さんを招待しますか？"
+      invite_as_admin: "Admin権限を付与"
+      send_invite: "Send Invite"
+      join_requests_title: "Join Requests"
+      requester: "Requester"
+      no_requests: "未承認の申請はありません。"
+  forms:
+    avatar_hint: "正方形の画像が推奨です（例: 400×400）。"
+  tasks:
+    status:
+      todo: "To Do"
+      in_progress: "In Progress"
+      done: "Done"
+      archived: "Archived"
+    sidebar:
+      title: "Tasks"
+      list: "List"
+      calendar: "Calendar"
+      view_list: "List"
+      view_calendar: "Calendar"
+      new_task: "New Task"
+      all_tasks: "All Tasks"
+      today_tasks: "Today"
+      week_tasks: "This Week"
+      incomplete_tasks: "Incomplete"
+      done_tasks: "Done"
+    index:
+      search_placeholder: "Search by title, description, or tags"
+      filter_title: "Filter"
+      filter_placeholder_status: "todo / prog / done"
+      filter_assignee: "Assignee name"
+      filter_owner: "Owner name"
+      filter_placeholder_partial: "Partial match"
+      filter_placeholder_assignee: "Assignee"
+      filter_placeholder_owner: "Owner"
+      column_title: "Title"
+      column_due_at: "Due Date"
+      column_status: "Status"
+      column_assignee: "Assignee"
+      column_owner: "Owner"
+      no_tasks: "まだタスクがありません。"
+      confirm_delete: "このタスクを削除しますか？"
+    form:
+      title: "Title"
+      due_date: "Due Date"
+      due_time: "Time"
+      due_hint: "例）09:00, 13:30 (30分単位)。空の場合は期限なしになります。"
+      assignee: "Assignee"
+      assignee_hint: "クリックで選択／解除（複数可）。"
+      description: "Description"
+      tags: "Tags"
+      tag_placeholder: "e.g. Project, Rails, Bug"
+      tag_hint: "カンマ（,）区切りで複数入力できます。"
+      status: "Status"
+      submit_create: "Create Task"
+      submit_update: "Update Task"
+    new:
+      title: "New Task"
+    show:
+      due_date: "Due"
+      assignee: "Assignee"
+      owner: "Owner"
+      status: "Status"
+      pin: "Pin"
+      title: "Task Details"
+      edit_title: "Edit Task"
+      comment_title: "Comments"
+      no_comments: "まだコメントはありません。"
+      new_comment: "Add Comment"
+    edit:
+      title: "Edit Task"
+    calendar:
+      slot_time_header: "Schedule for %{date} %{time}"
+      slot_title: "Tasks for %{date} %{time}"
+      slot_title_list: "Task List"
+      view_detail: "View Detail"
+      no_tasks_in_slot: "この時間帯のタスクはありません。"-e \n--- END OF FILE ---\n
+config/locales/en.yml
+--- START OF FILE ---
+# config/locales/en.yml
+en:
+  common:
+    app_name: "Forestly"
+    tagline: "Task app for your diverse life"
+    edit: "Edit"
+    delete: "Delete"
+    confirm_delete: "Are you sure you want to delete this?"
+    approve: "Approve"
+    unknown: "Unknown"
+    not_set: "Not set"
+    search: "Search"
+    clear: "Clear"
+    filter_apply: "Apply Filter"
+    filter_clear: "Clear Filter"
+    more: "More"
+    today: "Today"
+    prev_week: "＜ Prev Week"
+    next_week: "Next Week ＞"
+    time: "Time"
+    load_more: "Load More"
+    created_at: "Created at"
+    remove_image: "Remove image"
+    back: "Back"
+  error:
+    template:
+      header: "%{count} error(s) occurred."
+  devise:
+    sessions:
+      new:
+        title: "Log in"
+        sign_up_link: "Sign up"
+        send_sign_up_email: "Send sign-up email"
+        demo_mode:
+          header: "[Submission Mode] Demo Accounts"
+          common: "Common"
+          note: "*Email sending is disabled. Please check MVP features after logging in."
+    mailer:
+      confirmation_instructions:
+        subject: "Confirmation of Email Change"
+        instruction_title: "Confirm your email change."
+        instruction_body: "Click the link below to confirm your new email address."
+        action_link: "Confirm Email Change"
+      reset_password_instructions:
+        subject: "Reset Password Instructions"
+        instruction_title: "Instructions to change your password."
+        instruction_body: "Click the link below to set a new password."
+        action_link: "Change Password"
+    registrations:
+      edit:
+        title: "Account Settings"
+        current_email: "Current Email"
+        unconfirmed_email_msg: "Pending change: %{email} (waiting for confirmation)"
+        change_email_title: "Change Email Address"
+        send_email_change_instructions: "Send confirmation email to new address"
+        change_password_title: "Change Password"
+        send_password_reset_instructions: "Send password reset email"
+  date:
+    formats:
+      default: "%Y/%m/%d"
+      short: "%Y/%m/%d"
+      md: "%m/%d"
+  time:
+      formats:
+        default: "%Y/%m/%d %H:%M:%S"
+        ja_short: "%m/%d %H:%M"
+  activerecord:
+    attributes:
+      user:
+        email: "Email"
+        password: "Password"
+        new_email: "New Email Address"
+      team:
+        name: "Team Name"
+        join_token: "Team ID"
+        avatar: "Team Icon"
+      comment:
+        body: "Body"
+        pinned: "Pin this comment"
+    errors:
+      template:
+        header: "%{count} error(s) prohibited this %{model} from being saved:"
+    models:
+      team: "Team"
+      profile: "Profile"
+      membership_request:
+        attributes:
+          team_id:
+            taken: "An invitation to this profile has already been sent or is pending."
+      comment: "Comment"
+    placeholders:
+      team:
+        name: "Enter team name"
+      comment:
+        body: "Enter comment..."
+  users:
+    confirmations:
+      edit_email_title: "Confirm Email Change"
+      new_email_label: "New Email Address (for confirmation)"
+      submit_confirm: "Confirm and update email"
+  helpers:
+    submit:
+      create: "Create %{model}"
+      update: "Update %{model}"
+      comment:
+        create: "Post Comment"
+  time:
+    formats:
+      ja_short: "%m/%d %H:%M" 
+  layouts:
+    application:
+      nav:
+        task: "Tasks"
+        works: "Works"
+        chat: "Chat"
+        social: "Social"
+        profile: "Profiles"
+        team: "Teams"
+        all_profiles_tasks: "Show all profiles' tasks"
+      menu:
+        logout: "Log out"
+        confirm_logout: "Are you sure you want to log out?"
+      submit_mode: "[Submission Mode] Email sending is disabled"
+  profiles:
+    form:
+      label_title: "Profile Management Name (Used for switching profiles)"
+      label_placeholder: "e.g., Company A / Side Project / Private"
+      display_name_title: "Display Name (Visible to other users)"
+      display_name_placeholder: "e.g., John Doe"
+      avatar_title: "Avatar Image"
+      choose_file: "Choose file"
+      no_file_selected: "No file selected"
+      remove_avatar: "Remove avatar"
+      avatar_hint: "Square images are recommended (e.g., 400x400)."
+      profile_id: "Profile ID"
+      profile_id_immutable_hint: "This ID cannot be edited."
+      theme_title: "Theme (Header & Sidebar color)"
+      theme_hint: "Only the header and sidebar colors will change."
+      locale_title: "Language"
+      submit_create: "Create Profile"
+      submit_update: "Update Profile Settings"
+    index:
+      title: "Profiles"
+      new_link: "Create New Profile"
+      column_name: "Name"
+      column_theme: "Theme"
+      column_actions: "Actions"
+      no_profiles: "No profiles found."
+    show:
+      title: "Profile Details"
+      label_title: "Profile Name (Internal)"
+      display_name_title: "Display Name (Public)"
+      theme_title: "Theme Color"
+    new:
+      title: "Create Profile"
+    edit:
+      title: "Edit Profile"
+    locales:
+      ja: "Japanese (日本語)"
+      en: "English"
+      ja_en: "Japanese with English Keywords"
+  profile_settings:
+    sidebar:
+      title: "Profile Settings"
+      home: "Home"
+      edit: "Edit Profile"
+      new: "Create New Profile"
+      auth: "Email & Password"
+    edit:
+      title: "Edit Profile"
+      search_team_title: "Search & Join Team by ID"
+      search_button: "Search Team"
+      team_invite_token: "Team ID"
+      ask_membership_request: "Would you like to request to join?"
+      apply_as_admin: "Apply as Admin"
+      team_not_found: "No team found with the provided ID."
+      column_team_name: "Team Name"
+      column_requester: "Inviting Profile"
+      incoming_invites_title: "Invitations for this Profile"
+      no_invites: "No team invitations for this profile."
+      not_found: "Profile not found."
+  teams:
+    index:
+      title: "Teams"
+      edit_settings_title: "Edit Team Settings"
+      new_team: "Create Team"
+      no_teams_html: "No teams found."
+    new:
+      title: "Create New Team"
+    members:
+      title: "Member Management"
+      select_team: "Select team to manage:"
+      suffix_of_team: "'s Members"
+      role: "Role"
+      roles:
+        admin: "Admin"
+        member: "Member"
+      confirm_remove: "Remove this member from the team?"
+      no_members: "No members found."
+      invite_section_title: "Invite New Member"
+      invite_id_label: "Profile ID to invite"
+      invite_confirm_msg: "Do you want to invite this user?"
+      invite_as_admin: "Grant Admin Privileges"
+      send_invite: "Send Invitation"
+      join_requests_title: "Incoming Join Requests"
+      requester: "Requester"
+      no_requests: "No pending requests."
+  forms:
+    avatar_hint: "Square images are recommended (e.g., 400x400)."
+  tasks:
+    status:
+      todo: "To Do"
+      in_progress: "In Progress"
+      done: "Done"
+      archived: "Archived"
+    sidebar:
+      title: "Tasks"
+      list: "List"
+      calendar: "Calendar"
+      view_list: "List"
+      view_calendar: "Calendar"
+      new_task: "Create New Task"
+      all_tasks: "All Tasks"
+      today_tasks: "Today's Tasks"
+      week_tasks: "This Week's Tasks"
+      incomplete_tasks: "Incomplete Tasks"
+      done_tasks: "Done Tasks"
+    index:
+      search_placeholder: "Search by title, description, or tags (AND search with spaces)"
+      filter_title: "Partial Match"
+      filter_placeholder_status: "todo / prog / done"
+      filter_assignee: "Assignee name"
+      filter_owner: "Owner name"
+      filter_placeholder_partial: "Partial match"
+      filter_placeholder_assignee: "Assignee name"
+      filter_placeholder_owner: "Owner name"
+      column_title: "Title"
+      column_due_at: "Due Date"
+      column_status: "Status"
+      column_assignee: "Assignee"
+      column_owner: "Owner"
+      no_tasks: "No tasks found."
+      confirm_delete: "Delete this task?"
+    form:
+      title: "Title"
+      due_date: "Due Date"
+      due_time: "Time"
+      due_hint: "e.g., 09:00, 13:30 (30-minute intervals). Leave blank for no due time."
+      assignee: "Assignee"
+      assignee_hint: "Click to select/deselect assignees (multiple allowed)."
+      description: "Description"
+      tags: "Tags"
+      tag_placeholder: "e.g., Project A, Bug, High Priority"
+      tag_hint: "Separate multiple tags with commas (,)."
+      status: "Status"
+      submit_create: "Create Task"
+      submit_update: "Update Task"
+    new:
+      title: "New Task"
+    show:
+      due_date: "Due"
+      assignee: "Assignee"
+      owner: "Owner"
+      status: "Status"
+      pin: "Pin"
+      title: "Task Details"
+      edit_title: "Edit Task"
+      comment_title: "Comments"
+      no_comments: "No comments yet."
+      new_comment: "New Comment"
+    edit:
+      title: "Edit Task"
+    calendar:
+      slot_time_header: "Schedule for %{date} %{time}"
+      slot_title: "Tasks for %{date} %{time}"
+      slot_title_list: "Tasks in this slot"
+      view_detail: "View Details"
+      no_tasks_in_slot: "No tasks in this slot."-e \n--- END OF FILE ---\n
+config/locales/ja.yml
+--- START OF FILE ---
+# config/locals/ja.yml
+ja:
+  common:
+    app_name: "Forestly"
+    tagline: "多様なあなたのTaskアプリ"
+    edit: "編集"
+    delete: "削除"
+    confirm_delete: "本当に削除しますか？"
+    approve: "承認"
+    unknown: "不明"
+    not_set: "未設定"
+    search: "検索"
+    clear: "クリア"
+    filter_apply: "フィルタ適用"
+    filter_clear: "フィルタクリア"
+    more: "もっと見る"
+    today: "今日"
+    prev_week: "＜ 前の週"
+    next_week: "次の週 ＞"
+    time: "時間"
+    load_more: "もっと見る"
+    created_at: "作成日"
+    remove_image: "画像を削除する"
+    back: "戻る"
+  error:
+    template:
+      header: "%{count}件のエラーがあります。"
+  devise:
+    sessions:
+      new:
+        title: "ログイン"
+        sign_up_link: "新規ユーザー登録"
+        send_sign_up_email: "登録用メールの送信"
+        demo_mode:
+          header: "【提出モード】デモアカウント"
+          common: "共通"
+          note: "※メール送信は無効です。ログイン後にMVP機能をご確認ください。"
+    mailer:
+      confirmation_instructions:
+        subject: "メールアドレス変更の確認"
+        instruction_title: "メールアドレス変更の確認です。"
+        instruction_body: "以下のリンクを開いて、メールアドレスの変更を確定してください。"
+        action_link: "メールアドレス変更を進める"
+      reset_password_instructions:
+        subject: "パスワード再設定のご案内"
+        instruction_title: "パスワード変更のご案内です。"
+        instruction_body: "以下のリンクを開いて、新しいパスワードを設定してください。"
+        action_link: "パスワード変更を進める"
+    registrations:
+      edit:
+        title: "アカウント設定"
+        current_email: "現在のメールアドレス"
+        unconfirmed_email_msg: "変更申請中： %{email}（確認待ち）"
+        change_email_title: "メールアドレスの変更"
+        send_email_change_instructions: "新しいメールアドレスに変更用メールを送信する"
+        change_password_title: "パスワードの変更"
+        send_password_reset_instructions: "パスワードの変更用メールを送信する"
+  date:
+    formats:
+      default: "%Y/%m/%d"
+      short: "%Y/%m/%d"
+      md: "%m/%d"
+  time:
+      formats:
+        default: "%Y/%m/%d %H:%M:%S"
+        ja_short: "%m/%d %H:%M"
+  activerecord:
+    attributes:
+      user:
+        email: "メール"
+        password: "パスワード"
+        new_email: "新しいメールアドレス"
+      team:
+        name: "チーム名"
+        join_token: "チームID"
+        avatar: "チームアイコン"
+      comment:
+        body: "本文"
+        pinned: "このコメントをピン留めする"
+    errors:
+      template:
+        header: "%{count}件のエラーがあります："
+    models:
+      team: "チーム"
+      membership_request:
+        attributes:
+          team_id:
+            taken: "このプロフィールへの招待はすでに送信済み・承認待ちです。"
+      comment: "コメント"
+    placeholders:
+      team:
+        name: "チーム名を入力してください"
+      comment:
+        body: "コメントを入力..."
+  users:
+    confirmations:
+          edit_email_title: "メールアドレスの変更"
+          new_email_label: "新しいメールアドレス（確認用）"
+          submit_confirm: "上記のメールアドレスで確定する"
+  helpers:
+    submit:
+      create: "%{model}を作成する"
+      update: "%{model}を更新する"
+      comment:
+        create: "コメント送信"
+  time:
+    formats:
+      ja_short: "%m/%d %H:%M" 
+  layouts:
+    application:
+      nav:
+        task: "タスク"
+        works: "ワークス"
+        chat: "チャット"
+        social: "ソーシャル"
+        profile: "プロフィール"
+        team: "チーム"
+        all_profiles_tasks: "全てのプロフィールのタスクを表示"
+      menu:
+        logout: "ログアウト"
+        confirm_logout: "ログアウトしますか？"
+      submit_mode: "【提出モード】メール送信は無効です"
+  profiles:
+    form:
+      label_title: "プロフィール管理名（プロフィール切り替えに利用する名前）"
+      label_placeholder: "株式会社〇〇 / 副業 / プライベート など"
+      display_name_title: "表示名（他のユーザーに表示される名前）"
+      display_name_placeholder: "例）田中太郎 / Tanaka Taro など"
+      avatar_title: "アイコン画像"
+      choose_file: "ファイルを選択"
+      no_file_selected: "選択されていません"
+      remove_avatar: "画像を削除する"
+      avatar_hint: "正方形の画像が推奨です（例: 400×400）。"
+      profile_id: "プロフィールID"
+      profile_id_immutable_hint: "このIDは編集できません。"
+      theme_title: "テーマ（ヘッダー・左ナビの色）"
+      theme_hint: "メイン画面とライトパネルは白のまま、ヘッダーと左ナビだけ色が変わります。"
+      locale_title: "表示言語 / Language"
+      submit_create: "プロフィールを作成する"
+      submit_update: "プロフィール設定を更新する"
+    index:
+      title: "プロフィール一覧"
+      new_link: "新規プロフィール作成"
+      column_name: "名前"
+      column_theme: "テーマ"
+      column_actions: "操作"
+      no_profiles: "まだプロフィールがありません。"
+    show:
+      title: "プロフィール詳細"
+      label_title: "プロフィール名（管理用）"
+      display_name_title: "表示名（他ユーザーに見せる名前）"
+      theme_title: "テーマカラー"
+    new:
+      title: "プロフィール作成"
+    edit:
+      title: "プロフィール編集"
+    locales:
+      ja: "日本語 (Full Japanese)"
+      en: "English (Full English)"
+      ja_en: "主に日本語 キーワードのみ英語 (Japanese with English Keywords)"
+  profile_settings:
+    sidebar:
+      title: "プロフィール設定"
+      home: "ホーム"
+      edit: "プロフィール編集"
+      new: "新規プロフィール作成"
+      auth: "メール・パスワード変更"
+    edit:
+      title: "プロフィール編集"
+      search_team_title: "チームIDでチームを検索して参加申請"
+      search_button: "チームを検索"
+      team_invite_token: "チームID"
+      ask_membership_request: "へ参加申請を送りますか？"
+      apply_as_admin: "管理者として申請"
+      team_not_found: "入力された参加IDに該当するチームが見つかりませんでした。"
+      column_team_name: "チーム名"
+      column_requester: "招待元プロフィール"
+      incoming_invites_title: "このプロフィール宛のチーム招待"
+      no_invites: "このプロフィール宛のチーム招待はありません。"
+      not_found: "編集対象のプロフィールが見つかりませんでした。"
+  teams:
+    index:
+      title: "チーム一覧"
+      edit_settings_title: "チーム編集"
+      new_team: "チームを作成する"
+      no_teams_heml: "まだチームがありません。"
+    settings:
+      sidebar:
+       title: "チーム管理"
+       show: "チーム詳細"
+       manage: "メンバー・招待管理"
+       edit: "チーム情報の編集"
+    new:
+      title: "新規チーム作成"
+    members:
+      title: "メンバー管理"
+      select_team: "管理するチームを選択:"
+      suffix_of_team: "のメンバー"
+      role: "権限"
+      roles:
+        admin: "管理者"
+        member: "メンバー"
+      confirm_remove: "このメンバーをチームから削除しますか？"
+      no_members: "メンバーがいません。"
+      invite_section_title: "新しいメンバーを招待"
+      invite_id_label: "招待したいユーザーのプロフィールID"
+      invite_confirm_msg: "さんをこのチームに招待しますか？"
+      invite_as_admin: "管理者権限を付与する"
+      send_invite: "招待を送る"
+      join_requests_title: "届いている参加申請"
+      requester: "申請者"
+      no_requests: "現在、未承認の申請はありません。"
+  forms:
+    avatar_hint: "正方形の画像が推奨です（例: 400×400）。"
+  tasks:
+    status:
+      todo: "未着手"
+      in_progress: "進行中"
+      done: "完了"
+      archived: "アーカイブ"
+    sidebar:
+      title: "タスク"
+      list: "リスト"
+      calendar: "カレンダー"
+      view_list: "リスト"
+      view_calendar: "カレンダー"
+      new_task: "新規タスク作成"
+      all_tasks: "すべてのタスク"
+      today_tasks: "今日のタスク"
+      week_tasks: "今週のタスク"
+      incomplete_tasks: "未完了タスク"
+      done_tasks: "完了タスク"
+    index:
+      search_placeholder: "タイトル・詳細・タグで検索（スペース区切りでAND検索）"
+      filter_title: "部分一致"
+      filter_placeholder_status: "todo / prog / done"
+      filter_assignee: "担当者名の一部"
+      filter_owner: "作成者名の一部"
+      filter_placeholder_partial: "部分一致"
+      filter_placeholder_status: "todo / prog / done"
+      filter_placeholder_assignee: "担当者名の一部"
+      filter_placeholder_owner: "作成者名の一部"
+      column_title: "タイトル"
+      column_due_at: "期限"
+      column_status: "ステータス"
+      column_assignee: "担当者"
+      column_owner: "作成者"
+      no_tasks: "まだタスクがありません。"
+      confirm_delete: "このタスクを削除しますか？"
+    form:
+      title: "タイトル"
+      due_date: "期限"
+      due_time: "時間"
+      due_hint: "例）09:00, 13:30 のように 30分単位で入力してください。空の場合は期限なしになります。"
+      assignee: "担当者"
+      assignee_hint: "担当者をクリックすると選択／解除できます（複数選択可）。"
+      description: "詳細"
+      tags: "タグ"
+      tag_placeholder: "例）RUNTEQ, Rails, バグ修正"
+      tag_hint: "カンマ（,）区切りで複数タグを入力できます。"
+      status: "ステータス"
+      submit_create: "タスクを作成"
+      submit_update: "タスクを更新"
+    new:
+      title: "タスク新規作成"
+    show:
+      due_date: "期限"
+      assignee: "担当者"
+      owner: "作成者"
+      status: "ステータス"
+      pin: "ピン"
+      title: "タスクの詳細"
+      edit_title: "タスク編集"
+      comment_title: "コメント"
+      no_comments: "まだコメントはありません。"
+      new_comment: "新規コメント"
+    edit:
+      title: "タスク編集"
+    calendar:
+      slot_time_header: "%{date} %{time} の予定"
+      slot_title: "%{date} %{time} のタスク"
+      slot_title_list: "この時間帯のタスク一覧"
+      view_detail: "詳細を見る"
+      no_tasks_in_slot: "この時間帯のタスクはありません。"
+-e \n--- END OF FILE ---\n
+config/locales/devise.en.yml
+--- START OF FILE ---
+# Additional translations at https://github.com/heartcombo/devise/wiki/I18n
 
-
---- FILE: config/routes.rb ---
+en:
+  devise:
+    confirmations:
+      confirmed: "Your email address has been successfully confirmed."
+      send_instructions: "You will receive an email with instructions for how to confirm your email address in a few minutes."
+      send_paranoid_instructions: "If your email address exists in our database, you will receive an email with instructions for how to confirm your email address in a few minutes."
+    failure:
+      already_authenticated: "You are already signed in."
+      inactive: "Your account is not activated yet."
+      invalid: "Invalid %{authentication_keys} or password."
+      locked: "Your account is locked."
+      last_attempt: "You have one more attempt before your account is locked."
+      not_found_in_database: "Invalid %{authentication_keys} or password."
+      timeout: "Your session expired. Please sign in again to continue."
+      unauthenticated: "You need to sign in or sign up before continuing."
+      unconfirmed: "You have to confirm your email address before continuing."
+    mailer:
+      confirmation_instructions:
+        subject: "Confirmation instructions"
+      reset_password_instructions:
+        subject: "Reset password instructions"
+      unlock_instructions:
+        subject: "Unlock instructions"
+      email_changed:
+        subject: "Email Changed"
+      password_change:
+        subject: "Password Changed"
+    omniauth_callbacks:
+      failure: "Could not authenticate you from %{kind} because \"%{reason}\"."
+      success: "Successfully authenticated from %{kind} account."
+    passwords:
+      no_token: "You can't access this page without coming from a password reset email. If you do come from a password reset email, please make sure you used the full URL provided."
+      send_instructions: "You will receive an email with instructions on how to reset your password in a few minutes."
+      send_paranoid_instructions: "If your email address exists in our database, you will receive a password recovery link at your email address in a few minutes."
+      updated: "Your password has been changed successfully. You are now signed in."
+      updated_not_active: "Your password has been changed successfully."
+    registrations:
+      destroyed: "Bye! Your account has been successfully cancelled. We hope to see you again soon."
+      signed_up: "Welcome! You have signed up successfully."
+      signed_up_but_inactive: "You have signed up successfully. However, we could not sign you in because your account is not yet activated."
+      signed_up_but_locked: "You have signed up successfully. However, we could not sign you in because your account is locked."
+      signed_up_but_unconfirmed: "A message with a confirmation link has been sent to your email address. Please follow the link to activate your account."
+      update_needs_confirmation: "You updated your account successfully, but we need to verify your new email address. Please check your email and follow the confirmation link to confirm your new email address."
+      updated: "Your account has been updated successfully."
+      updated_but_not_signed_in: "Your account has been updated successfully, but since your password was changed, you need to sign in again."
+    sessions:
+      signed_in: "Signed in successfully."
+      signed_out: "Signed out successfully."
+      already_signed_out: "Signed out successfully."
+    unlocks:
+      send_instructions: "You will receive an email with instructions for how to unlock your account in a few minutes."
+      send_paranoid_instructions: "If your account exists, you will receive an email with instructions for how to unlock it in a few minutes."
+      unlocked: "Your account has been unlocked successfully. Please sign in to continue."
+  errors:
+    messages:
+      already_confirmed: "was already confirmed, please try signing in"
+      confirmation_period_expired: "needs to be confirmed within %{period}, please request a new one"
+      expired: "has expired, please request a new one"
+      not_found: "not found"
+      not_locked: "was not locked"
+      not_saved:
+        one: "1 error prohibited this %{resource} from being saved:"
+        other: "%{count} errors prohibited this %{resource} from being saved:"
+-e \n--- END OF FILE ---\n
+config/routes.rb
+--- START OF FILE ---
 # config/routes.rb
 Rails.application.routes.draw do
   root "tasks#index"
@@ -4372,23 +5204,18 @@ Rails.application.routes.draw do
 
   resources :profiles do
     collection { post :switch }
+    member do
+      get :settings
+    end
   end
 
   get "up" => "rails/health#show", as: :rails_health_check
 
-  resource :profile_settings, only: [] do
-    get :home
-    get :edit
-    get :theme
+  resources :teams do
+    member do
+      get :manage
+    end
   end
-
-  resource :team_settings, only: [] do
-    get :home
-    get :edit
-    get :members
-  end
-
-  resources :teams
 
   get "tasks/slot_tasks", to: "tasks#slot_tasks", as: :slot_tasks
 
@@ -4408,1028 +5235,4 @@ Rails.application.routes.draw do
     mount LetterOpenerWeb::Engine, at: "/letter_opener"
   end
 end
-
-
---- FILE: config/environments/production.rb ---
-# config/environments/production.rb
-require "active_support/core_ext/integer/time"
-
-Rails.application.configure do
-  config.enable_reloading = false
-
-  config.eager_load = true
-
-  config.consider_all_requests_local = false
-  config.action_controller.perform_caching = true
-
-  config.assets.compile = true
-
-  config.active_storage.service = :local
-
-  config.force_ssl = true
-
-  config.logger = ActiveSupport::Logger.new(STDOUT)
-    .tap  { |logger| logger.formatter = ::Logger::Formatter.new }
-    .then { |logger| ActiveSupport::TaggedLogging.new(logger) }
-
-  config.log_tags = [ :request_id ]
-
-  config.log_level = ENV.fetch("RAILS_LOG_LEVEL", "info")
-
-  config.action_mailer.perform_caching = false
-
-  config.i18n.fallbacks = true
-
-  config.active_support.report_deprecations = false
-
-  config.active_record.dump_schema_after_migration = false
-
-  config.active_record.attributes_for_inspect = [ :id ]
-
-  config.action_mailer.default_url_options = {
-    host: ENV.fetch("APP_HOST", "todo-beaver.onrender.com"),
-    protocol: "https"
-  }
-
-  # --- Submit mode switch (email delivery) ---
-  deliver_emails = ENV.fetch("DELIVER_EMAILS", "false") == "true"
-
-  config.action_mailer.perform_deliveries = deliver_emails
-  config.action_mailer.raise_delivery_errors = deliver_emails
-
-  config.public_file_server.enabled = true
-
-  if deliver_emails
-    config.action_mailer.delivery_method = :smtp
-    config.action_mailer.smtp_settings = {
-      address: ENV.fetch("SMTP_ADDRESS"),
-      port: ENV.fetch("SMTP_PORT", "587").to_i,
-      domain: ENV.fetch("SMTP_DOMAIN", "todo-beaver.onrender.com"),
-      user_name: ENV.fetch("SMTP_USERNAME"),
-      password: ENV.fetch("SMTP_PASSWORD"),
-      authentication: ENV.fetch("SMTP_AUTH", "plain").to_sym,
-      enable_starttls_auto: ENV.fetch("SMTP_STARTTLS", "true") == "true"
-    }
-  else
-    # Don't deliver emails in submit mode (prevents 500)
-    config.action_mailer.delivery_method = :test
-  end
-end
-
-
---- FILE: config/environments/development.rb ---
-# config/environments/development.rb
-require "active_support/core_ext/integer/time"
-
-Rails.application.configure do
-  config.enable_reloading = true
-
-  config.eager_load = false
-
-  config.consider_all_requests_local = true
-
-  config.server_timing = true
-
-  if Rails.root.join("tmp/caching-dev.txt").exist?
-    config.action_controller.perform_caching = true
-    config.action_controller.enable_fragment_cache_logging = true
-
-    config.cache_store = :memory_store
-    config.public_file_server.headers = { "Cache-Control" => "public, max-age=#{2.days.to_i}" }
-  else
-    config.action_controller.perform_caching = false
-
-    config.cache_store = :null_store
-  end
-
-  config.active_storage.service = :local
-
-  config.action_mailer.perform_deliveries = true
-  config.action_mailer.raise_delivery_errors = true
-  config.action_mailer.delivery_method = :letter_opener_web
-  config.action_mailer.default_url_options = { host: "localhost", port: 3000 }
-
-  config.active_support.deprecation = :log
-
-  config.active_support.disallowed_deprecation = :raise
-
-  config.active_support.disallowed_deprecation_warnings = []
-
-  config.active_record.migration_error = :page_load
-
-  config.active_record.verbose_query_logs = true
-
-  config.active_job.verbose_enqueue_logs = true
-
-  config.assets.quiet = true
-
-  config.action_view.annotate_rendered_view_with_filenames = true
-
-  config.action_controller.raise_on_missing_callback_actions = true
-end
-
-
---- FILE: config/environments/test.rb ---
-# config/environments/test.rb
-require "active_support/core_ext/integer/time"
-
-Rails.application.configure do
-  config.enable_reloading = false
-
-  config.eager_load = ENV["CI"].present?
-
-  config.public_file_server.headers = { "Cache-Control" => "public, max-age=#{1.hour.to_i}" }
-
-  config.consider_all_requests_local = true
-  config.action_controller.perform_caching = false
-  config.cache_store = :null_store
-
-  config.action_dispatch.show_exceptions = :rescuable
-
-  config.action_controller.allow_forgery_protection = false
-
-  config.active_storage.service = :test
-
-  config.action_mailer.perform_caching = false
-
-  config.action_mailer.delivery_method = :test
-
-  config.action_mailer.default_url_options = { host: "www.example.com" }
-
-  config.active_support.deprecation = :stderr
-
-  config.active_support.disallowed_deprecation = :raise
-
-  config.active_support.disallowed_deprecation_warnings = []
-
-  config.action_controller.raise_on_missing_callback_actions = true
-end
-
-
---- FILE: config/environment.rb ---
-# config/environment.rb
-# Load the Rails application.
-require_relative "application"
-
-# Initialize the Rails application.
-Rails.application.initialize!
-
-
---- FILE: config/application.rb ---
-# config/application.rb
-require_relative "boot"
-
-require "rails/all"
-
-Bundler.require(*Rails.groups)
-
-module TodoBeaver
-  class Application < Rails::Application
-    config.load_defaults 7.2
-
-    config.autoload_lib(ignore: %w[assets tasks])
-
-    config.time_zone = "Tokyo"
-    config.active_record.default_timezone = :local
-
-    config.i18n.default_locale = :ja
-  end
-end
-
-
---- FILE: config/puma.rb ---
-# This configuration file will be evaluated by Puma. The top-level methods that
-# are invoked here are part of Puma's configuration DSL. For more information
-# about methods provided by the DSL, see https://puma.io/puma/Puma/DSL.html.
-
-# Puma starts a configurable number of processes (workers) and each process
-# serves each request in a thread from an internal thread pool.
-#
-# The ideal number of threads per worker depends both on how much time the
-# application spends waiting for IO operations and on how much you wish to
-# to prioritize throughput over latency.
-#
-# As a rule of thumb, increasing the number of threads will increase how much
-# traffic a given process can handle (throughput), but due to CRuby's
-# Global VM Lock (GVL) it has diminishing returns and will degrade the
-# response time (latency) of the application.
-#
-# The default is set to 3 threads as it's deemed a decent compromise between
-# throughput and latency for the average Rails application.
-#
-# Any libraries that use a connection pool or another resource pool should
-# be configured to provide at least as many connections as the number of
-# threads. This includes Active Record's `pool` parameter in `database.yml`.
-threads_count = ENV.fetch("RAILS_MAX_THREADS", 3)
-threads threads_count, threads_count
-
-# Specifies the `port` that Puma will listen on to receive requests; default is 3000.
-port ENV.fetch("PORT", 3000)
-
-# Allow puma to be restarted by `bin/rails restart` command.
-plugin :tmp_restart
-
-# Specify the PID file. Defaults to tmp/pids/server.pid in development.
-# In other environments, only set the PID file if requested.
-pidfile ENV["PIDFILE"] if ENV["PIDFILE"]
-
-
---- FILE: config/boot.rb ---
-ENV["BUNDLE_GEMFILE"] ||= File.expand_path("../Gemfile", __dir__)
-
-require "bundler/setup" # Set up gems listed in the Gemfile.
-require "bootsnap/setup" # Speed up boot time by caching expensive operations.
-
-
---- FILE: config/importmap.rb ---
-# config/importmap.rb
-pin "application"
-pin "@hotwired/turbo-rails", to: "turbo.min.js"
-pin "@hotwired/stimulus", to: "stimulus.min.js"
-pin "@hotwired/stimulus-loading", to: "stimulus-loading.js"
-
-pin "controllers", to: "controllers/index.js"
-pin_all_from "app/javascript/controllers", under: "controllers"
-
-
---- FILE: config/initializers/filter_parameter_logging.rb ---
-# Be sure to restart your server when you modify this file.
-
-# Configure parameters to be partially matched (e.g. passw matches password) and filtered from the log file.
-# Use this to limit dissemination of sensitive information.
-# See the ActiveSupport::ParameterFilter documentation for supported notations and behaviors.
-Rails.application.config.filter_parameters += [
-  :passw, :email, :secret, :token, :_key, :crypt, :salt, :certificate, :otp, :ssn
-]
-
-
---- FILE: config/initializers/assets.rb ---
-# Be sure to restart your server when you modify this file.
-
-# Version of your assets, change this if you want to expire all your assets.
-Rails.application.config.assets.version = "1.0"
-
-# Add additional assets to the asset load path.
-# Rails.application.config.assets.paths << Emoji.images_path
-
-# Precompile additional assets.
-# application.js, application.css, and all non-JS/CSS in the app/assets
-# folder are already added.
-# Rails.application.config.assets.precompile += %w[ admin.js admin.css ]
-
-
---- FILE: config/initializers/parameter_encoding_patch.rb ---
-# config/initializers/parameter_encoding_patch.rb
-Rails.application.config.to_prepare do
-  ActionController::Base.class_eval do
-    if instance_variable_get(:@_parameter_encodings).nil?
-      instance_variable_set(:@_parameter_encodings, {})
-    end
-  end
-end
-
-
---- FILE: config/initializers/devise.rb ---
-# frozen_string_literal: true
-
-# Assuming you have not yet modified this file, each configuration option below
-# is set to its default value. Note that some are commented out while others
-# are not: uncommented lines are intended to protect your configuration from
-# breaking changes in upgrades (i.e., in the event that future versions of
-# Devise change the default values for those options).
-#
-# Use this hook to configure devise mailer, warden hooks and so forth.
-# Many of these configuration options can be set straight in your model.
-Devise.setup do |config|
-  # The secret key used by Devise. Devise uses this key to generate
-  # random tokens. Changing this key will render invalid all existing
-  # confirmation, reset password and unlock tokens in the database.
-  # Devise will use the `secret_key_base` as its `secret_key`
-  # by default. You can change it below and use your own secret key.
-  # config.secret_key = '6799c1f91f1d0a80d48df75b7b4f4de90fabc6b567e70515d092e117944d6f6d9d1799b40ed799ee8493a05085234c6502d59c2e1db163d2b03ecded3c322059'
-
-  # ==> Controller configuration
-  # Configure the parent class to the devise controllers.
-  # config.parent_controller = 'DeviseController'
-
-  # ==> Mailer Configuration
-  # Configure the e-mail address which will be shown in Devise::Mailer,
-  # note that it will be overwritten if you use your own mailer class
-  # with default "from" parameter.
-  config.mailer_sender = "please-change-me-at-config-initializers-devise@example.com"
-
-  # Configure the class responsible to send e-mails.
-  # config.mailer = 'Devise::Mailer'
-
-  # Configure the parent class responsible to send e-mails.
-  # config.parent_mailer = 'ActionMailer::Base'
-
-  # ==> ORM configuration
-  # Load and configure the ORM. Supports :active_record (default) and
-  # :mongoid (bson_ext recommended) by default. Other ORMs may be
-  # available as additional gems.
-  require "devise/orm/active_record"
-
-  # ==> Configuration for any authentication mechanism
-  # Configure which keys are used when authenticating a user. The default is
-  # just :email. You can configure it to use [:username, :subdomain], so for
-  # authenticating a user, both parameters are required. Remember that those
-  # parameters are used only when authenticating and not when retrieving from
-  # session. If you need permissions, you should implement that in a before filter.
-  # You can also supply a hash where the value is a boolean determining whether
-  # or not authentication should be aborted when the value is not present.
-  # config.authentication_keys = [:email]
-
-  # Configure parameters from the request object used for authentication. Each entry
-  # given should be a request method and it will automatically be passed to the
-  # find_for_authentication method and considered in your model lookup. For instance,
-  # if you set :request_keys to [:subdomain], :subdomain will be used on authentication.
-  # The same considerations mentioned for authentication_keys also apply to request_keys.
-  # config.request_keys = []
-
-  # Configure which authentication keys should be case-insensitive.
-  # These keys will be downcased upon creating or modifying a user and when used
-  # to authenticate or find a user. Default is :email.
-  config.case_insensitive_keys = [ :email ]
-
-  # Configure which authentication keys should have whitespace stripped.
-  # These keys will have whitespace before and after removed upon creating or
-  # modifying a user and when used to authenticate or find a user. Default is :email.
-  config.strip_whitespace_keys = [ :email ]
-
-  # Tell if authentication through request.params is enabled. True by default.
-  # It can be set to an array that will enable params authentication only for the
-  # given strategies, for example, `config.params_authenticatable = [:database]` will
-  # enable it only for database (email + password) authentication.
-  # config.params_authenticatable = true
-
-  # Tell if authentication through HTTP Auth is enabled. False by default.
-  # It can be set to an array that will enable http authentication only for the
-  # given strategies, for example, `config.http_authenticatable = [:database]` will
-  # enable it only for database authentication.
-  # For API-only applications to support authentication "out-of-the-box", you will likely want to
-  # enable this with :database unless you are using a custom strategy.
-  # The supported strategies are:
-  # :database      = Support basic authentication with authentication key + password
-  # config.http_authenticatable = false
-
-  # If 401 status code should be returned for AJAX requests. True by default.
-  # config.http_authenticatable_on_xhr = true
-
-  # The realm used in Http Basic Authentication. 'Application' by default.
-  # config.http_authentication_realm = 'Application'
-
-  # It will change confirmation, password recovery and other workflows
-  # to behave the same regardless if the e-mail provided was right or wrong.
-  # Does not affect registerable.
-  # config.paranoid = true
-
-  # By default Devise will store the user in session. You can skip storage for
-  # particular strategies by setting this option.
-  # Notice that if you are skipping storage for all authentication paths, you
-  # may want to disable generating routes to Devise's sessions controller by
-  # passing skip: :sessions to `devise_for` in your config/routes.rb
-  config.skip_session_storage = [ :http_auth ]
-
-  # By default, Devise cleans up the CSRF token on authentication to
-  # avoid CSRF token fixation attacks. This means that, when using AJAX
-  # requests for sign in and sign up, you need to get a new CSRF token
-  # from the server. You can disable this option at your own risk.
-  # config.clean_up_csrf_token_on_authentication = true
-
-  # When false, Devise will not attempt to reload routes on eager load.
-  # This can reduce the time taken to boot the app but if your application
-  # requires the Devise mappings to be loaded during boot time the application
-  # won't boot properly.
-  # config.reload_routes = true
-
-  # ==> Configuration for :database_authenticatable
-  # For bcrypt, this is the cost for hashing the password and defaults to 12. If
-  # using other algorithms, it sets how many times you want the password to be hashed.
-  # The number of stretches used for generating the hashed password are stored
-  # with the hashed password. This allows you to change the stretches without
-  # invalidating existing passwords.
-  #
-  # Limiting the stretches to just one in testing will increase the performance of
-  # your test suite dramatically. However, it is STRONGLY RECOMMENDED to not use
-  # a value less than 10 in other environments. Note that, for bcrypt (the default
-  # algorithm), the cost increases exponentially with the number of stretches (e.g.
-  # a value of 20 is already extremely slow: approx. 60 seconds for 1 calculation).
-  config.stretches = Rails.env.test? ? 1 : 12
-
-  # Set up a pepper to generate the hashed password.
-  # config.pepper = 'b09cbad222847be41062e7cb9ebaceab341e6f01ed91c8a33801433bd432b69ffa36e7b7b38ca3b8b2f6023b7946d4d998cef5dddeab730f7593d7c12c1ee189'
-
-  # Send a notification to the original email when the user's email is changed.
-  # config.send_email_changed_notification = false
-
-  # Send a notification email when the user's password is changed.
-  # config.send_password_change_notification = false
-
-  # ==> Configuration for :confirmable
-  # A period that the user is allowed to access the website even without
-  # confirming their account. For instance, if set to 2.days, the user will be
-  # able to access the website for two days without confirming their account,
-  # access will be blocked just in the third day.
-  # You can also set it to nil, which will allow the user to access the website
-  # without confirming their account.
-  # Default is 0.days, meaning the user cannot access the website without
-  # confirming their account.
-  # config.allow_unconfirmed_access_for = 2.days
-
-  # A period that the user is allowed to confirm their account before their
-  # token becomes invalid. For example, if set to 3.days, the user can confirm
-  # their account within 3 days after the mail was sent, but on the fourth day
-  # their account can't be confirmed with the token any more.
-  # Default is nil, meaning there is no restriction on how long a user can take
-  # before confirming their account.
-  # config.confirm_within = 3.days
-
-  # If true, requires any email changes to be confirmed (exactly the same way as
-  # initial account confirmation) to be applied. Requires additional unconfirmed_email
-  # db field (see migrations). Until confirmed, new email is stored in
-  # unconfirmed_email column, and copied to email column on successful confirmation.
-  config.reconfirmable = true
-
-  # Defines which key will be used when confirming an account
-  # config.confirmation_keys = [:email]
-
-  # ==> Configuration for :rememberable
-  # The time the user will be remembered without asking for credentials again.
-  # config.remember_for = 2.weeks
-
-  # Invalidates all the remember me tokens when the user signs out.
-  config.expire_all_remember_me_on_sign_out = true
-
-  # If true, extends the user's remember period when remembered via cookie.
-  # config.extend_remember_period = false
-
-  # Options to be passed to the created cookie. For instance, you can set
-  # secure: true in order to force SSL only cookies.
-  # config.rememberable_options = {}
-
-  # ==> Configuration for :validatable
-  # Range for password length.
-  config.password_length = 6..128
-
-  # Email regex used to validate email formats. It simply asserts that
-  # one (and only one) @ exists in the given string. This is mainly
-  # to give user feedback and not to assert the e-mail validity.
-  config.email_regexp = /\A[^@\s]+@[^@\s]+\z/
-
-  # ==> Configuration for :timeoutable
-  # The time you want to timeout the user session without activity. After this
-  # time the user will be asked for credentials again. Default is 30 minutes.
-  # config.timeout_in = 30.minutes
-
-  # ==> Configuration for :lockable
-  # Defines which strategy will be used to lock an account.
-  # :failed_attempts = Locks an account after a number of failed attempts to sign in.
-  # :none            = No lock strategy. You should handle locking by yourself.
-  # config.lock_strategy = :failed_attempts
-
-  # Defines which key will be used when locking and unlocking an account
-  # config.unlock_keys = [:email]
-
-  # Defines which strategy will be used to unlock an account.
-  # :email = Sends an unlock link to the user email
-  # :time  = Re-enables login after a certain amount of time (see :unlock_in below)
-  # :both  = Enables both strategies
-  # :none  = No unlock strategy. You should handle unlocking by yourself.
-  # config.unlock_strategy = :both
-
-  # Number of authentication tries before locking an account if lock_strategy
-  # is failed attempts.
-  # config.maximum_attempts = 20
-
-  # Time interval to unlock the account if :time is enabled as unlock_strategy.
-  # config.unlock_in = 1.hour
-
-  # Warn on the last attempt before the account is locked.
-  # config.last_attempt_warning = true
-
-  # ==> Configuration for :recoverable
-  #
-  # Defines which key will be used when recovering the password for an account
-  # config.reset_password_keys = [:email]
-
-  # Time interval you can reset your password with a reset password key.
-  # Don't put a too small interval or your users won't have the time to
-  # change their passwords.
-  config.reset_password_within = 6.hours
-
-  # When set to false, does not sign a user in automatically after their password is
-  # reset. Defaults to true, so a user is signed in automatically after a reset.
-  # config.sign_in_after_reset_password = true
-
-  # ==> Configuration for :encryptable
-  # Allow you to use another hashing or encryption algorithm besides bcrypt (default).
-  # You can use :sha1, :sha512 or algorithms from others authentication tools as
-  # :clearance_sha1, :authlogic_sha512 (then you should set stretches above to 20
-  # for default behavior) and :restful_authentication_sha1 (then you should set
-  # stretches to 10, and copy REST_AUTH_SITE_KEY to pepper).
-  #
-  # Require the `devise-encryptable` gem when using anything other than bcrypt
-  # config.encryptor = :sha512
-
-  # ==> Scopes configuration
-  # Turn scoped views on. Before rendering "sessions/new", it will first check for
-  # "users/sessions/new". It's turned off by default because it's slower if you
-  # are using only default views.
-  # config.scoped_views = false
-
-  # Configure the default scope given to Warden. By default it's the first
-  # devise role declared in your routes (usually :user).
-  # config.default_scope = :user
-
-  # Set this configuration to false if you want /users/sign_out to sign out
-  # only the current scope. By default, Devise signs out all scopes.
-  # config.sign_out_all_scopes = true
-
-  # ==> Navigation configuration
-  # Lists the formats that should be treated as navigational. Formats like
-  # :html should redirect to the sign in page when the user does not have
-  # access, but formats like :xml or :json, should return 401.
-  #
-  # If you have any extra navigational formats, like :iphone or :mobile, you
-  # should add them to the navigational formats lists.
-  #
-  # The "*/*" below is required to match Internet Explorer requests.
-  # config.navigational_formats = ['*/*', :html, :turbo_stream]
-
-  # The default HTTP method used to sign out a resource. Default is :delete.
-  config.sign_out_via = :delete
-
-  # ==> OmniAuth
-  # Add a new OmniAuth provider. Check the wiki for more information on setting
-  # up on your models and hooks.
-  # config.omniauth :github, 'APP_ID', 'APP_SECRET', scope: 'user,public_repo'
-
-  # ==> Warden configuration
-  # If you want to use other strategies, that are not supported by Devise, or
-  # change the failure app, you can configure them inside the config.warden block.
-  #
-  # config.warden do |manager|
-  #   manager.intercept_401 = false
-  #   manager.default_strategies(scope: :user).unshift :some_external_strategy
-  # end
-
-  # ==> Mountable engine configurations
-  # When using Devise inside an engine, let's call it `MyEngine`, and this engine
-  # is mountable, there are some extra configurations to be taken into account.
-  # The following options are available, assuming the engine is mounted as:
-  #
-  #     mount MyEngine, at: '/my_engine'
-  #
-  # The router that invoked `devise_for`, in the example above, would be:
-  # config.router_name = :my_engine
-  #
-  # When using OmniAuth, Devise cannot automatically set OmniAuth path,
-  # so you need to do it manually. For the users scope, it would be:
-  # config.omniauth_path_prefix = '/my_engine/users/auth'
-
-  # ==> Hotwire/Turbo configuration
-  # When using Devise with Hotwire/Turbo, the http status for error responses
-  # and some redirects must match the following. The default in Devise for existing
-  # apps is `200 OK` and `302 Found` respectively, but new apps are generated with
-  # these new defaults that match Hotwire/Turbo behavior.
-  # Note: These might become the new default in future versions of Devise.
-  config.responder.error_status = :unprocessable_entity
-  config.responder.redirect_status = :see_other
-
-  # ==> Configuration for :registerable
-
-  # When set to false, does not sign a user in automatically after their password is
-  # changed. Defaults to true, so a user is signed in automatically after changing a password.
-  # config.sign_in_after_change_password = true
-end
-
-
---- FILE: config/initializers/permissions_policy.rb ---
-# Be sure to restart your server when you modify this file.
-
-# Define an application-wide HTTP permissions policy. For further
-# information see: https://developers.google.com/web/updates/2018/06/feature-policy
-
-# Rails.application.config.permissions_policy do |policy|
-#   policy.camera      :none
-#   policy.gyroscope   :none
-#   policy.microphone  :none
-#   policy.usb         :none
-#   policy.fullscreen  :self
-#   policy.payment     :self, "https://secure.example.com"
-# end
-
-
---- FILE: config/initializers/content_security_policy.rb ---
-# Be sure to restart your server when you modify this file.
-
-# Define an application-wide content security policy.
-# See the Securing Rails Applications Guide for more information:
-# https://guides.rubyonrails.org/security.html#content-security-policy-header
-
-# Rails.application.configure do
-#   config.content_security_policy do |policy|
-#     policy.default_src :self, :https
-#     policy.font_src    :self, :https, :data
-#     policy.img_src     :self, :https, :data
-#     policy.object_src  :none
-#     policy.script_src  :self, :https
-#     policy.style_src   :self, :https
-#     # Specify URI for violation reports
-#     # policy.report_uri "/csp-violation-report-endpoint"
-#   end
-#
-#   # Generate session nonces for permitted importmap, inline scripts, and inline styles.
-#   config.content_security_policy_nonce_generator = ->(request) { request.session.id.to_s }
-#   config.content_security_policy_nonce_directives = %w(script-src style-src)
-#
-#   # Report violations without enforcing the policy.
-#   # config.content_security_policy_report_only = true
-# end
-
-
---- FILE: config/initializers/inflections.rb ---
-# Be sure to restart your server when you modify this file.
-
-# Add new inflection rules using the following format. Inflections
-# are locale specific, and you may define rules for as many different
-# locales as you wish. All of these examples are active by default:
-# ActiveSupport::Inflector.inflections(:en) do |inflect|
-#   inflect.plural /^(ox)$/i, "\\1en"
-#   inflect.singular /^(ox)en/i, "\\1"
-#   inflect.irregular "person", "people"
-#   inflect.uncountable %w( fish sheep )
-# end
-
-# These inflection rules are supported but not enabled by default:
-# ActiveSupport::Inflector.inflections(:en) do |inflect|
-#   inflect.acronym "RESTful"
-# end
-
-
---- FILE: db/migrate/20251201030420_create_membership_requests.rb ---
-class CreateMembershipRequests < ActiveRecord::Migration[7.2]
-  def change
-    create_table :membership_requests do |t|
-      # 申請を出した側のプロフィール
-      t.references :requester_profile, null: false, foreign_key: { to_table: :profiles }
-
-      # 相手のプロフィール（Team -> Profile 招待で使う）
-      t.references :target_profile, foreign_key: { to_table: :profiles }
-
-      # 対象チーム（Profile -> Team 申請で使う）
-      t.references :team, foreign_key: true
-
-      # 方向: profile_to_team / team_to_profile
-      t.integer :direction, null: false, default: 0
-
-      # 状態: pending / approved / rejected / canceled
-      t.integer :status, null: false, default: 0
-
-      # メッセージ（任意）
-      t.text :message
-
-      t.timestamps
-    end
-
-    # 「同じ内容の pending 申請を二重で作らない」ためのインデックス（とりあえず方向も含めておく）
-    add_index :membership_requests,
-              [ :requester_profile_id, :target_profile_id, :team_id, :direction ],
-              name: "idx_membership_requests_uniqueness"
-  end
-end
-
-
---- FILE: db/migrate/20251129122723_create_team_memberships.rb ---
-# db/migrate/xxxx_create_team_memberships.rb
-class CreateTeamMemberships < ActiveRecord::Migration[7.2]
-  def change
-    create_table :team_memberships do |t|
-      t.references :profile, null: false, foreign_key: true
-      t.references :team,    null: false, foreign_key: true
-      t.string :role
-
-      t.timestamps
-    end
-
-    # 同じ profile が同じ team に二重登録されないようにする
-    add_index :team_memberships, [ :profile_id, :team_id ], unique: true
-  end
-end
-
-
---- FILE: db/migrate/20251129114825_create_teams.rb ---
-class CreateTeams < ActiveRecord::Migration[7.2]
-  def change
-    create_table :teams do |t|
-      t.string :name
-
-      t.timestamps
-    end
-  end
-end
-
-
---- FILE: db/migrate/20251201151350_add_admin_flag_to_membership_requests.rb ---
-class AddAdminFlagToMembershipRequests < ActiveRecord::Migration[7.2]
-  def change
-    add_column :membership_requests, :admin, :boolean, default: false, null: false
-  end
-end
-
-
---- FILE: db/migrate/20251213084433_add_confirmable_to_users.rb ---
-# db/migrate/xxxx_add_confimable_to_users.rb
-class AddConfirmableToUsers < ActiveRecord::Migration[7.2]
-  def change
-    add_column :users, :confirmation_token, :string
-    add_column :users, :confirmed_at, :datetime
-    add_column :users, :confirmation_sent_at, :datetime
-    add_column :users, :unconfirmed_email, :string
-
-    add_index :users, :confirmation_token, unique: true
-  end
-end
-
-
---- FILE: db/migrate/20251203152911_create_task_assignments.rb ---
-# db/migrate/xxxx_create_task_assignments.rb
-class CreateTaskAssignments < ActiveRecord::Migration[7.1]
-  def change
-    create_table :task_assignments do |t|
-      t.references :task,    null: false, foreign_key: true
-      t.references :profile, null: false, foreign_key: true
-
-      t.timestamps
-    end
-
-    add_index :task_assignments, [ :task_id, :profile_id ], unique: true
-  end
-end
-
-
---- FILE: db/migrate/20251125033848_create_profiles.rb ---
-class CreateProfiles < ActiveRecord::Migration[7.2]
-  def change
-    create_table :profiles do |t|
-      t.references :user, null: false, foreign_key: true
-      t.string :name
-      t.string :theme
-
-      t.timestamps
-    end
-  end
-end
-
-
---- FILE: db/migrate/20251202142010_create_tasks.rb ---
-# db/migrate/xxxx_create_tasks.rb
-class CreateTasks < ActiveRecord::Migration[7.1]
-  def change
-    create_table :tasks do |t|
-      t.references :owner_profile, null: false, foreign_key: { to_table: :profiles }
-      t.references :assignee_profile, foreign_key: { to_table: :profiles }
-      t.references :team, null: false, foreign_key: true
-
-      t.string   :title, null: false
-      t.text     :description
-      t.datetime :due_at
-      t.integer  :status, null: false, default: 0  # enum 用
-
-      t.timestamps
-    end
-  end
-end
-
-
---- FILE: db/migrate/20251203115451_create_tags.rb ---
-# db/migrate/xxxx_create_tags.rb
-class CreateTags < ActiveRecord::Migration[7.1]
-  def change
-    create_table :tags do |t|
-      t.string :name, null: false
-
-      t.timestamps
-    end
-
-    add_index :tags, :name, unique: true
-  end
-end
-
-
---- FILE: db/migrate/20251203115524_create_task_tags.rb ---
-# db/migrate/xxxx_create_task_tags.rb
-class CreateTaskTags < ActiveRecord::Migration[7.1]
-  def change
-    create_table :task_tags do |t|
-      t.references :task, null: false, foreign_key: true
-      t.references :tag,  null: false, foreign_key: true
-
-      t.timestamps
-    end
-
-    add_index :task_tags, [ :task_id, :tag_id ], unique: true
-  end
-end
-
-
---- FILE: db/migrate/20251130053718_add_join_token_to_profiles_and_teams.rb ---
-class AddJoinTokenToProfilesAndTeams < ActiveRecord::Migration[7.2]
-  def change
-    add_column :profiles, :join_token, :string
-    add_index  :profiles, :join_token, unique: true
-
-    add_column :teams, :join_token, :string
-    add_index  :teams, :join_token, unique: true
-  end
-end
-
-
---- FILE: db/migrate/20251205103631_create_comments.rb ---
-# db/migrate/xxxx_create_commments.rb
-class CreateComments < ActiveRecord::Migration[7.2]
-  def change
-    create_table :comments do |t|
-      t.references :task, null: false, foreign_key: true
-      t.references :author_profile, null: false, foreign_key: { to_table: :profiles }
-      t.text :body, null: false
-
-      t.timestamps
-    end
-  end
-end
-
-
---- FILE: db/migrate/20251214072957_remove_onboarding_from_users.rb ---
-class RemoveOnboardingFromUsers < ActiveRecord::Migration[7.2]
-  def change
-    remove_column :users, :onboarding, :boolean
-  end
-end
-
-
---- FILE: db/migrate/20251206141956_add_pinned_to_comments.rb ---
-# db/migrate/xxxx_add_pinned_to_comments.rb
-class AddPinnedToComments < ActiveRecord::Migration[7.1]
-  def change
-    add_column :comments, :pinned, :boolean, null: false, default: false
-  end
-end
-
-
---- FILE: db/migrate/20251214064818_add_onboarding_to_users.rb ---
-# db/migrate/xxxx_add_onboarding_to_users.rb
-class AddOnboardingToUsers < ActiveRecord::Migration[7.2]
-  def change
-    add_column :users, :onboarding, :boolean, null: false, default: false
-  end
-end
-
-
---- FILE: db/migrate/20251123061232_devise_create_users.rb ---
-# frozen_string_literal: true
-
-class DeviseCreateUsers < ActiveRecord::Migration[7.2]
-  def change
-    create_table :users do |t|
-      ## Database authenticatable
-      t.string :email,              null: false, default: ""
-      t.string :encrypted_password, null: false, default: ""
-
-      ## Recoverable
-      t.string   :reset_password_token
-      t.datetime :reset_password_sent_at
-
-      ## Rememberable
-      t.datetime :remember_created_at
-
-      ## Trackable
-      # t.integer  :sign_in_count, default: 0, null: false
-      # t.datetime :current_sign_in_at
-      # t.datetime :last_sign_in_at
-      # t.string   :current_sign_in_ip
-      # t.string   :last_sign_in_ip
-
-      ## Confirmable
-      # t.string   :confirmation_token
-      # t.datetime :confirmed_at
-      # t.datetime :confirmation_sent_at
-      # t.string   :unconfirmed_email # Only if using reconfirmable
-
-      ## Lockable
-      # t.integer  :failed_attempts, default: 0, null: false # Only if lock strategy is :failed_attempts
-      # t.string   :unlock_token # Only if unlock strategy is :email or :both
-      # t.datetime :locked_at
-
-
-      t.timestamps null: false
-    end
-
-    add_index :users, :email,                unique: true
-    add_index :users, :reset_password_token, unique: true
-    # add_index :users, :confirmation_token,   unique: true
-    # add_index :users, :unlock_token,         unique: true
-  end
-end
-
-
---- FILE: db/migrate/20251207042702_create_reactions.rb ---
-class CreateReactions < ActiveRecord::Migration[7.2]
-  def change
-    create_table :reactions do |t|
-      t.references :comment, null: false, foreign_key: true
-      t.references :profile, null: false, foreign_key: true
-      t.string :kind
-
-      t.timestamps
-    end
-  end
-end
-
-
---- FILE: db/migrate/20251130024714_rename_name_to_label_in_profiles.rb ---
-class RenameNameToLabelInProfiles < ActiveRecord::Migration[7.2]
-  def change
-    rename_column :profiles, :name, :label
-  end
-end
-
-
---- FILE: db/migrate/20251205111906_create_active_storage_tables.active_storage.rb ---
-# This migration comes from active_storage (originally 20170806125915)
-class CreateActiveStorageTables < ActiveRecord::Migration[7.0]
-  def change
-    # Use Active Record's configured type for primary and foreign keys
-    primary_key_type, foreign_key_type = primary_and_foreign_key_types
-
-    create_table :active_storage_blobs, id: primary_key_type do |t|
-      t.string   :key,          null: false
-      t.string   :filename,     null: false
-      t.string   :content_type
-      t.text     :metadata
-      t.string   :service_name, null: false
-      t.bigint   :byte_size,    null: false
-      t.string   :checksum
-
-      if connection.supports_datetime_with_precision?
-        t.datetime :created_at, precision: 6, null: false
-      else
-        t.datetime :created_at, null: false
-      end
-
-      t.index [ :key ], unique: true
-    end
-
-    create_table :active_storage_attachments, id: primary_key_type do |t|
-      t.string     :name,     null: false
-      t.references :record,   null: false, polymorphic: true, index: false, type: foreign_key_type
-      t.references :blob,     null: false, type: foreign_key_type
-
-      if connection.supports_datetime_with_precision?
-        t.datetime :created_at, precision: 6, null: false
-      else
-        t.datetime :created_at, null: false
-      end
-
-      t.index [ :record_type, :record_id, :name, :blob_id ], name: :index_active_storage_attachments_uniqueness, unique: true
-      t.foreign_key :active_storage_blobs, column: :blob_id
-    end
-
-    create_table :active_storage_variant_records, id: primary_key_type do |t|
-      t.belongs_to :blob, null: false, index: false, type: foreign_key_type
-      t.string :variation_digest, null: false
-
-      t.index [ :blob_id, :variation_digest ], name: :index_active_storage_variant_records_uniqueness, unique: true
-      t.foreign_key :active_storage_blobs, column: :blob_id
-    end
-  end
-
-  private
-    def primary_and_foreign_key_types
-      config = Rails.configuration.generators
-      setting = config.options[config.orm][:primary_key_type]
-      primary_key_type = setting || :primary_key
-      foreign_key_type = setting || :bigint
-      [ primary_key_type, foreign_key_type ]
-    end
-end
-
-
---- FILE: db/migrate/20251214143313_make_tasks_team_optional.rb ---
-# db/migrate/xxxx_make_tasks_team_optional.rb
-class MakeTasksTeamOptional < ActiveRecord::Migration[7.2]
-  def change
-    change_column_null :tasks, :team_id, true
-  end
-end
-
-
---- FILE: db/migrate/20251129125826_add_display_name_to_profiles.rb ---
-class AddDisplayNameToProfiles < ActiveRecord::Migration[7.2]
-  def change
-    add_column :profiles, :display_name, :string
-  end
-end
-
-
+-e \n--- END OF FILE ---\n

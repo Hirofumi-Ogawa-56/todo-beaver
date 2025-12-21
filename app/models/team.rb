@@ -18,7 +18,7 @@ class Team < ApplicationRecord
 
   attr_accessor :remove_avatar
 
-  before_save :purge_avatar_if_requested
+  before_save :purge_avatar_if_needed
 
   private
 
@@ -33,11 +33,9 @@ class Team < ApplicationRecord
     end
   end
 
-  def purge_avatar_if_requested
-    return if remove_avatar.blank?
-
-    # "0" / "1" が来るので boolean キャスト
-    flag = ActiveModel::Type::Boolean.new.cast(remove_avatar)
-    avatar.purge if flag && avatar.attached?
+  def purge_avatar_if_needed
+    if ActiveModel::Type::Boolean.new.cast(remove_avatar)
+      avatar.purge
+    end
   end
 end

@@ -2,7 +2,7 @@
 require "test_helper"
 
 class TeamsControllerTest < ActionDispatch::IntegrationTest
-  setup do
+setup do
     @user, @profile = sign_in_with_profile
     @team = teams(:one)
     TeamMembership.create!(team: @team, profile: @profile, role: TeamMembership::ADMIN_ROLE)
@@ -25,6 +25,11 @@ class TeamsControllerTest < ActionDispatch::IntegrationTest
 
   test "should get edit" do
     get edit_team_url(@team)
+    assert_response :success
+  end
+
+  test "should get manage" do
+    get manage_team_url(@team)
     assert_response :success
   end
 end

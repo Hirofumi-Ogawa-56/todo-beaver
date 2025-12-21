@@ -12,23 +12,18 @@ Rails.application.routes.draw do
 
   resources :profiles do
     collection { post :switch }
+    member do
+      get :settings
+    end
   end
 
   get "up" => "rails/health#show", as: :rails_health_check
 
-  resource :profile_settings, only: [] do
-    get :home
-    get :edit
-    get :theme
+  resources :teams do
+    member do
+      get :manage
+    end
   end
-
-  resource :team_settings, only: [] do
-    get :home
-    get :edit
-    get :members
-  end
-
-  resources :teams
 
   get "tasks/slot_tasks", to: "tasks#slot_tasks", as: :slot_tasks
 

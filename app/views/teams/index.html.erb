@@ -1,6 +1,6 @@
 <!-- app/views/teams/index.html.erb -->
 <% content_for :sidebar do %>
-  <%= render "team_settings/sidebar" %>
+  <%= render "teams/sidebar" %>
 <% end %>
 
 <h1 class="text-xl font-bold mb-4"><%= t('teams.index.title') %></h1>
@@ -11,36 +11,58 @@
               class: "text-sm px-3 py-2 bg-blue-600 text-white rounded hover:bg-blue-700" %>
 </div>
 
-<table class="w-full text-sm">
-  <thead>
-    <tr class="border-b">
-      <th class="text-left py-2"><%= t('activerecord.attributes.team.name') %></th>
-      <th class="text-left py-2"><%= t('common.created_at') %></th>
-      <th class="text-left py-2"></th>
-    </tr>
-  </thead>
-  <tbody>
-    <% @teams.each do |team| %>
+<!-- チーム一覧 -->
+<% if @teams.any? %>
+  <table class="w-full text-sm">
+    <thead class="sticky top-0 bg-gray-50 z-10">
       <tr class="border-b">
-        <td class="py-2">
-          <%= link_to team_path(team), class: "inline-block" do %>
-            <%= team_chip(
-                  team,
-                  size: :xs,
-                  wrapper_class: "px-2 py-1 rounded bg-gray-100 text-xs"
-                ) %>
-          <% end %>
-        </td>
-        <td class="py-2"><%= t(team.created_at.to_date) %></td>
-        <td class="py-2">
-          <%= link_to t('common.edit'), edit_team_path(team), class: "text-xs text-gray-600 underline mr-2" %>
-        <%= button_to t('common.delete'),
-          team_path(team),
-          method: :delete,
-          form: { data: { turbo_confirm: t('common.confirm_delete') } },
-          class: "text-xs text-red-600 underline bg-transparent border-0 p-0 inline" %>
-        </td>
+        <th class="text-left py-2 px-2"><%= t('activerecord.attributes.team.name') %></th>
+        <th class="text-left py-2 px-2"><%= t('common.created_at') %></th>
+        <th class="text-left py-2 px2"></th>
       </tr>
-    <% end %>
-  </tbody>
-</table>
+    </thead>
+
+    <tbody>
+      <% @teams.each do |team| %>
+        <tr class>
+          <td class="py-2">
+            <%= link_to team_path(team), class: "inline-block" do %>
+              <%= team_chip(
+                    team,
+                    size: :xs,
+                    wrapper_class: "px-2 py-1 rounded bg-gray-100 text-xs"
+                  ) %>
+            <% end %>
+          </td>
+          <td class="py-2"><%= l(team.created_at.to_date) %></td>
+            <td class="py-2 text-right">
+              <div class="flex items-center justify-end gap-3">
+                <%= link_to t('teams.members.title', default: "メンバー"), 
+                  manage_team_path(team), 
+                  class: "text-xs text-gray-600 underline hover:text-blue-600" %>
+
+                <%= link_to t('common.edit'), 
+                            edit_team_path(team), 
+                            class: "text-xs text-gray-600 underline hover:text-blue-600" %>
+
+                <%= button_to t('common.delete'),
+                              team_path(team),
+                              method: :delete,
+                              form: { 
+                                data: { turbo_confirm: t('common.confirm_delete') },
+                                class: "inline" 
+                              },
+                              class: "text-xs text-red-600 underline bg-transparent border-0 p-0 cursor-pointer hover:text-red-800" %>
+              </div>
+            </td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+<% else %>
+  <div class="py-10 text-center border-2 border-dashed border-gray-100 rounded-lg">
+    <p class="text-sm text-gray-500">
+      <%= t('teams.index.not_joined_team') %>
+    </p>
+  </div>
+<% end %>

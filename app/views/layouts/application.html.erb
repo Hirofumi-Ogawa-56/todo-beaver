@@ -117,7 +117,7 @@
                   <% end %>                  
                   
                   <!-- プロフィール -->
-                  <%= link_to edit_profile_settings_path,
+                  <%= link_to edit_profile_path(current_profile),
                               class: "text-lg font-semibold px-3 py-1 rounded hover:bg-white/10 flex items-center gap-1" do %>
                     <%= image_tag "butterfly_icon.png",
                                   alt: "Profile",
@@ -127,12 +127,12 @@
                   <% end %>
 
                   <!-- チーム -->
-                  <%= link_to edit_team_settings_path,
+                  <%= link_to teams_path,
                               class: "text-lg font-semibold px-3 py-1 rounded hover:bg-white/10 flex items-center gap-1" do %>
                     <%= image_tag "elephant_icon.png",
                                   alt: "Team",
                                   class: "block",
-                                  style: "height: 33px; width: auto;" %>
+                                  style: "height: 32px; width: auto;" %>
                     <span><%= t('layouts.application.nav.team') %></span>
                   <% end %>
               

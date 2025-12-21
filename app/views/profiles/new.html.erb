@@ -2,7 +2,7 @@
 
 <% if user_signed_in? && current_user.profiles.any? %>
   <% content_for :sidebar do %>
-    <%= render "profile_settings/sidebar" %>
+    <%= render "profiles/sidebar" %>
   <% end %>
 <% end %>
 

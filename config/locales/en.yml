@@ -185,10 +185,11 @@ en:
       edit_settings_title: "Edit Team Settings"
       new_team: "Create Team"
       no_teams_html: "No teams found."
+      not_joined_team: "You haven't joined any teams yet."
     new:
       title: "Create New Team"
     members:
-      title: "Member Management"
+      title: "Member"
       select_team: "Select team to manage:"
       suffix_of_team: "'s Members"
       role: "Role"

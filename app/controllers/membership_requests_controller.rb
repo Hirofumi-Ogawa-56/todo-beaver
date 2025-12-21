@@ -15,7 +15,7 @@ class MembershipRequestsController < ApplicationController
 
       # すでにメンバーなら申請不要
       if team.profiles.exists?(id: current_profile.id)
-        redirect_back fallback_location: edit_profile_settings_path,
+        redirect_back fallback_location: edit_profile_path(current_profile),
                       alert: "すでにこのチームのメンバーです"
         return
       end
@@ -29,10 +29,10 @@ class MembershipRequestsController < ApplicationController
       )
 
       if req.save
-        redirect_back fallback_location: edit_profile_settings_path,
+        redirect_back fallback_location: edit_profile_path(current_profile),
                       notice: "参加申請を送信しました。"
       else
-        redirect_back fallback_location: edit_profile_settings_path,
+        redirect_back fallback_location: edit_profile_path(current_profile),
                       alert: req.errors.full_messages.first
       end
 
@@ -47,7 +47,7 @@ class MembershipRequestsController < ApplicationController
     case req.direction
     when "team_to_profile"
       unless req.pending? && req.target_profile_id == current_profile&.id
-        redirect_back fallback_location: edit_profile_settings_path,
+        redirect_back fallback_location: edit_profile_path(current_profile),
                       alert: "この招待は承認できません"
         return
       end
@@ -67,7 +67,7 @@ class MembershipRequestsController < ApplicationController
         req.update!(status: :approved)
       end
 
-      redirect_back fallback_location: edit_profile_settings_path,
+      redirect_back fallback_location: edit_profile_path(current_profile),
                     notice: "チーム招待を承認しました。"
 
     when "profile_to_team"
@@ -78,7 +78,7 @@ class MembershipRequestsController < ApplicationController
         team.team_memberships.find_by(profile: current_profile, role: TeamMembership::ADMIN_ROLE)
 
       unless admin_membership
-        redirect_back fallback_location: members_team_settings_path(team_id: team.id),
+        redirect_back fallback_location: manage_team_path(team),
                       alert: "このチームの申請を承認する権限がありません"
         return
       end
@@ -88,7 +88,7 @@ class MembershipRequestsController < ApplicationController
         req.update!(status: :approved)
       end
 
-      redirect_back fallback_location: members_team_settings_path(team_id: team.id),
+      redirect_back fallback_location: manage_team_path(team),
                     notice: "参加申請を承認しました。"
 
     else
@@ -108,7 +108,7 @@ class MembershipRequestsController < ApplicationController
 
     requester_profile = current_profile
     unless requester_profile
-      redirect_back fallback_location: members_team_settings_path(team_id: team.id),
+      redirect_back fallback_location: manage_team_path(team),
                     alert: "現在のプロフィールが選択されていません"
       return
     end
@@ -118,14 +118,14 @@ class MembershipRequestsController < ApplicationController
       team.team_memberships.find_by(profile: requester_profile, role: TeamMembership::ADMIN_ROLE)
 
     unless admin_membership
-      redirect_back fallback_location: members_team_settings_path(team_id: team.id),
+      redirect_back fallback_location: manage_team_path(team),
                     alert: "このチームの招待を送る権限がありません"
       return
     end
 
     # すでにメンバーなら招待不要（任意だけど親切）
     if team.profiles.exists?(id: target_profile.id)
-      redirect_back fallback_location: members_team_settings_path(team_id: team.id),
+      redirect_back fallback_location: manage_team_path(team),
                     alert: "このプロフィールはすでにチームメンバーです"
       return
     end
@@ -140,10 +140,10 @@ class MembershipRequestsController < ApplicationController
     )
 
     if membership_request.save
-      redirect_back fallback_location: members_team_settings_path(team_id: team.id),
+      redirect_back fallback_location: manage_team_path(team),
                     notice: "招待を送信しました"
     else
-      redirect_back fallback_location: members_team_settings_path(team_id: team.id),
+      redirect_back fallback_location: manage_team_path(team),
                     alert: membership_request.errors.full_messages.first
     end
   end
