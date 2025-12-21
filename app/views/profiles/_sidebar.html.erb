@@ -2,19 +2,22 @@
 <h2 class="font-semibold text-sm mb-3"><%= t('profile_settings.sidebar.title') %></h2>
 <nav class="space-y-1">
 
-<%= link_to t('profile_settings.sidebar.home'),
-            edit_profile_path(@profile),
-            class: nav_class(edit_profile_path(@profile)) %>
+  <%# @profile ではなく current_profile を使う %>
+  <%= link_to t('profile_settings.sidebar.home'),
+              edit_profile_path(current_profile),
+              class: nav_class(edit_profile_path(current_profile)) %>
 
-<%= link_to t('profile_settings.sidebar.edit'),
-            edit_profile_path(@profile),
-            class: nav_class(edit_profile_path(@profile)) %>
+  <%= link_to t('profile_settings.sidebar.edit'),
+              edit_profile_path(current_profile),
+              class: nav_class(edit_profile_path(current_profile)) %>
 
-<%= link_to t('profile_settings.sidebar.new'),
-            new_profile_path,
-            class: nav_class(new_profile_path) %>
+  <% if current_profile %>
+      <%= link_to t('profile_settings.sidebar.new'),
+                  new_profile_path,
+                  class: nav_class(new_profile_path) %>
+  <% end %>
 
-<%= link_to t('profile_settings.sidebar.auth'),
-            edit_user_registration_path,
-            class: nav_class(edit_user_registration_path) %>
+  <%= link_to t('profile_settings.sidebar.auth'),
+              edit_user_registration_path,
+              class: nav_class(edit_user_registration_path) %>
 </nav>

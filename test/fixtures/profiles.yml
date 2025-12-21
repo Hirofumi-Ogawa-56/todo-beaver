@@ -1,6 +1,4 @@
 # test/fixtures/profiles.yml
-# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
-
 one:
   id: 980190962
   user: one
@@ -15,4 +13,3 @@ two:
   display_name: "小川（副業）"
   theme: "side"
 
-# 必要なら3つ目、4つ目も自由に追加OK
