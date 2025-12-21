@@ -78,7 +78,7 @@ class MembershipRequestsController < ApplicationController
         team.team_memberships.find_by(profile: current_profile, role: TeamMembership::ADMIN_ROLE)
 
       unless admin_membership
-        redirect_back fallback_location: manage_team_path(@team)(team_id: team.id),
+        redirect_back fallback_location: manage_team_path(team),
                       alert: "このチームの申請を承認する権限がありません"
         return
       end
@@ -88,7 +88,7 @@ class MembershipRequestsController < ApplicationController
         req.update!(status: :approved)
       end
 
-      redirect_back fallback_location: manage_team_path(@team)(team_id: team.id),
+      redirect_back fallback_location: manage_team_path(team),
                     notice: "参加申請を承認しました。"
 
     else
@@ -108,7 +108,7 @@ class MembershipRequestsController < ApplicationController
 
     requester_profile = current_profile
     unless requester_profile
-      redirect_back fallback_location: manage_team_path(@team)(team_id: team.id),
+      redirect_back fallback_location: manage_team_path(team),
                     alert: "現在のプロフィールが選択されていません"
       return
     end
@@ -118,14 +118,14 @@ class MembershipRequestsController < ApplicationController
       team.team_memberships.find_by(profile: requester_profile, role: TeamMembership::ADMIN_ROLE)
 
     unless admin_membership
-      redirect_back fallback_location: manage_team_path(@team)(team_id: team.id),
+      redirect_back fallback_location: manage_team_path(team),
                     alert: "このチームの招待を送る権限がありません"
       return
     end
 
     # すでにメンバーなら招待不要（任意だけど親切）
     if team.profiles.exists?(id: target_profile.id)
-      redirect_back fallback_location: manage_team_path(@team)(team_id: team.id),
+      redirect_back fallback_location: manage_team_path(team),
                     alert: "このプロフィールはすでにチームメンバーです"
       return
     end
@@ -140,10 +140,10 @@ class MembershipRequestsController < ApplicationController
     )
 
     if membership_request.save
-      redirect_back fallback_location: manage_team_path(@team)(team_id: team.id),
+      redirect_back fallback_location: manage_team_path(team),
                     notice: "招待を送信しました"
     else
-      redirect_back fallback_location: manage_team_path(@team)(team_id: team.id),
+      redirect_back fallback_location: manage_team_path(team),
                     alert: membership_request.errors.full_messages.first
     end
   end

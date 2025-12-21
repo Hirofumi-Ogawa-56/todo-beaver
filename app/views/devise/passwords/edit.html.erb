@@ -1,10 +1,10 @@
 <!-- app/views/devise/passwords/edit.html.erb -->
+<!-- 新規登録メールのリンク先 -->
 <div class="min-h-screen flex items-center justify-center bg-white px-4">
   <div class="w-full max-w-md">
-    <!-- ロゴ -->
     <div class="flex flex-col items-center text-center mb-8">
       <%= image_tag "forestly_logo.png",
-                    alt: "forestly",
+                    alt: t('common.app_name'),
                     class: "block",
                     style: "height: 128px; width: auto;" %>
       <p class="mt-0 text-sm text-gray-600">
@@ -18,14 +18,7 @@
       </div>
     <% end %>
 
-    <% if flash[:notice].present? %>
-      <div class="mb-4 rounded border border-green-200 bg-green-50 px-3 py-2 text-sm text-green-800">
-        <%= flash[:notice] %>
-      </div>
-    <% end %>
-
-    <!-- タイトル -->
-    <h1 class="text-lg font-semibold text-center mb-4">
+    <h1 class="text-lg font-semibold text-center mb-2">
       <%= t('devise.passwords.edit.title') %>
     </h1>
 
@@ -38,7 +31,6 @@
                  url: user_password_path,
                  html: { method: :put, data: { turbo: false } }) do |f| %>
 
-      <!-- reset token は必須 -->
       <%= f.hidden_field :reset_password_token %>
 
       <% if resource.errors.any? %>
@@ -51,30 +43,56 @@
         </div>
       <% end %>
 
-      <div class="space-y-3">
-        <div class="flex items-center gap-3">
-          <%= f.label :password, t('activerecord.attributes.user.password'), class: "w-28 text-sm text-gray-700" %>
-          <%= f.password_field :password,
-                               autocomplete: "new-password",
-                               class: "flex-1 border border-gray-200 rounded px-3 py-2 text-sm" %>
+      <div class="space-y-6">
+        <div class="p-4 rounded-lg border border-blue-100 bg-blue-50/30">
+          <h2 class="text-xs font-bold text-blue-800 uppercase tracking-wider mb-4">
+            <%= t('profiles.new.title') %>
+          </h2>
+
+          <%= f.fields_for :profiles, resource.profiles.build do |p| %>
+            <div class="space-y-4">
+              <div>
+                <%= p.label :label, t('profiles.form.label_title'), class: "block text-xs font-medium text-gray-700 mb-1" %>
+                <%= p.text_field :label,
+                                 placeholder: t('profiles.form.label_placeholder'),
+                                 class: "w-full border border-gray-200 rounded px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent" %>
+              </div>
+
+              <div>
+                <%= p.label :display_name, t('profiles.form.display_name_title'), class: "block text-xs font-medium text-gray-700 mb-1" %>
+                <%= p.text_field :display_name,
+                                 placeholder: t('profiles.form.display_name_placeholder'),
+                                 class: "w-full border border-gray-200 rounded px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent" %>
+              </div>
+            </div>
+          <% end %>
         </div>
 
-        <div class="flex items-center gap-3">
-          <%= f.label :password_confirmation, t('activerecord.attributes.user.password_confirmation'), class: "w-28 text-sm text-gray-700" %>
-          <%= f.password_field :password_confirmation,
-                               autocomplete: "new-password",
-                               class: "flex-1 border border-gray-200 rounded px-3 py-2 text-sm" %>
+        <div class="space-y-3">
+          <div class="flex items-center gap-3">
+            <%= f.label :password, t('activerecord.attributes.user.password'), class: "w-28 text-sm text-gray-700" %>
+            <%= f.password_field :password,
+                                 autocomplete: "new-password",
+                                 class: "flex-1 border border-gray-200 rounded px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500" %>
+          </div>
+
+          <div class="flex items-center gap-3">
+            <%= f.label :password_confirmation, t('activerecord.attributes.user.password_confirmation'), class: "w-28 text-sm text-gray-700" %>
+            <%= f.password_field :password_confirmation,
+                                 autocomplete: "new-password",
+                                 class: "flex-1 border border-gray-200 rounded px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500" %>
+          </div>
         </div>
 
         <div class="pt-2">
           <%= f.submit t('common.submit_confirm'),
-                      class: "w-full px-4 py-2 bg-blue-600 text-white text-sm rounded hover:bg-blue-700" %>
+                      class: "w-full px-4 py-2 bg-blue-600 text-white text-sm font-semibold rounded hover:bg-blue-700 transition-colors shadow-sm" %>
         </div>
       </div>
     <% end %>
 
-    <div class="mt-6 text-center text-sm">
-      <%= link_to t('devise.sessions.new.back_to_login', default: "ログインへ戻る"), new_user_session_path, class: "text-gray-600 underline" %>
+    <div class="mt-8 text-center text-sm border-t border-gray-100 pt-6">
+      <%= link_to t('devise.sessions.new.back_to_login', default: "ログインへ戻る"), new_user_session_path, class: "text-gray-500 hover:text-blue-600 underline transition-colors" %>
     </div>
   </div>
 </div>
