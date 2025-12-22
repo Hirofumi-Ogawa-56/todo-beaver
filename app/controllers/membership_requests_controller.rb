@@ -32,10 +32,16 @@ class MembershipRequestsController < ApplicationController
         redirect_back fallback_location: edit_profile_path(current_profile),
                       notice: "参加申請を送信しました。"
       else
-        redirect_back fallback_location: edit_profile_path(current_profile),
-                      alert: req.errors.full_messages.first
-      end
+        # message を呼ばず、attribute と type (エラーの種類) だけを出す
+        details = req.errors.details.map { |attr, errors|
+          "#{attr}: #{errors.map { |e| e[:error] }.join(', ')}"
+        }.join(" / ")
 
+        redirect_back fallback_location: edit_profile_path(current_profile),
+                      alert: "申請に失敗しました（エラー詳細）: #{details}"
+      end
+    when "team_to_parent", "team_to_child"
+      create_team_hierarchy_request(direction)
     else
       redirect_back fallback_location: root_path, alert: "不正なリクエストです。"
     end
@@ -90,7 +96,8 @@ class MembershipRequestsController < ApplicationController
 
       redirect_back fallback_location: manage_team_path(team),
                     notice: "参加申請を承認しました。"
-
+    when "team_to_parent", "team_to_child"
+      approve_team_hierarchy_request(req)
     else
       redirect_back fallback_location: root_path, alert: "不正なリクエストです。"
     end
@@ -146,5 +153,53 @@ class MembershipRequestsController < ApplicationController
       redirect_back fallback_location: manage_team_path(team),
                     alert: membership_request.errors.full_messages.first
     end
+  end
+
+  # ★ チーム親子申請の作成
+  def create_team_hierarchy_request(direction)
+    from_team = Team.find(params[:team_id])
+    to_team = Team.find(params[:target_team_id])
+
+    # 権限チェック：操作しているチーム（from_team）の管理者であること
+    unless from_team.admin?(current_profile)
+      return redirect_back fallback_location: edit_team_path(from_team), alert: "権限がありません"
+    end
+
+    req = MembershipRequest.new(
+      direction: direction,
+      team: from_team,
+      target_team: to_team,
+      requester_profile: current_profile,
+      status: :pending
+    )
+
+    if req.save
+      redirect_back fallback_location: edit_team_path(from_team), notice: "申請・招待を送信しました。"
+    else
+      redirect_back fallback_location: edit_team_path(from_team), alert: "申請に失敗しました。"
+    end
+  end
+
+  # ★ チーム親子申請の承認
+  def approve_team_hierarchy_request(req)
+      unless req.target_team.admin?(current_profile)
+        return redirect_back fallback_location: root_path, alert: "承認権限がありません"
+      end
+
+      begin
+        Team.transaction do
+          if req.team_to_parent?
+            # 下位チーム(team)側がすでに別の上位チームを持っていないか確認（任意）
+            req.team.update!(parent: req.target_team)
+          else
+            # 下位チーム(target_team)側がすでに別の上位チームを持っていないか確認（任意）
+            req.target_team.update!(parent: req.team)
+          end
+          req.update!(status: :approved)
+        end
+        redirect_back fallback_location: edit_team_path(req.target_team), notice: "組織構造を更新しました。"
+      rescue ActiveRecord::RecordInvalid => e
+        redirect_back fallback_location: edit_team_path(req.target_team), alert: "更新に失敗しました: #{e.record.errors.full_messages.join(', ')}"
+      end
   end
 end

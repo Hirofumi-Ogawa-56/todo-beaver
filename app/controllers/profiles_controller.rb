@@ -26,6 +26,7 @@ class ProfilesController < ApplicationController
   end
 
   def edit
+    prepare_membership_data
   end
 
   def update
@@ -52,14 +53,7 @@ class ProfilesController < ApplicationController
   end
 
   def settings
-    @incoming_team_invites = @profile.received_membership_requests
-                                     .team_to_profile
-                                     .pending
-                                     .includes(:team, :requester_profile)
-
-
-    @team_invite_token = params[:team_invite_token].to_s.strip.upcase
-    @invite_teams = @team_invite_token.present? ? Team.where(join_token: @team_invite_token) : Team.none
+    prepare_membership_data
   end
 
   private
@@ -77,5 +71,23 @@ class ProfilesController < ApplicationController
       :remove_avatar,
       :locale
     )
+  end
+
+  def prepare_membership_data
+    # 1. チーム検索ロジック
+    @team_invite_token = params[:team_invite_token].to_s.strip.upcase
+    @invite_teams = @team_invite_token.present? ? Team.where(join_token: @team_invite_token) : Team.none
+
+    # 2. 自分(Profile)からチームへ送った「申請中」のリスト（申請取消用）
+    @outgoing_requests = @profile.sent_membership_requests
+                                 .profile_to_team
+                                 .pending
+                                 .includes(:team)
+
+    # 3. チームから自分(Profile)へ届いた「招待」のリスト（承認・却下用）
+    @incoming_team_invites = @profile.received_membership_requests
+                                     .team_to_profile
+                                     .pending
+                                     .includes(:team, :requester_profile)
   end
 end

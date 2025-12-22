@@ -4,4 +4,153 @@
 <% end %>
 
 <h1 class="text-xl font-bold mb-4">チーム編集</h1>
-<%= render "form", team: @team %>
+
+<%# 基本情報の編集（名前・アバター） %>
+<div class="bg-white p-6 rounded-lg border mb-8">
+  <%= render "form", team: @team %>
+</div>
+
+<%# 組織階層の設定 %>
+<div class="bg-white p-6 rounded-lg border">
+  <h2 class="text-sm font-bold text-gray-700 mb-4 uppercase tracking-wider">組織階層の設定（上位・下位チーム）</h2>
+
+  <div class="p-4 bg-gray-50 rounded border border-dashed mb-6">
+    <div class="text-xs text-gray-500 font-medium mb-3">組織図（現在の階層構造）:</div>
+    
+    <div class="bg-white p-4 rounded border shadow-sm overflow-x-auto">
+      <ul class="tree-root">
+        <% 
+          # 最上位のチーム（親の親...）を特定する
+          root_team = @team
+          root_team = root_team.parent while root_team.parent.present?
+        %>
+        <%= render_team_tree(root_team, @team) %>
+      </ul>
+    </div>
+
+    <% if @team.parent %>
+      <div class="mt-4 flex justify-end">
+        <%= button_to "上位チームとの連携を解除", 
+                      team_path(@team), 
+                      method: :patch, 
+                      params: { "team[parent_id]" => "" },
+                      form: { data: { turbo_confirm: "上位チームとの連携を解除しますか？" } },
+                      class: "text-[10px] px-2 py-1 bg-white border border-red-200 text-red-600 rounded hover:bg-red-50 transition" %>
+      </div>
+    <% end %>
+  </div>
+
+    <%# --- 連携申請エリア --- %>
+    <div class="border-t pt-4">
+      <h3 class="text-sm font-semibold mb-2">組織の連携</h3>
+      
+    <% if @outgoing_parent_request %>
+      <div class="flex items-center justify-between bg-amber-50 p-3 rounded border border-amber-200">
+        <div class="flex items-center gap-2">
+          <span class="flex h-2 w-2 rounded-full bg-amber-400"></span>
+          <span class="text-xs text-amber-800">
+            <%# target_team を使って名前とIDを表示 %>
+            <strong><%= @outgoing_parent_request.target_team.name %></strong> 
+            (ID: <%= @outgoing_parent_request.target_team.join_token %>) へ申請中・承認待ちです
+          </span>
+        </div>
+        <%= button_to "申請取消", 
+                      membership_request_path(@outgoing_parent_request.id), 
+                      method: :delete, 
+                      form: { data: { turbo_confirm: "申請を取り消しますか？" } },
+                      class: "text-xs text-red-600 underline hover:text-red-800" %>
+      </div>
+    <% else %>
+        <%= form_with url: edit_team_path(@team), method: :get, local: true, class: "flex items-end gap-2 mb-4" do %>
+          <div>
+            <label class="block text-xs mb-1">チームID</label>
+            <%= text_field_tag :parent_team_token, params[:parent_team_token], 
+                              placeholder: "チームIDを入力",
+                              class: "border rounded px-2 py-1 text-sm w-48" %>
+          </div>
+          <div class="mb-1">
+            <%= submit_tag "検索", class: "px-3 py-2 text-xs bg-gray-100 rounded border hover:bg-gray-200 cursor-pointer" %>
+          </div>
+        <% end %>
+
+        <% if @found_parent_team %>
+          <div class="p-3 bg-blue-50 border border-blue-200 rounded flex flex-col gap-3">
+            <div class="flex items-center gap-2">
+              <%= team_chip(@found_parent_team, size: :xs) %>
+              <span class="text-xs text-gray-600">を組織に関連付けますか？</span>
+            </div>
+            
+            <div class="flex gap-2">
+              <%= form_with url: membership_requests_path, method: :post, local: true do %>
+                <%= hidden_field_tag :direction, "team_to_parent" %>
+                <%= hidden_field_tag :team_id, @team.id %>
+                <%= hidden_field_tag :target_team_id, @found_parent_team.id %>
+                <%= submit_tag "このチームの下位チームになるよう申請", 
+                              class: "px-3 py-1.5 bg-blue-600 text-white text-xs font-bold rounded hover:bg-blue-700 cursor-pointer" %>
+              <% end %>
+
+              <%= form_with url: membership_requests_path, method: :post, local: true do %>
+                <%= hidden_field_tag :direction, "team_to_child" %>
+                <%= hidden_field_tag :team_id, @team.id %>
+                <%= hidden_field_tag :target_team_id, @found_parent_team.id %>
+                <%= submit_tag "このチームの上位チームになるよう申請", 
+                              class: "px-3 py-1.5 bg-gray-800 text-white text-xs font-bold rounded hover:bg-black cursor-pointer" %>
+              <% end %>
+            </div>
+          </div>
+        <% end %>
+      <% end %>
+    </div>
+
+    <%# --- 届いている「上位から」または「下位から」の申請承認 --- %>
+    <div class="border-t pt-4">
+      <h3 class="text-sm font-semibold mb-2">届いている組織連携の申請</h3>
+      <% if @incoming_child_requests.any? %>
+        <table class="w-full text-xs">
+          <thead>
+            <tr class="border-b">
+              <th class="text-left py-1 text-gray-500">申請元のチーム</th>
+              <th class="text-left py-1 text-gray-500">内容</th>
+              <th class="text-left py-1"></th>
+            </tr>
+          </thead>
+          <tbody>
+            <% @incoming_child_requests.each do |req| %>
+              <tr class="border-b">
+                <td class="py-2">
+                  <%= team_chip(req.team, size: :xs, wrapper_class: "px-2 py-1 rounded bg-gray-100 text-xs") %>
+                </td>
+                <td class="py-2">
+                  <% if req.team_to_parent? %>
+                    <span class="px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-100 font-medium">
+                      下位チームからの申請
+                    </span>
+                  <% else %>
+                    <span class="px-2 py-0.5 rounded-full bg-purple-50 text-purple-700 border border-purple-100 font-medium">
+                      上位チームからの申請
+                    </span>
+                  <% end %>
+                </td>
+                <td class="py-2 text-right">
+                  <div class="flex items-center justify-end gap-3">
+                    <!-- 承認ボタン・却下ボタン -->
+                    <%= button_to "承認", approve_membership_request_path(req), method: :patch,
+                                  class: "px-4 py-1 bg-blue-100 text-blue-700 rounded border border-blue-300 hover:bg-blue-200 font-bold" %>
+
+                    <%= button_to "却下", 
+                                  membership_request_path(req.id), 
+                                  method: :delete, 
+                                  form: { data: { turbo_confirm: "この連携申請を却下しますか？" } },
+                                  class: "text-xs text-red-600 underline hover:text-red-800" %>
+                  </div>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      <% else %>
+        <p class="text-xs text-gray-500 mt-2">現在、届いている申請はありません。</p>
+      <% end %>
+    </div>
+  </div>
+</div>

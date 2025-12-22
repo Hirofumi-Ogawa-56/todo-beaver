@@ -17,25 +17,36 @@ export default class extends Controller {
     this.resizing = false
   }
 
-  // リンクから呼ばれる
-  // data-side-panel-title-param="..." でタイトルを受け取る
   open(event) {
-    const title = event.params.title // side_panel_title_param → title
-
+    // 1. タイトルの更新
+    const title = event.params.title
     if (this.hasTitleTarget && title) {
       this.titleTarget.textContent = title
     }
 
-    this.panelTarget.classList.remove("translate-x-full")
-    this.panelTarget.classList.add("translate-x-0")
+    // 2. hidden を解除（これで DOM 上にスペースが確保される）
+    this.panelTarget.classList.remove("hidden")
+
+    // 3. ブラウザの描画を待ってからアニメーションを開始
+    requestAnimationFrame(() => {
+      this.panelTarget.classList.remove("translate-x-full")
+      this.panelTarget.classList.add("translate-x-0")
+    })
   }
 
   close() {
+    // 1. 画面外へ戻すアニメーションを開始
     this.panelTarget.classList.add("translate-x-full")
     this.panelTarget.classList.remove("translate-x-0")
+
+    // 2. アニメーション（duration-200）が終わってから hidden にする
+    // これをしないと、閉じた後も「透明な壁」が右側に残ってしまいます
+    setTimeout(() => {
+      this.panelTarget.classList.add("hidden")
+    }, 200) 
   }
 
-  // リサイズ開始
+  // --- リサイズ機能はそのまま維持 ---
   startResize(event) {
     event.preventDefault()
     this.resizing   = true

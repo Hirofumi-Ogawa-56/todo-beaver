@@ -39,6 +39,35 @@ class TeamsController < ApplicationController
   end
 
   def edit
+    @team = Team.find(params[:id])
+
+    unless @team.admin?(current_profile)
+      redirect_to @team, alert: "編集権限がありません。"
+      return
+    end
+
+    # --- [組織階層の設定用] 親子関係の検索ロジック ---
+    if params[:parent_team_token].present?
+      @found_parent_team = Team.find_by(join_token: params[:parent_team_token].upcase)
+      if @found_parent_team == @team
+        @found_parent_team = nil
+        flash.now[:alert] = "自分自身を親チームに指定することはできません。"
+      end
+    end
+
+    # 届いている親子関連申請
+    @incoming_child_requests = MembershipRequest.where(
+      target_team_id: @team.id,
+      direction: [ :team_to_parent, :team_to_child ],
+      status: :pending
+    )
+
+    # 送信済みの親子関連申請
+    @outgoing_parent_request = MembershipRequest.where(
+      team_id: @team.id,
+      direction: [ :team_to_parent, :team_to_child ],
+      status: :pending
+    ).first
   end
 
   def update
@@ -54,30 +83,23 @@ class TeamsController < ApplicationController
     redirect_to teams_path, notice: "チームを削除しました"
   end
 
-  # ★ 旧 team_settings#members を統合したアクション
   def manage
-    # set_team により、この時点で @team は取得済みです
-
+    # メンバー管理専用のデータ取得
     @memberships = @team.team_memberships.includes(:profile)
-    @members     = @memberships.map(&:profile)
 
-    # 今のプロフィールがこのチームの管理者かどうか
-    @current_membership = @memberships.find { |m| m.profile_id == current_profile.id }
-    @can_manage_members = @current_membership&.admin?
+    # プロフィール（個人）からの参加申請
+    @incoming_join_requests = @team.membership_requests
+                                  .profile_to_team
+                                  .pending
+                                  .includes(:requester_profile)
 
-    # プロフィール検索用（招待用トークン）
+    # [招待用] プロフィール検索
     @profile_invite_token = params[:profile_invite_token].to_s.strip.upcase
     if @profile_invite_token.present?
       @found_profile = Profile.where(join_token: @profile_invite_token)
-                              .where.not(id: @members.map(&:id))
+                              .where.not(id: @memberships.pluck(:profile_id))
                               .first
     end
-
-    # このチームに届いている参加申請（プロフィールからチームへ）
-    @incoming_join_requests = @team.membership_requests
-                                   .profile_to_team
-                                   .pending
-                                   .includes(:requester_profile)
   end
 
   private

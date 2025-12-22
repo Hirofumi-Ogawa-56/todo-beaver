@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2025_12_17_154535) do
+ActiveRecord::Schema[7.2].define(version: 2025_12_21_123526) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -63,9 +63,11 @@ ActiveRecord::Schema[7.2].define(version: 2025_12_17_154535) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.boolean "admin"
+    t.integer "target_team_id"
     t.index ["requester_profile_id", "target_profile_id", "team_id", "direction"], name: "idx_membership_requests_uniqueness"
     t.index ["requester_profile_id"], name: "index_membership_requests_on_requester_profile_id"
     t.index ["target_profile_id"], name: "index_membership_requests_on_target_profile_id"
+    t.index ["target_team_id"], name: "index_membership_requests_on_target_team_id"
     t.index ["team_id"], name: "index_membership_requests_on_team_id"
   end
 
@@ -150,7 +152,9 @@ ActiveRecord::Schema[7.2].define(version: 2025_12_17_154535) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.string "join_token"
+    t.integer "parent_id"
     t.index ["join_token"], name: "index_teams_on_join_token", unique: true
+    t.index ["parent_id"], name: "index_teams_on_parent_id"
   end
 
   create_table "users", force: :cascade do |t|
@@ -189,4 +193,5 @@ ActiveRecord::Schema[7.2].define(version: 2025_12_17_154535) do
   add_foreign_key "tasks", "teams"
   add_foreign_key "team_memberships", "profiles"
   add_foreign_key "team_memberships", "teams"
+  add_foreign_key "teams", "teams", column: "parent_id"
 end

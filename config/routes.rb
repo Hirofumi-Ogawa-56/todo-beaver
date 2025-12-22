@@ -35,8 +35,10 @@ Rails.application.routes.draw do
 
   resources :team_memberships, only: %i[create destroy update]
 
-  resources :membership_requests, only: %i[create] do
-    member { patch :approve }
+  resources :membership_requests, only: [ :create, :destroy, :update ] do
+    member do
+      patch :approve
+    end
   end
 
   if Rails.env.development?

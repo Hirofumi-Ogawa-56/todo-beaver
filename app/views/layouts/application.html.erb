@@ -177,39 +177,38 @@
       </header>
 
     <!-- メインコンテンツ -->
-    <main class="<%= submit_mode? ? 'pt-24' : 'pt-16' %> pb-0">
-      <% if notice %>
-        <div class="mb-4 bg-green-100 text-green-800 px-4 py-2 rounded">
-          <%= notice %>
-        </div>
-      <% end %>
-      <% if alert %>
-        <div class="mb-4 bg-red-100 text-red-800 px-4 py-2 rounded">
-          <%= alert %>
+    <main class="<%= submit_mode? ? 'pt-24' : 'pt-16' %> h-screen overflow-hidden flex flex-col">
+      <% if notice || alert %>
+        <div class="flex-none px-6 mt-2">
+          <% if notice %>
+            <div class="bg-green-100 text-green-800 px-4 py-2 rounded text-sm"><%= notice %></div>
+          <% end %>
+          <% if alert %>
+            <div class="bg-red-100 text-red-800 px-4 py-2 rounded text-sm"><%= alert %></div>
+          <% end %>
         </div>
       <% end %>
 
       <div
-        class="flex gap-0 min-h-[calc(100vh-4rem)]"
+        class="flex flex-1 overflow-hidden" 
         data-controller="side-panel"
         data-side-panel-initial-width-value="480"
       >
         <% if content_for?(:sidebar) %>
-          <aside class="w-60 shrink-0 px-4 pt-3 pb-6 self-stretch <%= sidebar_theme_class %>">
+          <aside class="w-60 shrink-0 px-4 pt-3 pb-6 overflow-y-auto border-r <%= sidebar_theme_class %>">
             <%= yield :sidebar %>
           </aside>
 
-          <section class="flex-1 bg-white px-6 pt-3 pb-6 overflow-auto">
+          <section class="flex-1 bg-white px-6 pt-3 pb-6 overflow-y-auto border-r border-gray-100">
             <%= yield %>
           </section>
         <% else %>
-          <section class="flex-1 bg-white px-6 pt-3 pb-6">
+          <section class="flex-1 bg-white px-6 pt-3 pb-6 overflow-y-auto border-r border-gray-100">
             <%= yield %>
           </section>
         <% end %>
 
-      <!-- 共通サイドパネルを描画 -->
-      <%= render "shared/side_panel" %>
+        <%= render "shared/side_panel" %>
       </div>
     </main>
 
