@@ -132,7 +132,7 @@ ja:
       remove_avatar: "画像を削除する"
       avatar_hint: "正方形の画像が推奨です（例: 400×400）。"
       profile_id: "プロフィールID"
-      profile_id_immutable_hint: "このIDは編集できません。"
+      profile_id_immutable_hint: "このIDは変更できません。"
       theme_title: "テーマ（ヘッダー・左ナビの色）"
       theme_hint: "メイン画面とライトパネルは白のまま、ヘッダーと左ナビだけ色が変わります。"
       locale_title: "表示言語 / Language"

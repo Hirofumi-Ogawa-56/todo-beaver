@@ -3,13 +3,18 @@ class Team < ApplicationRecord
   has_many :team_memberships, dependent: :destroy
   has_many :profiles, through: :team_memberships
   has_many :membership_requests, dependent: :destroy
+  has_many :children, class_name: "Team", foreign_key: "parent_id", dependent: :destroy
 
   has_one_attached :avatar
 
   validates :name, presence: true, length: { maximum: 30 }
   validates :join_token, uniqueness: true, allow_nil: true
+  validate :parent_cannot_be_self
+
+  belongs_to :parent, class_name: "Team", optional: true
 
   before_create :set_join_token
+  before_save :purge_avatar_if_needed
 
   def display_initials
     base = name.presence || "?"
@@ -18,7 +23,14 @@ class Team < ApplicationRecord
 
   attr_accessor :remove_avatar
 
-  before_save :purge_avatar_if_needed
+  def admin?(profile)
+  # 1. 直接このチームの管理者かチェック
+  return true if team_memberships.exists?(profile: profile, role: "admin")
+
+  # 2. 親チームが存在する場合、親チームの管理者かチェック（再帰的にトップまで遡る）
+  return parent.admin?(profile) if parent.present?
+  false
+end
 
   private
 
@@ -36,6 +48,12 @@ class Team < ApplicationRecord
   def purge_avatar_if_needed
     if ActiveModel::Type::Boolean.new.cast(remove_avatar)
       avatar.purge
+    end
+  end
+
+  def parent_cannot_be_self
+    if parent_id.present? && parent_id == id
+      errors.add(:parent_id, "自分自身を親チームに設定することはできません")
     end
   end
 end

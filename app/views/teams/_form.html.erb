@@ -52,7 +52,24 @@
       </label>
     <% end %>
   </div>
-  
+
+    <% if @team.persisted? && @team.join_token.present? %>
+      <div class="mb-6 max-w-md">
+        <label class="block text-xs mb-1 text-gray-500">
+          チームID
+        </label>
+
+        <input type="text"
+              value="<%= @team.join_token %>"
+              readonly
+              class="border border-gray-300 rounded px-3 py-2 w-full bg-gray-50 text-gray-600 font-mono text-sm" />
+
+        <p class="text-[11px] text-gray-400 mt-1">
+          このIDは変更はできません。
+        </p>
+      </div>
+    <% end %>
+    
   <div class="pt-2">
     <%= f.submit t("helpers.submit.#{@team.new_record? ? 'create' : 'update'}", model: t('activerecord.models.team')),
                  class: "px-6 py-2 bg-blue-600 text-white text-sm font-medium rounded shadow-sm hover:bg-blue-700 transition cursor-pointer" %>
