@@ -1,0 +1,46 @@
+<!-- app/views/chat_rooms/_sidebar.html.erb -->
+<h2 class="font-semibold text-lg mb-3">Chat</h2>
+
+<div class="mb-4 flex flex-col gap-3">
+  <%= link_to "新規ルームを作成",
+              new_chat_room_path,
+              class: "text-center text-xs px-3 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 font-bold transition",
+              data: {
+                turbo_frame: "side-panel-frame",
+                action: "click->side-panel#open",
+                side_panel_title_param: "新規チャットルーム"
+              } %>
+</div>
+
+<nav class="space-y-1 overflow-y-auto max-h-[calc(100vh-250px)]">
+    <% if @chat_rooms.any? %>
+        <% @chat_rooms.each do |room| %>
+        <% 
+            # 現在のルームが開かれているか判定
+            is_active = (controller_name == 'chat_rooms' && params[:id].to_i == room.id)
+            
+            # タスクの nav_class と同様のロジックを適用
+            # 基本は 'text-gray-600' だが、テーマが暗い場合は白っぽく、
+            # アクティブな時は青くなるように調整します
+            base_classes = "group flex items-center justify-between px-3 py-2 rounded-lg transition"
+            state_classes = is_active ? 
+                            "bg-blue-600 text-white shadow-sm" : 
+                            "text-inherit hover:bg-white/10 opacity-80 hover:opacity-100" 
+        %>
+
+        <%= link_to chat_room_path(room), class: "#{base_classes} #{state_classes}" do %>
+            <div class="flex items-center gap-2 min-w-0">
+            <div class="w-2 h-2 rounded-full <%= is_active ? 'bg-white' : 'bg-gray-400' %>"></div>
+            <span class="truncate font-medium"><%= room.name.presence || "無名のルーム" %></span>
+            </div>
+        <% end %>
+        <% end %>
+
+  <% else %>
+    <div class="px-3 py-4 text-sm text-gray-400 text-center bg-gray-50 rounded-lg border border-dashed">
+      参加中のルームはありません
+    </div>
+  <% end %>
+</nav>
+
+<hr class="my-3">

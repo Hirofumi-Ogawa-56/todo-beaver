@@ -1,0 +1,5 @@
+class AddPrimaryTeamIdToProfiles < ActiveRecord::Migration[7.2]
+  def change
+    add_column :profiles, :primary_team_id, :integer
+  end
+end

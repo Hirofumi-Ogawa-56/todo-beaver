@@ -1,0 +1,9 @@
+<!-- app/views/works/new.html.erb -->
+<div class="max-w-5xl mx-auto py-8 px-4">
+  <div class="mb-8">
+    <%= link_to "← 一覧に戻る", works_path, class: "text-sm text-gray-500 hover:text-blue-600 transition-colors" %>
+  </div>
+  <div class="bg-white p-8">
+    <%= render "form", work: @work %>
+  </div>
+</div>

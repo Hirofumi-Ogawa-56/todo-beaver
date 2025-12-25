@@ -1,0 +1,49 @@
+<!-- app/views/messages/_message.html.erb -->
+<% is_thread_parent ||= false %>
+<div class="group flex items-start gap-3 hover:bg-gray-50 px-4 py-2 relative" id="<%= dom_id(message) %>">
+  <div class="shrink-0 mt-1">
+    <%= profile_avatar(message.author_profile, size: :sm) %>
+  </div>
+
+  <div class="flex-1 min-w-0">
+    <div class="flex items-baseline gap-2 flex-wrap">
+    <span class="font-bold text-sm"><%= message.author_profile.display_name %></span>
+    
+    <% if org_name = message.author_profile.organization_display_name %>
+        <span class="text-[9px] text-gray-400 bg-gray-50 px-1 rounded border border-gray-100">
+        <%= org_name %>
+        </span>
+    <% end %>
+
+    <span class="text-[10px] text-gray-400"><%= l(message.created_at, format: :ja_short) %></span>
+    </div>
+
+    <div class="text-sm text-gray-800 whitespace-pre-wrap"><%= message.body %></div>
+    
+    <%# スレッドのリンク表示（メイン画面のみ） %>
+    <% if !is_thread_parent && message.replies.any? %>
+        <%= link_to chat_room_message_path(message.chat_room, message), 
+                    data: { action: "click->side-panel#open", side_panel_title_param: "スレッド", turbo_frame: "side-panel-frame" },
+                    class: "text-xs text-blue-600 font-bold mt-1 inline-block hover:underline" do %>
+            <%= message.replies.count %> 件の返信
+        <% end %>
+    <% end %>
+  </div>
+
+  <div class="hidden group-hover:flex absolute right-4 top-2 bg-white border rounded shadow-sm z-10">
+    <% unless is_thread_parent || message.parent_message_id.present? %>
+    <%= link_to chat_room_message_path(message.chat_room, message), 
+            data: { action: "click->side-panel#open", side_panel_title_param: "スレッド", turbo_frame: "side-panel-frame" },
+            class: "p-1.5 hover:bg-gray-100 text-gray-500", title: "スレッドで返信" do %>
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
+        </svg>
+      <% end %>
+    <% end %>
+    
+    <%# ハートリアクション %>
+        <%= button_to chat_room_message_reactions_path(message.chat_room, message, kind: "heart"), class: "p-1.5 hover:bg-gray-100" do %>
+        ❤️
+        <% end %>
+  </div>
+</div>

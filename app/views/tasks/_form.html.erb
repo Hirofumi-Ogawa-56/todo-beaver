@@ -50,29 +50,14 @@
   </div>
 
   <!-- 担当者 -->
-    <div class="mb-4">
-      <%= f.label :assignee_ids, t('tasks.form.assignees'), class: "block text-sm mb-1" %>
-
-      <div class="flex flex-wrap gap-2">
-        <%= f.collection_check_boxes :assignee_ids,
-                                    @assignee_candidates,
-                                    :id,
-                                    :display_name do |b| %>
-          <label class="inline-flex items-center px-2 py-1 rounded-full border border-gray-300 bg-gray-50 cursor-pointer text-xs">
-            <!-- 実際のチェックボックス（地味でもOK） -->
-            <%= b.check_box(class: "mr-1") %>
-
-            <!-- アイコン＋名前 -->
-            <%= profile_avatar(b.object, size: :xs) %>
-            <span class="ml-1"><%= b.object.display_name %></span>
-          </label>
-        <% end %>
-      </div>
-
-      <p class="text-[11px] text-gray-500 mt-1">
-        <%= t('tasks.form.assignee_hint') %>
-      </p>
+  <div class="mb-4">
+    <%= f.label :assignee_ids, t('tasks.form.assignees'), class: "block text-sm mb-1" %>
+    <div class="flex flex-wrap gap-2">
+      <%= f.collection_check_boxes :assignee_ids, @assignee_candidates, :id, :display_name do |b| %>
+        <%= profile_selection_chip(b, b.object) %>
+      <% end %>
     </div>
+  </div>
 
   <!-- 詳細 -->
   <div class="mb-4">

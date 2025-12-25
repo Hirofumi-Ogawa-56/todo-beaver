@@ -1,0 +1,16 @@
+<!-- app/views/posts/index.html.erb-->
+<div class="max-w-2xl mx-auto py-8 px-4">
+  <div class="bg-white border rounded-xl p-4 mb-6 shadow-sm">
+    <%= form_with model: Post.new do |f| %>
+      <%= f.text_area :body, placeholder: "いまどうしてる？", 
+                      class: "w-full border-none focus:ring-0 text-lg resize-none", rows: 3 %>
+      <div class="flex justify-end border-t pt-3 mt-2">
+        <%= f.submit "投稿する", class: "bg-blue-500 text-white px-6 py-1.5 rounded-full font-bold hover:bg-blue-600 transition" %>
+      </div>
+    <% end %>
+  </div>
+
+  <div class="space-y-4" id="posts-feed">
+    <%= render @posts %>
+  </div>
+</div>

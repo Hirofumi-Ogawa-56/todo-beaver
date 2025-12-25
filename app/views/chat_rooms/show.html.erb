@@ -1,0 +1,45 @@
+<!-- app/views/chat_rooms/show.html.erb -->
+<% content_for :sidebar do %>
+  <%= render "chat_rooms/sidebar" %>
+<% end %>
+
+<%# 1. リアルタイム通信タグは header の外に出す %>
+<%= turbo_stream_from @chat_room %>
+
+<div class="flex flex-col h-full bg-white">
+  <%# 2. header 内の構造を整理 %>
+  <header class="h-14 border-b flex items-center px-4 shrink-0 justify-between">
+    <%# 左側：アイコンとルーム名 %>
+    <div class="flex items-center gap-3">
+      <%= chat_room_avatar(@chat_room, size: :sm) %>
+      <h1 class="font-bold text-lg"><%= @chat_room.name.presence || "無名のチャットルーム" %></h1>
+    </div>
+
+    <%# 右側：テキストの編集ボタン %>
+    <div>
+      <%# side-panel-frame をターゲットにし、JSアクションでパネルを開く設定 %>
+      <%= link_to edit_chat_room_path(@chat_room), 
+                  data: { 
+                    turbo_frame: "side-panel-frame",
+                    action: "click->side-panel#open",
+                    side_panel_title_param: "ルーム編集" 
+                  }, 
+                  class: "text-[11px] font-bold text-gray-500 hover:text-blue-600 border border-gray-200 px-3 py-1.5 rounded-lg hover:border-blue-200 hover:bg-blue-50 transition-all shadow-sm bg-white" do %>
+        ルームを編集
+      <% end %>
+    </div>
+  </header>
+
+  <div class="flex-1 overflow-y-auto p-4 space-y-1" id="main_messages">
+    <%= render partial: "messages/message", collection: @messages %>
+  </div>
+
+  <div class="p-4 border-t">
+    <%= form_with(model: [@chat_room, @new_message], class: "border rounded-lg focus-within:ring-1 focus-within:ring-gray-400") do |f| %>
+      <%= f.text_area :body, placeholder: "#{@chat_room.name} へのメッセージ", class: "w-full p-2 outline-none resize-none border-none rounded-t-lg text-sm" %>
+      <div class="bg-gray-50 p-2 flex justify-end rounded-b-lg">
+        <%= f.submit "送信", class: "bg-emerald-700 text-white px-3 py-1 rounded text-sm font-bold" %>
+      </div>
+    <% end %>
+  </div>
+</div>

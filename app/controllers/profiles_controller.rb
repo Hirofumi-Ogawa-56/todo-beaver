@@ -49,7 +49,10 @@ class ProfilesController < ApplicationController
   def switch
     profile = current_user.profiles.find(params[:profile_id])
     session[:current_profile_id] = profile.id
-    redirect_back fallback_location: profiles_path
+
+    # Turboのキャッシュによる「古い情報の表示」を防ぐため、
+    # redirect_back ではなく、パスを指定してトップレベルでリダイレクトします
+    redirect_to root_path, status: :see_other, notice: "プロフィールを切り替えました"
   end
 
   def settings
@@ -69,7 +72,8 @@ class ProfilesController < ApplicationController
       :theme,
       :avatar,
       :remove_avatar,
-      :locale
+      :locale,
+      :primary_team_id
     )
   end
 

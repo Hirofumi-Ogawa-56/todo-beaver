@@ -44,12 +44,18 @@ app/models/membership_request.rb
 # app/models/membership_request.rb
 class MembershipRequest < ApplicationRecord
   # 関連
-  belongs_to :requester_profile, class_name: "Profile"
-  belongs_to :target_profile, class_name: "Profile", optional: true
   belongs_to :team
+  belongs_to :target_team, class_name: "Team", optional: true
+  belongs_to :requester_profile, class_name: "Profile", optional: true
+  belongs_to :target_profile, class_name: "Profile", optional: true
 
   # 方向
-  enum :direction, { profile_to_team: 0, team_to_profile: 1 }
+  enum :direction, {
+    profile_to_team: 0,
+    team_to_profile: 1,
+    team_to_parent: 2,
+    team_to_child: 3   # ★これを追加
+  }
 
   # 状態
   enum :status, { pending: 0, approved: 1, rejected: 2, canceled: 3 }
@@ -78,6 +84,8 @@ class MembershipRequest < ApplicationRecord
     when :team_to_profile
       errors.add(:team, "を指定してください") if team.nil?
       errors.add(:target_profile, "を指定してください") if target_profile.nil?
+    when :team_to_parent, :team_to_child # ★チーム同士の申請でも相手が必要
+      errors.add(:target_team, "を指定してください") if target_team.nil?
     end
   end
 end
@@ -99,13 +107,18 @@ class Team < ApplicationRecord
   has_many :team_memberships, dependent: :destroy
   has_many :profiles, through: :team_memberships
   has_many :membership_requests, dependent: :destroy
+  has_many :children, class_name: "Team", foreign_key: "parent_id", dependent: :destroy
 
   has_one_attached :avatar
 
   validates :name, presence: true, length: { maximum: 30 }
   validates :join_token, uniqueness: true, allow_nil: true
+  validate :parent_cannot_be_self
+
+  belongs_to :parent, class_name: "Team", optional: true
 
   before_create :set_join_token
+  before_save :purge_avatar_if_needed
 
   def display_initials
     base = name.presence || "?"
@@ -114,7 +127,14 @@ class Team < ApplicationRecord
 
   attr_accessor :remove_avatar
 
-  before_save :purge_avatar_if_needed
+  def admin?(profile)
+  # 1. 直接このチームの管理者かチェック
+  return true if team_memberships.exists?(profile: profile, role: "admin")
+
+  # 2. 親チームが存在する場合、親チームの管理者かチェック（再帰的にトップまで遡る）
+  return parent.admin?(profile) if parent.present?
+  false
+end
 
   private
 
@@ -132,6 +152,12 @@ class Team < ApplicationRecord
   def purge_avatar_if_needed
     if ActiveModel::Type::Boolean.new.cast(remove_avatar)
       avatar.purge
+    end
+  end
+
+  def parent_cannot_be_self
+    if parent_id.present? && parent_id == id
+      errors.add(:parent_id, "自分自身を親チームに設定することはできません")
     end
   end
 end
@@ -277,10 +303,7 @@ end
 app/models/user.rb
 --- START OF FILE ---
 # app/models/user.rb
-
-# Userクラスの定義
 class User < ApplicationRecord
-  # Userの機能を定義
   devise :database_authenticatable,
         :registerable,
         :recoverable,
@@ -288,8 +311,9 @@ class User < ApplicationRecord
         :validatable,
         :confirmable
 
-  # Userの関連を定義
-  has_many :profiles, dependent: :destroy # 一人のUserはたくさんのProfileを持てる
+  has_many :profiles, dependent: :destroy
+  accepts_nested_attributes_for :profiles
+  validates_presence_of :profiles
 end
 -e \n--- END OF FILE ---\n
 app/models/task.rb
@@ -382,6 +406,7 @@ class ApplicationController < ActionController::Base
   before_action :authenticate_user!, unless: :devise_controller?
   before_action :set_current_profile
   before_action :set_locale
+  before_action :configure_permitted_parameters, if: :devise_controller?
   helper_method :current_profile
 
   def set_locale
@@ -420,6 +445,13 @@ class ApplicationController < ActionController::Base
 
     redirect_to profiles_path,
                 alert: "タスクを利用するにはプロフィールを選択してください。"
+  end
+
+  protected
+
+  def configure_permitted_parameters
+    devise_parameter_sanitizer.permit(:sign_up, keys: [ profiles_attributes: [ :label, :display_name ] ])
+    devise_parameter_sanitizer.permit(:account_update, keys: [ profiles_attributes: [ :label, :display_name ] ])
   end
 end
 -e \n--- END OF FILE ---\n
@@ -467,7 +499,12 @@ class TeamsController < ApplicationController
   before_action :set_team, only: %i[show edit update destroy manage]
 
   def index
-    @teams = Team.order(created_at: :desc)
+    # current_profile が存在する場合のみ、そのプロフィールが所属するチームを取得
+    if current_profile
+      @teams = current_profile.teams.distinct
+    else
+      @teams = []
+    end
   end
 
   def show
@@ -496,6 +533,35 @@ class TeamsController < ApplicationController
   end
 
   def edit
+    @team = Team.find(params[:id])
+
+    unless @team.admin?(current_profile)
+      redirect_to @team, alert: "編集権限がありません。"
+      return
+    end
+
+    # --- [組織階層の設定用] 親子関係の検索ロジック ---
+    if params[:parent_team_token].present?
+      @found_parent_team = Team.find_by(join_token: params[:parent_team_token].upcase)
+      if @found_parent_team == @team
+        @found_parent_team = nil
+        flash.now[:alert] = "自分自身を親チームに指定することはできません。"
+      end
+    end
+
+    # 届いている親子関連申請
+    @incoming_child_requests = MembershipRequest.where(
+      target_team_id: @team.id,
+      direction: [ :team_to_parent, :team_to_child ],
+      status: :pending
+    )
+
+    # 送信済みの親子関連申請
+    @outgoing_parent_request = MembershipRequest.where(
+      team_id: @team.id,
+      direction: [ :team_to_parent, :team_to_child ],
+      status: :pending
+    ).first
   end
 
   def update
@@ -511,30 +577,23 @@ class TeamsController < ApplicationController
     redirect_to teams_path, notice: "チームを削除しました"
   end
 
-  # ★ 旧 team_settings#members を統合したアクション
   def manage
-    # set_team により、この時点で @team は取得済みです
-    
+    # メンバー管理専用のデータ取得
     @memberships = @team.team_memberships.includes(:profile)
-    @members     = @memberships.map(&:profile)
 
-    # 今のプロフィールがこのチームの管理者かどうか
-    @current_membership = @memberships.find { |m| m.profile_id == current_profile.id }
-    @can_manage_members = @current_membership&.admin?
+    # プロフィール（個人）からの参加申請
+    @incoming_join_requests = @team.membership_requests
+                                  .profile_to_team
+                                  .pending
+                                  .includes(:requester_profile)
 
-    # プロフィール検索用（招待用トークン）
+    # [招待用] プロフィール検索
     @profile_invite_token = params[:profile_invite_token].to_s.strip.upcase
     if @profile_invite_token.present?
       @found_profile = Profile.where(join_token: @profile_invite_token)
-                              .where.not(id: @members.map(&:id))
+                              .where.not(id: @memberships.pluck(:profile_id))
                               .first
     end
-
-    # このチームに届いている参加申請（プロフィールからチームへ）
-    @incoming_join_requests = @team.membership_requests
-                                   .profile_to_team
-                                   .pending
-                                   .includes(:requester_profile)
   end
 
   private
@@ -551,7 +610,8 @@ class TeamsController < ApplicationController
   def team_params
     params.require(:team).permit(:name, :avatar, :remove_avatar)
   end
-end-e \n--- END OF FILE ---\n
+end
+-e \n--- END OF FILE ---\n
 app/controllers/account_settings_controller.rb
 --- START OF FILE ---
 # app/controllers/account_settings_controller.rb
@@ -1102,6 +1162,7 @@ class ProfilesController < ApplicationController
   end
 
   def edit
+    prepare_membership_data
   end
 
   def update
@@ -1128,14 +1189,7 @@ class ProfilesController < ApplicationController
   end
 
   def settings
-    @incoming_team_invites = @profile.received_membership_requests
-                                     .team_to_profile
-                                     .pending
-                                     .includes(:team, :requester_profile)
-
-
-    @team_invite_token = params[:team_invite_token].to_s.strip.upcase
-    @invite_teams = @team_invite_token.present? ? Team.where(join_token: @team_invite_token) : Team.none
+    prepare_membership_data
   end
 
   private
@@ -1153,6 +1207,24 @@ class ProfilesController < ApplicationController
       :remove_avatar,
       :locale
     )
+  end
+
+  def prepare_membership_data
+    # 1. チーム検索ロジック
+    @team_invite_token = params[:team_invite_token].to_s.strip.upcase
+    @invite_teams = @team_invite_token.present? ? Team.where(join_token: @team_invite_token) : Team.none
+
+    # 2. 自分(Profile)からチームへ送った「申請中」のリスト（申請取消用）
+    @outgoing_requests = @profile.sent_membership_requests
+                                 .profile_to_team
+                                 .pending
+                                 .includes(:team)
+
+    # 3. チームから自分(Profile)へ届いた「招待」のリスト（承認・却下用）
+    @incoming_team_invites = @profile.received_membership_requests
+                                     .team_to_profile
+                                     .pending
+                                     .includes(:team, :requester_profile)
   end
 end
 -e \n--- END OF FILE ---\n
@@ -1374,10 +1446,16 @@ class MembershipRequestsController < ApplicationController
         redirect_back fallback_location: edit_profile_path(current_profile),
                       notice: "参加申請を送信しました。"
       else
-        redirect_back fallback_location: edit_profile_path(current_profile),
-                      alert: req.errors.full_messages.first
-      end
+        # message を呼ばず、attribute と type (エラーの種類) だけを出す
+        details = req.errors.details.map { |attr, errors|
+          "#{attr}: #{errors.map { |e| e[:error] }.join(', ')}"
+        }.join(" / ")
 
+        redirect_back fallback_location: edit_profile_path(current_profile),
+                      alert: "申請に失敗しました（エラー詳細）: #{details}"
+      end
+    when "team_to_parent", "team_to_child"
+      create_team_hierarchy_request(direction)
     else
       redirect_back fallback_location: root_path, alert: "不正なリクエストです。"
     end
@@ -1432,7 +1510,8 @@ class MembershipRequestsController < ApplicationController
 
       redirect_back fallback_location: manage_team_path(team),
                     notice: "参加申請を承認しました。"
-
+    when "team_to_parent", "team_to_child"
+      approve_team_hierarchy_request(req)
     else
       redirect_back fallback_location: root_path, alert: "不正なリクエストです。"
     end
@@ -1488,6 +1567,54 @@ class MembershipRequestsController < ApplicationController
       redirect_back fallback_location: manage_team_path(team),
                     alert: membership_request.errors.full_messages.first
     end
+  end
+
+  # ★ チーム親子申請の作成
+  def create_team_hierarchy_request(direction)
+    from_team = Team.find(params[:team_id])
+    to_team = Team.find(params[:target_team_id])
+
+    # 権限チェック：操作しているチーム（from_team）の管理者であること
+    unless from_team.admin?(current_profile)
+      return redirect_back fallback_location: edit_team_path(from_team), alert: "権限がありません"
+    end
+
+    req = MembershipRequest.new(
+      direction: direction,
+      team: from_team,
+      target_team: to_team,
+      requester_profile: current_profile,
+      status: :pending
+    )
+
+    if req.save
+      redirect_back fallback_location: edit_team_path(from_team), notice: "申請・招待を送信しました。"
+    else
+      redirect_back fallback_location: edit_team_path(from_team), alert: "申請に失敗しました。"
+    end
+  end
+
+  # ★ チーム親子申請の承認
+  def approve_team_hierarchy_request(req)
+      unless req.target_team.admin?(current_profile)
+        return redirect_back fallback_location: root_path, alert: "承認権限がありません"
+      end
+
+      begin
+        Team.transaction do
+          if req.team_to_parent?
+            # 下位チーム(team)側がすでに別の上位チームを持っていないか確認（任意）
+            req.team.update!(parent: req.target_team)
+          else
+            # 下位チーム(target_team)側がすでに別の上位チームを持っていないか確認（任意）
+            req.target_team.update!(parent: req.team)
+          end
+          req.update!(status: :approved)
+        end
+        redirect_back fallback_location: edit_team_path(req.target_team), notice: "組織構造を更新しました。"
+      rescue ActiveRecord::RecordInvalid => e
+        redirect_back fallback_location: edit_team_path(req.target_team), alert: "更新に失敗しました: #{e.record.errors.full_messages.join(', ')}"
+      end
   end
 end
 -e \n--- END OF FILE ---\n
@@ -1615,12 +1742,12 @@ app/views/devise/unlocks/new.html.erb
 app/views/devise/passwords/edit.html.erb
 --- START OF FILE ---
 <!-- app/views/devise/passwords/edit.html.erb -->
+<!-- 新規登録メールのリンク先 -->
 <div class="min-h-screen flex items-center justify-center bg-white px-4">
   <div class="w-full max-w-md">
-    <!-- ロゴ -->
     <div class="flex flex-col items-center text-center mb-8">
       <%= image_tag "forestly_logo.png",
-                    alt: "forestly",
+                    alt: t('common.app_name'),
                     class: "block",
                     style: "height: 128px; width: auto;" %>
       <p class="mt-0 text-sm text-gray-600">
@@ -1634,14 +1761,7 @@ app/views/devise/passwords/edit.html.erb
       </div>
     <% end %>
 
-    <% if flash[:notice].present? %>
-      <div class="mb-4 rounded border border-green-200 bg-green-50 px-3 py-2 text-sm text-green-800">
-        <%= flash[:notice] %>
-      </div>
-    <% end %>
-
-    <!-- タイトル -->
-    <h1 class="text-lg font-semibold text-center mb-4">
+    <h1 class="text-lg font-semibold text-center mb-2">
       <%= t('devise.passwords.edit.title') %>
     </h1>
 
@@ -1654,7 +1774,6 @@ app/views/devise/passwords/edit.html.erb
                  url: user_password_path,
                  html: { method: :put, data: { turbo: false } }) do |f| %>
 
-      <!-- reset token は必須 -->
       <%= f.hidden_field :reset_password_token %>
 
       <% if resource.errors.any? %>
@@ -1667,30 +1786,56 @@ app/views/devise/passwords/edit.html.erb
         </div>
       <% end %>
 
-      <div class="space-y-3">
-        <div class="flex items-center gap-3">
-          <%= f.label :password, t('activerecord.attributes.user.password'), class: "w-28 text-sm text-gray-700" %>
-          <%= f.password_field :password,
-                               autocomplete: "new-password",
-                               class: "flex-1 border border-gray-200 rounded px-3 py-2 text-sm" %>
+      <div class="space-y-6">
+        <div class="p-4 rounded-lg border border-blue-100 bg-blue-50/30">
+          <h2 class="text-xs font-bold text-blue-800 uppercase tracking-wider mb-4">
+            <%= t('profiles.new.title') %>
+          </h2>
+
+          <%= f.fields_for :profiles, resource.profiles.build do |p| %>
+            <div class="space-y-4">
+              <div>
+                <%= p.label :label, t('profiles.form.label_title'), class: "block text-xs font-medium text-gray-700 mb-1" %>
+                <%= p.text_field :label,
+                                 placeholder: t('profiles.form.label_placeholder'),
+                                 class: "w-full border border-gray-200 rounded px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent" %>
+              </div>
+
+              <div>
+                <%= p.label :display_name, t('profiles.form.display_name_title'), class: "block text-xs font-medium text-gray-700 mb-1" %>
+                <%= p.text_field :display_name,
+                                 placeholder: t('profiles.form.display_name_placeholder'),
+                                 class: "w-full border border-gray-200 rounded px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent" %>
+              </div>
+            </div>
+          <% end %>
         </div>
 
-        <div class="flex items-center gap-3">
-          <%= f.label :password_confirmation, t('activerecord.attributes.user.password_confirmation'), class: "w-28 text-sm text-gray-700" %>
-          <%= f.password_field :password_confirmation,
-                               autocomplete: "new-password",
-                               class: "flex-1 border border-gray-200 rounded px-3 py-2 text-sm" %>
+        <div class="space-y-3">
+          <div class="flex items-center gap-3">
+            <%= f.label :password, t('activerecord.attributes.user.password'), class: "w-28 text-sm text-gray-700" %>
+            <%= f.password_field :password,
+                                 autocomplete: "new-password",
+                                 class: "flex-1 border border-gray-200 rounded px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500" %>
+          </div>
+
+          <div class="flex items-center gap-3">
+            <%= f.label :password_confirmation, t('activerecord.attributes.user.password_confirmation'), class: "w-28 text-sm text-gray-700" %>
+            <%= f.password_field :password_confirmation,
+                                 autocomplete: "new-password",
+                                 class: "flex-1 border border-gray-200 rounded px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500" %>
+          </div>
         </div>
 
         <div class="pt-2">
           <%= f.submit t('common.submit_confirm'),
-                      class: "w-full px-4 py-2 bg-blue-600 text-white text-sm rounded hover:bg-blue-700" %>
+                      class: "w-full px-4 py-2 bg-blue-600 text-white text-sm font-semibold rounded hover:bg-blue-700 transition-colors shadow-sm" %>
         </div>
       </div>
     <% end %>
 
-    <div class="mt-6 text-center text-sm">
-      <%= link_to t('devise.sessions.new.back_to_login', default: "ログインへ戻る"), new_user_session_path, class: "text-gray-600 underline" %>
+    <div class="mt-8 text-center text-sm border-t border-gray-100 pt-6">
+      <%= link_to t('devise.sessions.new.back_to_login', default: "ログインへ戻る"), new_user_session_path, class: "text-gray-500 hover:text-blue-600 underline transition-colors" %>
     </div>
   </div>
 </div>
@@ -1828,6 +1973,7 @@ app/views/devise/shared/_links.html.erb
 app/views/devise/sessions/new.html.erb
 --- START OF FILE ---
 <!-- app/views/devise/sessions/new.html.erb -->
+<!-- ログイン画面・新規アカウント作成のメール送信画面 -->
 <div class="min-h-screen flex items-center justify-center bg-white px-4">
   <div class="w-full max-w-md">
     <!-- ロゴ -->
@@ -1957,6 +2103,7 @@ app/views/devise/confirmations/new.html.erb
 app/views/devise/registrations/edit.html.erb
 --- START OF FILE ---
 <!-- app/views/devise/registrations/edit.erb -->
+<!-- ログイン後のアドレス・パスワード変更設定画面 -->
 <% if user_signed_in? && current_user.profiles.any? %>
   <% content_for :sidebar do %>
     <%= render "profiles/sidebar" %>
@@ -2003,36 +2150,10 @@ app/views/devise/registrations/edit.html.erb
 </div>-e \n--- END OF FILE ---\n
 app/views/devise/registrations/new.html.erb
 --- START OF FILE ---
-<h2>Sign up</h2>
-
-<%= form_for(resource, as: resource_name, url: registration_path(resource_name)) do |f| %>
-  <%= render "devise/shared/error_messages", resource: resource %>
-
-  <div class="field">
-    <%= f.label :email %><br />
-    <%= f.email_field :email, autofocus: true, autocomplete: "email" %>
-  </div>
-
-  <div class="field">
-    <%= f.label :password %>
-    <% if @minimum_password_length %>
-    <em>(<%= @minimum_password_length %> characters minimum)</em>
-    <% end %><br />
-    <%= f.password_field :password, autocomplete: "new-password" %>
-  </div>
-
-  <div class="field">
-    <%= f.label :password_confirmation %><br />
-    <%= f.password_field :password_confirmation, autocomplete: "new-password" %>
-  </div>
-
-  <div class="actions">
-    <%= f.submit "Sign up" %>
-  </div>
-<% end %>
-
-<%= render "devise/shared/links" %>
--e \n--- END OF FILE ---\n
+<!-- app/view/devise/registrations/new.html.erb -->
+<%# app/views/devise/registrations/new.html.erb %>
+<%# 独自フロー（メール送信後のpassword/edit）を使用するため、この画面は使用しません %>
+<% controller.redirect_to new_user_session_path %>-e \n--- END OF FILE ---\n
 app/views/tasks/index.html.erb
 --- START OF FILE ---
 <!-- app/views/tasks/index.html.erb -->
@@ -2142,7 +2263,7 @@ app/views/tasks/index.html.erb
     <% end %>
   </div>
 
-
+<!-- タスク一覧 -->
 <% if @tasks.any? %>
   <div class="overflow-y-auto max-h-[calc(100vh-260px)]">
     <table class="w-full text-sm">
@@ -2167,7 +2288,6 @@ app/views/tasks/index.html.erb
         </tr>
       </thead>
 
-      <!-- ★ ここに id を付ける -->
       <tbody id="tasks-table-body">
         <%= render partial: "tasks/task_row", collection: @tasks, as: :task %>
       </tbody>
@@ -2208,7 +2328,7 @@ app/views/tasks/_task_row.html.erb
     <td class="py-2 px-2">
         <%= link_to task.title,
                     task_path(task),
-                    class: "font-semibold text-gray-600 underline",
+                    class: "font-semibold text-gray-800",
                     data: {
                     turbo_frame: "side-panel-frame",
                     action: "click->side-panel#open",
@@ -2944,33 +3064,28 @@ app/views/shared/_side_panel.html.erb
 
 <div
   data-side-panel-target="panel"
-  class="fixed top-0 right-0 h-full bg-white shadow-lg border-l border-gray-300
-         translate-x-full transition-transform duration-200 ease-out
-         flex flex-col z-40"
+  class="fixed lg:relative top-0 right-0 h-full bg-white lg:shadow-none shadow-lg border-l border-gray-300
+         translate-x-full lg:translate-x-0 transition-transform duration-200 ease-out
+         flex flex-col z-40 lg:z-0 shrink-0 hidden"
   style="width: 480px;"
 >
-  <!-- 左端リサイズ用ハンドル -->
   <div
     data-side-panel-target="resizeHandle"
     data-action="mousedown->side-panel#startResize"
-    class="absolute left-0 top-0 h-full w-1 cursor-col-resize bg-transparent"
+    class="absolute left-0 top-0 h-full w-1 cursor-col-resize bg-transparent hover:bg-blue-400 transition-colors"
   ></div>
 
-  <!-- ヘッダー -->
-  <div class="flex items-center justify-between px-3 py-2 border-b border-gray-300">
-    <h2 class="text-sm font-semibold" data-side-panel-target="title">
-      <!-- タイトルはリンク側から渡す -->
-    </h2>
+  <div class="flex items-center justify-between px-3 py-2 border-b border-gray-300 flex-none bg-gray-50">
+    <h2 class="text-sm font-semibold" data-side-panel-target="title"></h2>
     <button
       type="button"
-      class="text-xs text-gray-500 hover:text-gray-800"
+      class="text-xs text-gray-500 hover:text-gray-800 p-1"
       data-action="click->side-panel#close"
     >
       ✕
     </button>
   </div>
 
-  <!-- 中身：Turbo Frame で差し替わる -->
   <div class="flex-1 overflow-y-auto p-3">
     <turbo-frame id="side-panel-frame">
       <p class="text-xs text-gray-400">
@@ -3110,18 +3225,13 @@ app/views/layouts/application.html.erb
                   <% end %>
 
                   <!-- チーム -->
-                  <% if @team.present? && @team.persisted? %>
-                    <%= link_to edit_team_path(@team),
-                                class: "text-lg font-semibold px-3 py-1 rounded hover:bg-white/10 flex items-center gap-1" do %>
-                      <%= image_tag "elephant_icon.png", alt: "Team", class: "w-5 h-5" %>
-                      <span class="truncate max-w-[150px]"><%= @team.name %></span>
-                    <% end %>
-                  <% else %>
-                    <%# チームが未選択、または新規作成画面などの場合の表示 %>
-                    <div class="text-lg font-semibold px-3 py-1 flex items-center gap-1 opacity-50">
-                      <%= image_tag "elephant_icon.png", alt: "Team", class: "w-5 h-5" %>
-                      <span>Team</span>
-                    </div>
+                  <%= link_to teams_path,
+                              class: "text-lg font-semibold px-3 py-1 rounded hover:bg-white/10 flex items-center gap-1" do %>
+                    <%= image_tag "elephant_icon.png",
+                                  alt: "Team",
+                                  class: "block",
+                                  style: "height: 32px; width: auto;" %>
+                    <span><%= t('layouts.application.nav.team') %></span>
                   <% end %>
               
 
@@ -3165,39 +3275,38 @@ app/views/layouts/application.html.erb
       </header>
 
     <!-- メインコンテンツ -->
-    <main class="<%= submit_mode? ? 'pt-24' : 'pt-16' %> pb-0">
-      <% if notice %>
-        <div class="mb-4 bg-green-100 text-green-800 px-4 py-2 rounded">
-          <%= notice %>
-        </div>
-      <% end %>
-      <% if alert %>
-        <div class="mb-4 bg-red-100 text-red-800 px-4 py-2 rounded">
-          <%= alert %>
+    <main class="<%= submit_mode? ? 'pt-24' : 'pt-16' %> h-screen overflow-hidden flex flex-col">
+      <% if notice || alert %>
+        <div class="flex-none px-6 mt-2">
+          <% if notice %>
+            <div class="bg-green-100 text-green-800 px-4 py-2 rounded text-sm"><%= notice %></div>
+          <% end %>
+          <% if alert %>
+            <div class="bg-red-100 text-red-800 px-4 py-2 rounded text-sm"><%= alert %></div>
+          <% end %>
         </div>
       <% end %>
 
       <div
-        class="flex gap-0 min-h-[calc(100vh-4rem)]"
+        class="flex flex-1 overflow-hidden" 
         data-controller="side-panel"
         data-side-panel-initial-width-value="480"
       >
         <% if content_for?(:sidebar) %>
-          <aside class="w-60 shrink-0 px-4 pt-3 pb-6 self-stretch <%= sidebar_theme_class %>">
+          <aside class="w-60 shrink-0 px-4 pt-3 pb-6 overflow-y-auto border-r <%= sidebar_theme_class %>">
             <%= yield :sidebar %>
           </aside>
 
-          <section class="flex-1 bg-white px-6 pt-3 pb-6 overflow-auto">
+          <section class="flex-1 bg-white px-6 pt-3 pb-6 overflow-y-auto border-r border-gray-100">
             <%= yield %>
           </section>
         <% else %>
-          <section class="flex-1 bg-white px-6 pt-3 pb-6">
+          <section class="flex-1 bg-white px-6 pt-3 pb-6 overflow-y-auto border-r border-gray-100">
             <%= yield %>
           </section>
         <% end %>
 
-      <!-- 共通サイドパネルを描画 -->
-      <%= render "shared/side_panel" %>
+        <%= render "shared/side_panel" %>
       </div>
     </main>
 
@@ -3295,40 +3404,85 @@ app/views/teams/index.html.erb
               class: "text-sm px-3 py-2 bg-blue-600 text-white rounded hover:bg-blue-700" %>
 </div>
 
-<table class="w-full text-sm">
-  <thead>
-    <tr class="border-b">
-      <th class="text-left py-2"><%= t('activerecord.attributes.team.name') %></th>
-      <th class="text-left py-2"><%= t('common.created_at') %></th>
-      <th class="text-left py-2"></th>
-    </tr>
-  </thead>
-  <tbody>
-    <% @teams.each do |team| %>
+<% if @teams.any? %>
+  <table class="w-full text-sm">
+    <thead class="sticky top-0 bg-gray-50 z-10">
       <tr class="border-b">
-        <td class="py-2">
-          <%= link_to team_path(team), class: "inline-block" do %>
-            <%= team_chip(
-                  team,
-                  size: :xs,
-                  wrapper_class: "px-2 py-1 rounded bg-gray-100 text-xs"
-                ) %>
-          <% end %>
-        </td>
-        <td class="py-2"><%= t(team.created_at.to_date) %></td>
-        <td class="py-2">
-          <%= link_to t('common.edit'), edit_team_path(team), class: "text-xs text-gray-600 underline mr-2" %>
-        <%= button_to t('common.delete'),
-          team_path(team),
-          method: :delete,
-          form: { data: { turbo_confirm: t('common.confirm_delete') } },
-          class: "text-xs text-red-600 underline bg-transparent border-0 p-0 inline" %>
-        </td>
+        <th class="text-left py-2 px-2"><%= t('activerecord.attributes.team.name') %></th>
+        <th class="text-left py-2 px-2">チームID</th>
+        <th class="text-left py-2 px-2">役割</th>
+        <th class="text-left py-2 px-2"><%= t('common.created_at') %></th>
+        <th class="text-left py-2 px-2"></th>
       </tr>
-    <% end %>
-  </tbody>
-</table>
--e \n--- END OF FILE ---\n
+    </thead>
+
+    <tbody>
+      <% @teams.each do |team| %>
+        <tr class="border-b border-gray-50">
+          <td class="py-2">
+            <%= link_to team_path(team), class: "inline-block" do %>
+              <%= team_chip(
+                    team,
+                    size: :xs,
+                    wrapper_class: "px-2 py-1 rounded bg-gray-100 text-xs"
+                  ) %>
+            <% end %>
+          </td>
+          
+          <%# チームID（トークン）を表示 %>
+          <td class="py-2 px-2">
+            <span class="font-mono text-xs bg-gray-50 px-2 py-1 border rounded text-gray-700 select-all">
+              <%= team.join_token %>
+            </span>
+          </td>
+
+          <td class="py-2 px-2">
+            <% if team.admin?(current_profile) %>
+              <span class="px-2 py-0.5 bg-blue-100 text-blue-700 text-[10px] rounded-full font-bold">
+                <%= t('common.admin', default: '管理者') %>
+              </span>
+            <% else %>
+              <span class="px-2 py-0.5 bg-gray-100 text-gray-600 text-[10px] rounded-full">
+                <%= t('common.member', default: 'メンバー') %>
+              </span>
+            <% end %>
+          </td>
+
+          <td class="py-2 px-2 text-gray-500 text-xs">
+            <%= l(team.created_at.to_date) %>
+          </td>
+
+          <td class="py-2 text-right">
+            <div class="flex items-center justify-end gap-3">
+              <%= link_to t('teams.members.title', default: "メンバー"), 
+                manage_team_path(team), 
+                class: "text-xs text-gray-600 underline hover:text-blue-600" %>
+
+              <%= link_to t('common.edit'), 
+                          edit_team_path(team), 
+                          class: "text-xs text-gray-600 underline hover:text-blue-600" %>
+
+              <%= button_to t('common.delete'),
+                            team_path(team),
+                            method: :delete,
+                            form: { 
+                              data: { turbo_confirm: t('common.confirm_delete') },
+                              class: "inline" 
+                            },
+                            class: "text-xs text-red-600 underline bg-transparent border-0 p-0 cursor-pointer hover:text-red-800" %>
+            </div>
+          </td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+<% else %>
+  <div class="py-10 text-center border-2 border-dashed border-gray-100 rounded-lg">
+    <p class="text-sm text-gray-500">
+      <%= t('teams.index.not_joined_team') %>
+    </p>
+  </div>
+<% end %>-e \n--- END OF FILE ---\n
 app/views/teams/manage.html.erb
 --- START OF FILE ---
 <!-- app/views/teams/manage.html.erb -->
@@ -3336,154 +3490,101 @@ app/views/teams/manage.html.erb
   <%= render "teams/sidebar" %>
 <% end %>
 
-<h1 class="text-xl font-bold mb-4"><%= t('teams.members.title') %></h1>
+<h1 class="text-xl font-bold mb-4">メンバー管理: <%= @team.name %></h1>
 
-<div class="flex items-center mb-6">
-  <%= team_chip(
-        @team,
-        size: :sm,
-        wrapper_class: "px-2 py-1 rounded bg-gray-100 text-sm"
-      ) %>
-  <span class="ml-2 text-sm text-gray-500"><%= t('teams.members.suffix_of_team') %></span>
-</div>
-
-<% if @memberships.any? %>
-  <table class="w-full text-sm mb-4">
+<%# --- 所属メンバー一覧 --- %>
+<div class="bg-white p-6 rounded-lg border mb-8">
+  <h2 class="text-sm font-bold text-gray-700 mb-4 uppercase tracking-wider">所属メンバー</h2>
+  <table class="w-full text-sm">
     <thead>
       <tr class="border-b">
-        <th class="text-left py-2"><%= t('activerecord.models.profile') %></th>
-        <th class="text-left py-2"><%= t('teams.members.role') %></th>
-        <th class="text-left py-2"></th>
+        <th class="text-left py-2 px-2">プロフィール</th>
+        <th class="text-left py-2 px-2">役割</th>
+        <th class="text-left py-2 px-2"></th>
       </tr>
     </thead>
     <tbody>
       <% @memberships.each do |membership| %>
-        <tr>
-          <td class="py-1">
-            <%= profile_chip(
-              membership.profile,
-              size: :xs,
-              wrapper_class: "px-2 py-1 rounded bg-gray-100 text-xs"
-            ) %>
+        <tr class="border-b border-gray-50 hover:bg-gray-50">
+          <td class="py-3 px-2">
+            <%= profile_chip(membership.profile, size: :xs) %>
           </td>
-
-          <td class="py-2">
-            <% if @can_manage_members %>
-              <%= form_with model: membership,
-                            url: team_membership_path(membership),
-                            method: :patch,
-                            local: true,
-                            class: "inline-block" do |f| %>
-                <%= f.select :role,
-                            options_for_select(
-                              [
-                                [t('teams.members.roles.admin'), TeamMembership::ADMIN_ROLE],
-                                [t('teams.members.roles.member'), ""]
-                              ],
-                              membership.admin? ? TeamMembership::ADMIN_ROLE : ""
-                            ),
-                            {},
-                            class: "border border-gray-300 rounded px-2 py-1 text-xs",
-                            onchange: "this.form.submit();" %>
-              <% end %>
+          <td class="py-3 px-2">
+            <% if membership.admin? %>
+              <span class="px-2 py-0.5 bg-blue-100 text-blue-700 text-[10px] rounded-full font-bold">管理者</span>
             <% else %>
-              <%= membership.admin? ? t('teams.members.roles.admin') : t('teams.members.roles.member') %>
+              <span class="px-2 py-0.5 bg-gray-100 text-gray-600 text-[10px] rounded-full">メンバー</span>
             <% end %>
           </td>
-
-          <td class="py-2 text-right">
-            <% if @can_manage_members %>
-              <%= button_to t('common.delete'),
-                            team_membership_path(membership),
-                            method: :delete,
-                            form: { data: { turbo_confirm: t('teams.members.confirm_remove') }},
-                            class: "text-xs px-3 py-1 bg-red-50 text-red-700 rounded border border-red-200 hover:bg-red-100" %>
-            <% end %>
+          <td class="py-3 px-2 text-right">
+            <%# 必要に応じて、ここで退会ボタンや権限変更ボタンを追加 %>
           </td>
         </tr>
       <% end %>
     </tbody>
   </table>
-<% else %>
-  <p class="text-sm text-gray-500 mb-4">
-    <%= t('teams.members.no_members') %>
-  </p>
-<% end %>
-
-<div class="mt-6 border-t pt-4">
-  <h3 class="text-sm font-semibold mb-2"><%= t('teams.members.invite_section_title') %></h3>
-
-  <%# 送信先を manage_team_path(@team) に変更 %>
-  <%= form_with url: manage_team_path(@team), method: :get, local: true, class: "flex items-end gap-2 mb-3" do %>
-    <div>
-      <label class="block text-xs mb-1"><%= t('teams.members.invite_id_label') %></label>
-      <%= text_field_tag :profile_invite_token, @profile_invite_token, 
-                        class: "border rounded px-2 py-1 text-sm", placeholder: "個人のIDを入力" %>
-    </div>
-    <div class="mb-1">
-      <%= submit_tag t('common.search'), class: "px-3 py-2 text-xs bg-gray-100 rounded border hover:bg-gray-200" %>
-    </div>
-  <% end %>
-
-  <% if @found_profile %>
-    <div class="p-3 bg-blue-50 border border-blue-200 rounded flex items-center justify-between">
-      <div class="flex items-center gap-2">
-        <%= profile_chip(@found_profile, size: :xs) %>
-        <span class="text-xs text-gray-600"><%= t('teams.members.invite_confirm_msg') %></span>
-      </div>
-      <%= form_with url: membership_requests_path, method: :post, local: true do %>
-        <%= hidden_field_tag :direction, "team_to_profile" %>
-        <%= hidden_field_tag :team_id, @team.id %>
-        <%= hidden_field_tag :target_profile_id, @found_profile.id %>
-
-        <label class="inline-flex items-center gap-1 cursor-pointer">
-          <%= check_box_tag :admin, "1", false, class: "rounded border-gray-300 text-blue-600 focus:ring-blue-500" %>
-          <span class="text-xs text-gray-700 font-medium"><%= t('teams.members.invite_as_admin') %></span>
-        </label>
-
-        <%= submit_tag t('teams.members.send_invite'), class: "px-4 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700" %>
-      <% end %>
-    </div>
-  <% end %>
 </div>
 
-<div class="mt-6 border-t pt-4">
-  <h3 class="text-sm font-semibold mb-2"><%= t('teams.members.join_requests_title') %></h3>
-
+<%# --- 届いている参加申請（個人→チーム） --- %>
+<div class="bg-white p-6 rounded-lg border mb-8">
+  <h2 class="text-sm font-bold text-gray-700 mb-4 uppercase tracking-wider text-amber-600">届いている参加申請</h2>
   <% if @incoming_join_requests.any? %>
     <table class="w-full text-xs">
-      <thead>
-        <tr class="border-b">
-          <th class="text-left py-1"><%= t('teams.members.requester') %></th>
-          <th class="text-left py-1"></th>
-        </tr>
-      </thead>
       <tbody>
         <% @incoming_join_requests.each do |req| %>
           <tr class="border-b">
-            <td class="py-1">
-              <% if req.requester_profile %>
-                <%= profile_chip(
-                      req.requester_profile,
-                      size: :xs,
-                      wrapper_class: "px-2 py-1 rounded bg-gray-100 text-xs"
-                    ) %>
-              <% else %>
-                <span class="text-xs text-gray-400"><%= t('common.unknown') %></span>
+            <td class="py-3">
+              <%= profile_chip(req.requester_profile, size: :xs) %>
+              <% if req.admin? %>
+                <span class="ml-2 text-[9px] px-1 bg-amber-100 text-amber-700 rounded font-bold">管理者権限希望</span>
               <% end %>
             </td>
-            <td class="py-1 text-right">
-              <%= button_to t('common.approve'),
-                            approve_membership_request_path(req),
-                            method: :patch,
-                            class: "px-3 py-1 text-[11px] bg-blue-100 text-blue-700 rounded border border-blue-300 hover:bg-blue-200" %>
+            <td class="py-3 text-right">
+              <div class="flex justify-end gap-2">
+                <%= button_to "承認", approve_membership_request_path(req), method: :patch,
+                              class: "px-3 py-1 bg-blue-600 text-white rounded font-bold hover:bg-blue-700" %>
+                <%= button_to "却下", membership_request_path(req), method: :delete,
+                              form: { data: { turbo_confirm: "申請を却下しますか？" } },
+                              class: "px-3 py-1 bg-white border border-red-200 text-red-600 rounded hover:bg-red-50" %>
+              </div>
             </td>
           </tr>
         <% end %>
       </tbody>
     </table>
   <% else %>
-    <p class="text-xs text-gray-500 mt-2"><%= t('teams.members.no_requests') %></p>
+    <p class="text-xs text-gray-400">現在、届いている参加申請はありません。</p>
+  <% end %>
+</div>
+
+<%# --- プロフィール検索（個人を招待する） --- %>
+<div class="bg-white p-6 rounded-lg border">
+  <h2 class="text-sm font-bold text-gray-700 mb-4 uppercase tracking-wider">メンバーを招待</h2>
+  <%= form_with url: manage_team_path(@team), method: :get, local: true, class: "flex items-end gap-2 mb-4" do %>
+    <div>
+      <label class="block text-xs text-gray-400 mb-1">プロフィールID</label>
+      <%= text_field_tag :profile_invite_token, params[:profile_invite_token], 
+                        placeholder: "IDを入力",
+                        class: "border rounded px-2 py-1 text-sm w-48" %>
+    </div>
+    <div class="mb-1">
+      <%= submit_tag "検索", class: "px-3 py-2 text-xs bg-gray-100 rounded border hover:bg-gray-200 cursor-pointer" %>
+    </div>
+  <% end %>
+
+  <% if @found_profile %>
+    <div class="p-4 bg-blue-50 border border-blue-200 rounded flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <%= profile_chip(@found_profile, size: :xs) %>
+        <span class="text-xs text-gray-600">さんをチームに招待しますか？</span>
+      </div>
+      <%= form_with url: membership_requests_path, method: :post do %>
+        <%= hidden_field_tag :direction, "team_to_profile" %>
+        <%= hidden_field_tag :team_id, @team.id %>
+        <%= hidden_field_tag :target_profile_id, @found_profile.id %>
+        <%= submit_tag "招待を送る", class: "px-4 py-1.5 bg-blue-600 text-white text-xs font-bold rounded hover:bg-blue-700" %>
+      <% end %>
+    </div>
   <% end %>
 </div>-e \n--- END OF FILE ---\n
 app/views/teams/_sidebar.html.erb
@@ -3491,21 +3592,12 @@ app/views/teams/_sidebar.html.erb
 <!-- app/views/teams/_sidebar.html.erb -->
 <h2 class="font-semibold text-sm mb-3"><%= t('teams.settings.sidebar.title') %></h2>
 <nav class="space-y-1">
-  <%# チームのトップページ（show） %>
-  <%= link_to t('teams.settings.sidebar.show'), 
-              team_path(@team), 
-              class: nav_class(team_path(@team)) %>
+  <%# チーム一覧 %>
+  <%= link_to t('teams.index.title'),
+              teams_path,
+              class: nav_class(teams_path) %>
 
-  <%# メンバー管理（manage） %>
-  <%= link_to t('teams.settings.sidebar.manage'), 
-              manage_team_path(@team), 
-              class: nav_class(manage_team_path(@team)) %>
-
-  <%# チーム編集（edit） %>
-  <%= link_to t('teams.settings.sidebar.edit'), 
-              edit_team_path(@team), 
-              class: nav_class(edit_team_path(@team)) %>
-
+  <%# 3. 新規チーム作成 (常に表示) %>
   <div class="pt-4 border-t border-gray-100 mt-4">
     <%= link_to t('teams.index.new_team'), 
                 new_team_path, 
@@ -3520,7 +3612,156 @@ app/views/teams/edit.html.erb
 <% end %>
 
 <h1 class="text-xl font-bold mb-4">チーム編集</h1>
-<%= render "form", team: @team %>-e \n--- END OF FILE ---\n
+
+<%# 基本情報の編集（名前・アバター） %>
+<div class="bg-white p-6 rounded-lg border mb-8">
+  <%= render "form", team: @team %>
+</div>
+
+<%# 組織階層の設定 %>
+<div class="bg-white p-6 rounded-lg border">
+  <h2 class="text-sm font-bold text-gray-700 mb-4 uppercase tracking-wider">組織階層の設定（上位・下位チーム）</h2>
+
+  <div class="p-4 bg-gray-50 rounded border border-dashed mb-6">
+    <div class="text-xs text-gray-500 font-medium mb-3">組織図（現在の階層構造）:</div>
+    
+    <div class="bg-white p-4 rounded border shadow-sm overflow-x-auto">
+      <ul class="tree-root">
+        <% 
+          # 最上位のチーム（親の親...）を特定する
+          root_team = @team
+          root_team = root_team.parent while root_team.parent.present?
+        %>
+        <%= render_team_tree(root_team, @team) %>
+      </ul>
+    </div>
+
+    <% if @team.parent %>
+      <div class="mt-4 flex justify-end">
+        <%= button_to "上位チームとの連携を解除", 
+                      team_path(@team), 
+                      method: :patch, 
+                      params: { "team[parent_id]" => "" },
+                      form: { data: { turbo_confirm: "上位チームとの連携を解除しますか？" } },
+                      class: "text-[10px] px-2 py-1 bg-white border border-red-200 text-red-600 rounded hover:bg-red-50 transition" %>
+      </div>
+    <% end %>
+  </div>
+
+    <%# --- 連携申請エリア --- %>
+    <div class="border-t pt-4">
+      <h3 class="text-sm font-semibold mb-2">組織の連携</h3>
+      
+    <% if @outgoing_parent_request %>
+      <div class="flex items-center justify-between bg-amber-50 p-3 rounded border border-amber-200">
+        <div class="flex items-center gap-2">
+          <span class="flex h-2 w-2 rounded-full bg-amber-400"></span>
+          <span class="text-xs text-amber-800">
+            <%# target_team を使って名前とIDを表示 %>
+            <strong><%= @outgoing_parent_request.target_team.name %></strong> 
+            (ID: <%= @outgoing_parent_request.target_team.join_token %>) へ申請中・承認待ちです
+          </span>
+        </div>
+        <%= button_to "申請取消", 
+                      membership_request_path(@outgoing_parent_request.id), 
+                      method: :delete, 
+                      form: { data: { turbo_confirm: "申請を取り消しますか？" } },
+                      class: "text-xs text-red-600 underline hover:text-red-800" %>
+      </div>
+    <% else %>
+        <%= form_with url: edit_team_path(@team), method: :get, local: true, class: "flex items-end gap-2 mb-4" do %>
+          <div>
+            <label class="block text-xs mb-1">チームID</label>
+            <%= text_field_tag :parent_team_token, params[:parent_team_token], 
+                              placeholder: "チームIDを入力",
+                              class: "border rounded px-2 py-1 text-sm w-48" %>
+          </div>
+          <div class="mb-1">
+            <%= submit_tag "検索", class: "px-3 py-2 text-xs bg-gray-100 rounded border hover:bg-gray-200 cursor-pointer" %>
+          </div>
+        <% end %>
+
+        <% if @found_parent_team %>
+          <div class="p-3 bg-blue-50 border border-blue-200 rounded flex flex-col gap-3">
+            <div class="flex items-center gap-2">
+              <%= team_chip(@found_parent_team, size: :xs) %>
+              <span class="text-xs text-gray-600">を組織に関連付けますか？</span>
+            </div>
+            
+            <div class="flex gap-2">
+              <%= form_with url: membership_requests_path, method: :post, local: true do %>
+                <%= hidden_field_tag :direction, "team_to_parent" %>
+                <%= hidden_field_tag :team_id, @team.id %>
+                <%= hidden_field_tag :target_team_id, @found_parent_team.id %>
+                <%= submit_tag "このチームの下位チームになるよう申請", 
+                              class: "px-3 py-1.5 bg-blue-600 text-white text-xs font-bold rounded hover:bg-blue-700 cursor-pointer" %>
+              <% end %>
+
+              <%= form_with url: membership_requests_path, method: :post, local: true do %>
+                <%= hidden_field_tag :direction, "team_to_child" %>
+                <%= hidden_field_tag :team_id, @team.id %>
+                <%= hidden_field_tag :target_team_id, @found_parent_team.id %>
+                <%= submit_tag "このチームの上位チームになるよう申請", 
+                              class: "px-3 py-1.5 bg-gray-800 text-white text-xs font-bold rounded hover:bg-black cursor-pointer" %>
+              <% end %>
+            </div>
+          </div>
+        <% end %>
+      <% end %>
+    </div>
+
+    <%# --- 届いている「上位から」または「下位から」の申請承認 --- %>
+    <div class="border-t pt-4">
+      <h3 class="text-sm font-semibold mb-2">届いている組織連携の申請</h3>
+      <% if @incoming_child_requests.any? %>
+        <table class="w-full text-xs">
+          <thead>
+            <tr class="border-b">
+              <th class="text-left py-1 text-gray-500">申請元のチーム</th>
+              <th class="text-left py-1 text-gray-500">内容</th>
+              <th class="text-left py-1"></th>
+            </tr>
+          </thead>
+          <tbody>
+            <% @incoming_child_requests.each do |req| %>
+              <tr class="border-b">
+                <td class="py-2">
+                  <%= team_chip(req.team, size: :xs, wrapper_class: "px-2 py-1 rounded bg-gray-100 text-xs") %>
+                </td>
+                <td class="py-2">
+                  <% if req.team_to_parent? %>
+                    <span class="px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-100 font-medium">
+                      下位チームからの申請
+                    </span>
+                  <% else %>
+                    <span class="px-2 py-0.5 rounded-full bg-purple-50 text-purple-700 border border-purple-100 font-medium">
+                      上位チームからの申請
+                    </span>
+                  <% end %>
+                </td>
+                <td class="py-2 text-right">
+                  <div class="flex items-center justify-end gap-3">
+                    <!-- 承認ボタン・却下ボタン -->
+                    <%= button_to "承認", approve_membership_request_path(req), method: :patch,
+                                  class: "px-4 py-1 bg-blue-100 text-blue-700 rounded border border-blue-300 hover:bg-blue-200 font-bold" %>
+
+                    <%= button_to "却下", 
+                                  membership_request_path(req.id), 
+                                  method: :delete, 
+                                  form: { data: { turbo_confirm: "この連携申請を却下しますか？" } },
+                                  class: "text-xs text-red-600 underline hover:text-red-800" %>
+                  </div>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      <% else %>
+        <p class="text-xs text-gray-500 mt-2">現在、届いている申請はありません。</p>
+      <% end %>
+    </div>
+  </div>
+</div>-e \n--- END OF FILE ---\n
 app/views/teams/home.html.erb
 --- START OF FILE ---
 <!-- app/views/teams/home.html.erb -->
@@ -3606,7 +3847,24 @@ app/views/teams/_form.html.erb
       </label>
     <% end %>
   </div>
-  
+
+    <% if @team.persisted? && @team.join_token.present? %>
+      <div class="mb-6 max-w-md">
+        <label class="block text-xs mb-1 text-gray-500">
+          チームID
+        </label>
+
+        <input type="text"
+              value="<%= @team.join_token %>"
+              readonly
+              class="border border-gray-300 rounded px-3 py-2 w-full bg-gray-50 text-gray-600 font-mono text-sm" />
+
+        <p class="text-[11px] text-gray-400 mt-1">
+          このIDは変更はできません。
+        </p>
+      </div>
+    <% end %>
+    
   <div class="pt-2">
     <%= f.submit t("helpers.submit.#{@team.new_record? ? 'create' : 'update'}", model: t('activerecord.models.team')),
                  class: "px-6 py-2 bg-blue-600 text-white text-sm font-medium rounded shadow-sm hover:bg-blue-700 transition cursor-pointer" %>
@@ -3671,21 +3929,24 @@ app/views/profiles/_sidebar.html.erb
 <h2 class="font-semibold text-sm mb-3"><%= t('profile_settings.sidebar.title') %></h2>
 <nav class="space-y-1">
 
-<%= link_to t('profile_settings.sidebar.home'),
-            edit_profile_path(@profile),
-            class: nav_class(edit_profile_path(@profile)) %>
+  <%# @profile ではなく current_profile を使う %>
+  <%= link_to t('profile_settings.sidebar.home'),
+              edit_profile_path(current_profile),
+              class: nav_class(edit_profile_path(current_profile)) %>
 
-<%= link_to t('profile_settings.sidebar.edit'),
-            edit_profile_path(@profile),
-            class: nav_class(edit_profile_path(@profile)) %>
+  <%= link_to t('profile_settings.sidebar.edit'),
+              edit_profile_path(current_profile),
+              class: nav_class(edit_profile_path(current_profile)) %>
 
-<%= link_to t('profile_settings.sidebar.new'),
-            new_profile_path,
-            class: nav_class(new_profile_path) %>
+  <% if current_profile %>
+      <%= link_to t('profile_settings.sidebar.new'),
+                  new_profile_path,
+                  class: nav_class(new_profile_path) %>
+  <% end %>
 
-<%= link_to t('profile_settings.sidebar.auth'),
-            edit_user_registration_path,
-            class: nav_class(edit_user_registration_path) %>
+  <%= link_to t('profile_settings.sidebar.auth'),
+              edit_user_registration_path,
+              class: nav_class(edit_user_registration_path) %>
 </nav>-e \n--- END OF FILE ---\n
 app/views/profiles/edit.html.erb
 --- START OF FILE ---
@@ -3699,120 +3960,142 @@ app/views/profiles/edit.html.erb
 <% if @profile %>
   <%= render "profiles/form", profile: @profile %>
 
-  <!-- ▼ チームIDでチームに参加申請する ▼ -->
-  <div class="mt-6 border-t pt-4">
-    <h3 class="text-sm font-semibold mb-2"><%= t('profile_settings.edit.search_team_title') %></h3>
+  <div class="mt-8 bg-white p-6 rounded-lg border">
+    <h2 class="text-sm font-bold text-gray-700 mb-4 uppercase tracking-wider">チーム所属の設定</h2>
 
-    <%= form_with url: edit_profile_path(current_profile), method: :get, local: true,
-                  class: "flex flex-wrap items-end gap-2 mb-3" do %>
-      <div>
-        <label class="block text-xs mb-1"><%= t('profile_settings.edit.team_invite_token') %></label>
-        <%= text_field_tag :team_invite_token,
-                          @team_invite_token,
-                          class: "border rounded px-2 py-1 text-sm",
-                          placeholder: "例）AB12CD34" %>
-      </div>
-      <div class="mb-1">
-        <%= submit_tag t('profile_settings.edit.search_button'),
-                      class: "px-3 py-2 text-xs bg-gray-100 rounded border hover:bg-gray-200" %>
-      </div>
-    <% end %>
-
-    <% if @team_invite_token.present? %>
-      <% if @invite_teams.any? %>
-        <div class="p-3 bg-blue-50 border border-blue-200 rounded">
-          <% @invite_teams.each do |team| %>
-            <div class="flex flex-wrap items-center justify-between gap-4">
+    <%# --- 1. 送信済みの申請（申請中・取消エリア） --- %>
+    <div class="mb-6">
+      <% if @outgoing_requests.any? %>
+        <div class="space-y-2">
+          <% @outgoing_requests.each do |req| %>
+            <div class="flex items-center justify-between bg-amber-50 p-3 rounded border border-amber-200">
               <div class="flex items-center gap-2">
-                <%= team_chip(team, size: :xs) %>
-                <span class="text-xs text-gray-600 font-medium">
-                  <%= t('profile_settings.edit.ask_membership_request') %>
+                <span class="flex h-2 w-2 rounded-full bg-amber-400"></span>
+                <span class="text-xs text-amber-800">
+                  <strong><%= req.team.name %></strong> 
+                  (ID: <%= req.team.join_token %>) へ参加申請中です
+                  <% if req.admin? %><span class="ml-1 px-1 bg-amber-200 rounded text-[10px] font-bold">管理者権限希望</span><% end %>
                 </span>
               </div>
-
-              <%= form_with url: membership_requests_path, method: :post, local: true, class: "flex items-center gap-4" do %>
-                <%= hidden_field_tag :direction, "profile_to_team" %>
-                <%= hidden_field_tag :team_id, team.id %>
-                
-                <label class="inline-flex items-center gap-1 cursor-pointer">
-                  <%= check_box_tag :admin, "1", false, class: "rounded border-gray-300 text-blue-600 focus:ring-blue-500" %>
-                  <span class="text-xs text-gray-700">
-                    <%= t('profile_settings.edit.apply_as_admin') %>
-                  </span>
-                </label>
-
-                <%= submit_tag t('common.filter_apply'),
-                              class: "px-4 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700 shadow-sm" %>
-              <% end %>
+              <%= button_to "申請取消", 
+                            membership_request_path(req), 
+                            method: :delete, 
+                            form: { data: { turbo_confirm: "申請を取り消しますか？" } },
+                            class: "text-xs text-red-600 underline hover:text-red-800" %>
             </div>
           <% end %>
         </div>
-      <% else %>
-        <p class="text-xs text-red-500 mt-2">
-          <%= t('profile_settings.edit.team_not_found') %>
-        </p>
       <% end %>
-    <% end %>
-  </div>
- 
-
-  <%# ---- 招待一覧 ---- %>
-  <% if @incoming_team_invites.present? && @incoming_team_invites.any? %>
-    <div class="mt-6 border-t pt-4">
-      <h2 class="text-sm font-semibold mb-2"><%= t('profile_settings.edit.incoming_invites_title') %></h2>
-
-      <table class="w-full text-xs">
-        <thead>
-          <tr class="border-b">
-            <th class="text-left py-1"><%= t('profile_settings.edit.column_team_name') %></th>
-            <th class="text-left py-1"><%= t('profile_settings.edit.column_requester') %></th>
-            <th class="text-left py-1"></th>
-          </tr>
-        </thead>
-        <tbody>
-          <% @incoming_team_invites.each do |req| %>
-            <tr class="border-b">
-              <td class="py-1">
-                <%= team_chip(
-                      req.team,
-                      size: :xs,
-                      wrapper_class: "px-2 py-1 rounded bg-gray-100 text-xs font-semibold"
-                      ) %>
-              </td>
-              <td class="py-1">
-                <% if req.requester_profile.present? %>
-                  <%= profile_chip(
-                    req.requester_profile,
-                    size: :xs,
-                    wrapper_class: "px-2 py-1 rounded bg-gray-100 text-xs font-semibold"
-                    ) %>
-                <% else %>
-                  <span class="text-s text-gray-400">不明</span>
-                <% end %>
-              </td>
-              <td class="py-1 text-right">
-                <%= button_to t('common.approve'),
-                              approve_membership_request_path(req),
-                              method: :patch,
-                              class: "px-3 py-1 text-[11px] bg-blue-100 text-blue-700 rounded border border-blue-300 hover:bg-blue-200" %>
-              </td>
-            </tr>
-          <% end %>
-        </tbody>
-      </table>
     </div>
-  <% else %>
-    <p class="text-xs text-gray-500 mt-4">
-     <%= t('profile_settings.edit.no_invites') %>
-    </p>
-  <% end %>
+
+    <%# --- 2. 検索・新規申請エリア --- %>
+    <div class="p-4 bg-gray-50 rounded border border-dashed mb-6">
+      <h3 class="text-xs font-semibold text-gray-500 mb-3">新しいチームに参加する</h3>
+      
+      <%= form_with url: edit_profile_path(@profile), method: :get, local: true, class: "flex items-end gap-2 mb-4" do %>
+        <div>
+          <label class="block text-xs mb-1">チームID</label>
+          <%= text_field_tag :team_invite_token, @team_invite_token, 
+                            placeholder: "例）AB12CD34",
+                            class: "border rounded px-2 py-1 text-sm w-48" %>
+        </div>
+        <div class="mb-1">
+          <%= submit_tag "チーム検索", class: "px-3 py-2 text-xs bg-gray-100 rounded border hover:bg-gray-200 cursor-pointer" %>
+        </div>
+      <% end %>
+
+      <% if @team_invite_token.present? %>
+        <% if @invite_teams.any? %>
+          <div class="p-3 bg-blue-50 border border-blue-200 rounded flex flex-col gap-3">
+            <% @invite_teams.each do |team| %>
+              <div class="flex flex-wrap items-center justify-between gap-4">
+                <div class="flex items-center gap-2">
+                  <%= team_chip(team, size: :xs) %>
+                  <span class="text-xs text-gray-600">に参加申請しますか？</span>
+                </div>
+                
+                <div class="flex items-center gap-4">
+                  <%= form_with url: membership_requests_path, method: :post, local: true, class: "flex items-center gap-3" do %>
+                    <%= hidden_field_tag :direction, "profile_to_team" %>
+                    <%= hidden_field_tag :team_id, team.id %>
+                    
+                    <label class="inline-flex items-center gap-1 cursor-pointer">
+                      <%= check_box_tag :admin, "1", false, class: "rounded border-gray-300 text-blue-600" %>
+                      <span class="text-xs text-gray-700">管理者として申請</span>
+                    </label>
+
+                    <%= submit_tag "申請する", 
+                                  class: "px-4 py-1.5 bg-blue-600 text-white text-xs font-bold rounded hover:bg-blue-700 cursor-pointer shadow-sm" %>
+                  <% end %>
+                </div>
+              </div>
+            <% end %>
+          </div>
+        <% else %>
+          <p class="text-xs text-red-500">チームが見つかりませんでした。</p>
+        <% end %>
+      <% end %>
+    </div>
+
+    <%# --- 3. 届いている招待（承認・却下エリア） --- %>
+    <div class="border-t pt-4">
+      <h3 class="text-sm font-semibold mb-2">届いているチームからの招待</h3>
+      <% if @incoming_team_invites.any? %>
+        <table class="w-full text-xs text-left">
+          <thead>
+            <tr class="border-b">
+              <th class="py-2 text-gray-500 font-medium">招待元のチーム</th>
+              <th class="py-2 text-gray-500 font-medium">内容</th>
+              <th class="py-2"></th>
+            </tr>
+          </thead>
+          <tbody>
+            <% @incoming_team_invites.each do |req| %>
+              <tr class="border-b">
+                <td class="py-3">
+                  <div class="flex items-center gap-2">
+                    <%= team_chip(req.team, size: :xs, wrapper_class: "px-2 py-1 rounded bg-gray-100 text-xs") %>
+                    <% if req.requester_profile %>
+                      <span class="text-[10px] text-gray-400">by <%= req.requester_profile.display_name %></span>
+                    <% end %>
+                  </div>
+                </td>
+                <td class="py-3">
+                  <% if req.admin? %>
+                    <span class="px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-100 font-medium">
+                      管理者として招待
+                    </span>
+                  <% else %>
+                    <span class="px-2 py-0.5 rounded-full bg-gray-50 text-gray-700 border border-gray-100">
+                      メンバーとして招待
+                    </span>
+                  <% end %>
+                </td>
+                <td class="py-3 text-right">
+                  <div class="flex items-center justify-end gap-3">
+                    <%= button_to "承認", approve_membership_request_path(req), method: :patch,
+                                  class: "px-4 py-1 bg-blue-100 text-blue-700 rounded border border-blue-300 hover:bg-blue-200 font-bold" %>
+
+                    <%= button_to "却下", 
+                                  membership_request_path(req), 
+                                  method: :delete, 
+                                  form: { data: { turbo_confirm: "この招待を却下しますか？" } },
+                                  class: "text-xs text-red-600 underline hover:text-red-800" %>
+                  </div>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      <% else %>
+        <p class="text-xs text-gray-500 mt-2">現在、届いている招待はありません。</p>
+      <% end %>
+    </div>
+  </div>
 
 <% else %>
-  <p class="text-sm text-red-600">
-    <%= t('profile_settings.edit.not_found') %>
-  </p>
+  <p class="text-sm text-red-600">プロフィールが見つかりません。</p>
 <% end %>
-
 -e \n--- END OF FILE ---\n
 app/views/profiles/show.html.erb
 --- START OF FILE ---
@@ -4114,6 +4397,30 @@ app/helpers/teams_helper.rb
 --- START OF FILE ---
 # app/helpers/team_helper.rb
 module TeamsHelper
+  def render_team_tree(team, current_team)
+    # 現在表示中のチームかどうかでスタイルを変える
+    is_current = (team.id == current_team.id)
+    bg_color = is_current ? "bg-amber-100 border-amber-300" : "bg-white border-gray-200"
+
+    content_tag(:li, class: "list-none my-1") do
+      concat(
+        content_tag(:div, class: "flex items-center gap-2 p-1 rounded border #{bg_color} w-fit") do
+          concat team_chip(team, size: :xs)
+        end
+      )
+
+      # 子チーム（下位チーム）があれば、さらにインデントして表示
+      if team.children.any?
+        concat(
+          content_tag(:ul, class: "pl-6 border-l border-gray-200 ml-3 mt-1") do
+            team.children.each do |child_team|
+              concat render_team_tree(child_team, current_team)
+            end
+          end
+        )
+      end
+    end
+  end
 end
 -e \n--- END OF FILE ---\n
 app/helpers/profiles_helper.rb
@@ -4410,7 +4717,7 @@ ja_en:
       remove_avatar: "Remove avatar"
       avatar_hint: "正方形の画像が推奨です（例: 400×400）。"
       profile_id: "Profile ID"
-      profile_id_immutable_hint: "このIDは編集できません。"
+      profile_id_immutable_hint: "このIDは変更できません。"
       theme_title: "Theme（ヘッダー・左ナビの色）"
       theme_hint: "メイン画面は白のまま、ヘッダーと左ナビの色が変わります。"
       locale_title: "Language"
@@ -4462,6 +4769,7 @@ ja_en:
       edit_settings_title: "Edit Team"
       new_team: "Create Team"
       no_teams_html: "まだチームがありません。"
+      not_joined_team: "参加しているチームはありません。"
     new:
       title: "New Team"
     members:
@@ -4742,10 +5050,11 @@ en:
       edit_settings_title: "Edit Team Settings"
       new_team: "Create Team"
       no_teams_html: "No teams found."
+      not_joined_team: "You haven't joined any teams yet."
     new:
       title: "Create New Team"
     members:
-      title: "Member Management"
+      title: "Member"
       select_team: "Select team to manage:"
       suffix_of_team: "'s Members"
       role: "Role"
@@ -4969,7 +5278,7 @@ ja:
       remove_avatar: "画像を削除する"
       avatar_hint: "正方形の画像が推奨です（例: 400×400）。"
       profile_id: "プロフィールID"
-      profile_id_immutable_hint: "このIDは編集できません。"
+      profile_id_immutable_hint: "このIDは変更できません。"
       theme_title: "テーマ（ヘッダー・左ナビの色）"
       theme_hint: "メイン画面とライトパネルは白のまま、ヘッダーと左ナビだけ色が変わります。"
       locale_title: "表示言語 / Language"
@@ -5019,8 +5328,9 @@ ja:
     index:
       title: "チーム一覧"
       edit_settings_title: "チーム編集"
-      new_team: "チームを作成する"
-      no_teams_heml: "まだチームがありません。"
+      new_team: "新規チーム作成"
+      no_teams_html: "まだチームがありません。"
+      not_joined_team: "参加しているチームはありません。"
     settings:
       sidebar:
        title: "チーム管理"
@@ -5030,7 +5340,7 @@ ja:
     new:
       title: "新規チーム作成"
     members:
-      title: "メンバー管理"
+      title: "メンバー"
       select_team: "管理するチームを選択:"
       suffix_of_team: "のメンバー"
       role: "権限"
@@ -5227,8 +5537,10 @@ Rails.application.routes.draw do
 
   resources :team_memberships, only: %i[create destroy update]
 
-  resources :membership_requests, only: %i[create] do
-    member { patch :approve }
+  resources :membership_requests, only: [ :create, :destroy, :update ] do
+    member do
+      patch :approve
+    end
   end
 
   if Rails.env.development?

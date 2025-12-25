@@ -1,0 +1,73 @@
+<!-- app/views/works/index.html.erb -->
+<% content_for :sidebar do %>
+  <%= render "works/sidebar" %>
+<% end %>
+
+<div>
+  <div class="mb-1">
+    <%= form_with url: works_path, method: :get, local: true, class: "flex items-center gap-2 max-w-xl" do %>
+      <%= text_field_tag :q, params[:q], class: "flex-1 border border-gray-300 rounded px-3 py-1 text-sm", placeholder: "タイトル・内容で検索..." %>
+      <%= submit_tag "検索", class: "px-3 py-1 bg-gray-800 text-white text-sm rounded hover:bg-gray-900" %>
+    <% end %>
+  </div>
+
+  <div class="mb-1">
+    <table class="w-full text-xs">
+      <thead>
+        <tr class="border-b bg-gray-50">
+          <th class="py-2 px-2 text-left w-1/3">タイトル</th>
+          <th class="py-2 px-2 text-left">種類</th>
+          <th class="py-2 px-2 text-left">作成日</th>
+          <th class="py-2 px-2 text-left">ステータス</th>
+          <th class="py-2 px-2"></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="py-1 px-2"><input type="text" class="w-full border border-gray-300 rounded px-2 py-1" placeholder="タイトル絞り込み"></td>
+          <td class="py-1 px-2">
+            <select class="w-full border border-gray-300 rounded px-2 py-1">
+              <option>すべて</option>
+              <option>document</option>
+            </select>
+          </td>
+          <td class="py-1 px-2"></td>
+          <td class="py-1 px-2"></td>
+          <td class="py-1 px-2 text-right">
+            <button class="px-3 py-1 bg-gray-100 text-gray-700 rounded border border-gray-300">適用</button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <% if @works.any? %>
+    <div class="overflow-y-auto max-h-[calc(100vh-260px)]">
+      <table class="w-full text-sm">
+        <tbody id="works-table-body">
+          <% @works.each do |work| %>
+            <tr class="border-b hover:bg-gray-50">
+              <td class="py-3 px-2 font-medium">
+                <%= link_to work.title, edit_work_path(work), class: "text-blue-600 hover:underline" %>
+              </td>
+              <td class="py-3 px-2 text-gray-500 text-xs">
+                <span class="px-2 py-0.5 bg-gray-100 rounded-full"><%= work.work_type %></span>
+              </td>
+              <td class="py-3 px-2 text-gray-500 text-xs">
+                <%= l(work.created_at, format: :short) %>
+              </td>
+              <td class="py-3 px-2">
+                <span class="text-xs text-green-600">公開中</span>
+              </td>
+              <td class="py-3 px-2 text-right">
+                <%= link_to "編集", edit_work_path(work), class: "text-gray-400 hover:text-blue-600" %>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  <% else %>
+    <p class="text-sm text-gray-500 py-10 text-center">まだワークスがありません。</p>
+  <% end %>
+</div>

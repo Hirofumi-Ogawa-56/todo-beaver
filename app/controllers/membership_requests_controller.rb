@@ -58,20 +58,16 @@ class MembershipRequestsController < ApplicationController
         return
       end
 
-      TeamMembership.transaction do
-        role_value = req.admin? ? TeamMembership::ADMIN_ROLE : nil
+    TeamMembership.transaction do
+      role_value = req.admin? ? TeamMembership::ADMIN_ROLE : nil
 
-        TeamMembership.find_or_create_by!(team: req.team, profile: current_profile) do |m|
-          m.role = role_value
-        end
+      # すでにメンバーだった場合でも role を更新できるようにする
+      membership = TeamMembership.find_or_initialize_by(team: req.team, profile: current_profile)
+      membership.role = role_value if req.admin? # 管理者招待なら上書き
+      membership.save!
 
-        if role_value.present?
-          membership = TeamMembership.find_by!(team: req.team, profile: current_profile)
-          membership.update!(role: TeamMembership::ADMIN_ROLE) unless membership.admin?
-        end
-
-        req.update!(status: :approved)
-      end
+      req.update!(status: :approved)
+    end
 
       redirect_back fallback_location: edit_profile_path(current_profile),
                     notice: "チーム招待を承認しました。"
@@ -103,6 +99,17 @@ class MembershipRequestsController < ApplicationController
     end
   end
 
+  def destroy
+    @membership_request = MembershipRequest.find(params[:id])
+
+    # 権限チェック（招待を送った本人のチームの管理者か、など）
+    if @membership_request.destroy
+      redirect_back fallback_location: root_path, notice: "招待または申請を取り消しました。"
+    else
+      redirect_back fallback_location: root_path, alert: "取り消しに失敗しました。"
+    end
+  end
+
   private
 
   def set_membership_request
@@ -121,10 +128,9 @@ class MembershipRequestsController < ApplicationController
     end
 
     # 管理者だけ招待できる
-    admin_membership =
-      team.team_memberships.find_by(profile: requester_profile, role: TeamMembership::ADMIN_ROLE)
+    admin_membership = team.team_memberships.find_by(profile: requester_profile, role: TeamMembership::ADMIN_ROLE)
 
-    unless admin_membership
+    unless team.admin?(requester_profile) # ← ここで team.admin? を使っているので、上の1行はもう消しても大丈夫です！
       redirect_back fallback_location: manage_team_path(team),
                     alert: "このチームの招待を送る権限がありません"
       return
@@ -150,8 +156,13 @@ class MembershipRequestsController < ApplicationController
       redirect_back fallback_location: manage_team_path(team),
                     notice: "招待を送信しました"
     else
+      # エラー詳細を安全に取得する方式に変更
+      details = membership_request.errors.details.map { |attr, errors|
+        "#{attr}: #{errors.map { |e| e[:error] }.join(', ')}"
+      }.join(" / ")
+
       redirect_back fallback_location: manage_team_path(team),
-                    alert: membership_request.errors.full_messages.first
+                    alert: "招待に失敗しました（詳細: #{details}）"
     end
   end
 
@@ -182,24 +193,24 @@ class MembershipRequestsController < ApplicationController
 
   # ★ チーム親子申請の承認
   def approve_team_hierarchy_request(req)
-      unless req.target_team.admin?(current_profile)
-        return redirect_back fallback_location: root_path, alert: "承認権限がありません"
-      end
+    unless req.target_team.admin?(current_profile)
+      return redirect_back fallback_location: root_path, alert: "承認権限がありません"
+    end
 
-      begin
-        Team.transaction do
-          if req.team_to_parent?
-            # 下位チーム(team)側がすでに別の上位チームを持っていないか確認（任意）
-            req.team.update!(parent: req.target_team)
-          else
-            # 下位チーム(target_team)側がすでに別の上位チームを持っていないか確認（任意）
-            req.target_team.update!(parent: req.team)
-          end
-          req.update!(status: :approved)
+    begin
+      Team.transaction do
+        if req.team_to_parent?
+          # 下位チーム(team)側がすでに別の上位チームを持っていないか確認（任意）
+          req.team.update!(parent: req.target_team)
+        else
+          # 下位チーム(target_team)側がすでに別の上位チームを持っていないか確認（任意）
+          req.target_team.update!(parent: req.team)
         end
-        redirect_back fallback_location: edit_team_path(req.target_team), notice: "組織構造を更新しました。"
-      rescue ActiveRecord::RecordInvalid => e
-        redirect_back fallback_location: edit_team_path(req.target_team), alert: "更新に失敗しました: #{e.record.errors.full_messages.join(', ')}"
+        req.update!(status: :approved)
       end
+      redirect_back fallback_location: edit_team_path(req.target_team), notice: "組織構造を更新しました。"
+    rescue ActiveRecord::RecordInvalid => e
+      redirect_back fallback_location: edit_team_path(req.target_team), alert: "更新に失敗しました: #{e.record.errors.full_messages.join(', ')}"
+    end
   end
 end
