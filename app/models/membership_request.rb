@@ -29,6 +29,12 @@ class MembershipRequest < ApplicationRecord
               message: "同じ申請がすでに送信されており、承認待ちです。"
             }
 
+  # 「pending（待機中）」の状態のみ、同じチーム・同じターゲットへの重複を禁止する
+  validates :target_profile_id, uniqueness: {
+    scope: [ :team_id, :direction ],
+    message: "への招待は既に送信済みで承認待ちです"
+  }, if: :pending?
+
   validate :target_presence
 
   private

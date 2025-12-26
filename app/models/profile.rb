@@ -1,6 +1,7 @@
 # app/models/profile.rb
 class Profile < ApplicationRecord
   belongs_to :user
+  belongs_to :primary_team, class_name: "Team", optional: true
 
   validates :label, presence: true, length: { maximum: 25 }
   validates :display_name, presence: true, length: { maximum: 30 }
@@ -14,6 +15,7 @@ class Profile < ApplicationRecord
   has_many :assigned_tasks, through: :task_assignments, source: :task
   has_many :comments, foreign_key: :author_profile_id, dependent: :nullify
   has_many :reactions, dependent: :destroy
+  has_many :works, dependent: :destroy
 
   has_many :sent_membership_requests,
            class_name: "MembershipRequest",
@@ -24,6 +26,11 @@ class Profile < ApplicationRecord
            class_name: "MembershipRequest",
            foreign_key: :target_profile_id,
            dependent: :destroy
+
+  has_many :chat_members, dependent: :destroy
+  has_many :chat_rooms, through: :chat_members
+  has_many :created_chat_rooms, class_name: "ChatRoom", foreign_key: "creator_profile_id"
+  has_many :messages, foreign_key: "author_profile_id"
 
   has_one_attached :avatar
 
@@ -51,6 +58,21 @@ class Profile < ApplicationRecord
   def display_initials
     base = display_name.presence || label.presence || "?"
     base.split(/\s+/).map { |part| part[0] }.join[0, 2].upcase
+  end
+
+  def organization_display_name
+    # 1. 明示的に primary_team があればそれを使う
+    # 2. なければ所属チームの最初を使う
+    # 3. primary_team_id が nil（「表示しない」を選択）なら nil を返す
+
+    # 判定のためにまず対象チームを特定
+    target_team = primary_team || teams.first
+
+    # primary_team_id カラムに -1 や 0 を入れる運用も可能ですが、
+    # 既存の association (belongs_to :primary_team) を活かすため、
+    # 「特定のID」ではなく「紐付けがあるかどうか」で判定するのがスマートです。
+
+    target_team&.full_hierarchical_name
   end
 
   private

@@ -1,0 +1,15 @@
+<!-- app/views/post_comments/_comment.html.erb -->
+<div class="flex gap-3">
+  <div class="shrink-0">
+    <%= profile_chip(comment.author_profile, size: :sm) %>
+  </div>
+  <div class="flex-1 min-w-0">
+    <div class="flex items-baseline gap-2">
+      <span class="font-bold text-xs text-gray-900"><%= comment.author_profile.display_name %></span>
+      <span class="text-[10px] text-gray-400"><%= l(comment.created_at, format: :ja_short) %></span>
+    </div>
+    <div class="text-sm text-gray-800 mt-1 break-words">
+      <%= simple_format(comment.body) %>
+    </div>
+  </div>
+</div>

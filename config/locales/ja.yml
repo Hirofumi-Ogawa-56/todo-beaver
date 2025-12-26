@@ -58,12 +58,13 @@ ja:
   date:
     formats:
       default: "%Y/%m/%d"
-      short: "%Y/%m/%d"
+      short: "%m/%d"
       md: "%m/%d"
   time:
-      formats:
-        default: "%Y/%m/%d %H:%M:%S"
-        ja_short: "%m/%d %H:%M"
+    formats:
+      default: "%Y/%m/%d %H:%M:%S"
+      short: "%m/%d %H:%M"
+      ja_short: "%m/%d %H:%M"
   activerecord:
     attributes:
       user:
@@ -74,6 +75,13 @@ ja:
         name: "チーム名"
         join_token: "チームID"
         avatar: "チームアイコン"
+      membership_request:
+        status: "状態"
+        statuses:
+          pending: "待機中"
+          approved: "承認済み"
+          rejected: "却下"
+          canceled: "取り消し"
       comment:
         body: "本文"
         pinned: "このコメントをピン留めする"
@@ -82,16 +90,7 @@ ja:
         header: "%{count}件のエラーがあります："
     models:
       team: "チーム"
-      membership_request:
-        attributes:
-          team_id:
-            taken: "このプロフィールへの招待はすでに送信済み・承認待ちです。"
-      comment: "コメント"
-    placeholders:
-      team:
-        name: "チーム名を入力してください"
-      comment:
-        body: "コメントを入力..."
+      membership_request: "チーム申請/招待"
   users:
     confirmations:
           edit_email_title: "メールアドレスの変更"
@@ -103,18 +102,15 @@ ja:
       update: "%{model}を更新する"
       comment:
         create: "コメント送信"
-  time:
-    formats:
-      ja_short: "%m/%d %H:%M" 
   layouts:
     application:
       nav:
-        task: "タスク"
-        works: "ワークス"
-        chat: "チャット"
-        social: "ソーシャル"
-        profile: "プロフィール"
-        team: "チーム"
+        task: "Task"
+        works: "Works"
+        chat: "Chat"
+        social: "Social"
+        profile: "Profile"
+        team: "Team"
         all_profiles_tasks: "全てのプロフィールのタスクを表示"
       menu:
         logout: "ログアウト"

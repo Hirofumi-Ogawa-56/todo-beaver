@@ -3,8 +3,10 @@ one:
   id: 980190962
   email: user_one@example.com
   encrypted_password: <%= Devise::Encryptor.digest(User, 'password') %>
+  confirmed_at: <%= Time.current %> # ← (:db) を消してシンプルにする
 
 two:
   id: 298486374
   email: user_two@example.com
   encrypted_password: <%= Devise::Encryptor.digest(User, 'password') %>
+  confirmed_at: <%= Time.current %> # ← 同様に修正

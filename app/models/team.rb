@@ -4,6 +4,7 @@ class Team < ApplicationRecord
   has_many :profiles, through: :team_memberships
   has_many :membership_requests, dependent: :destroy
   has_many :children, class_name: "Team", foreign_key: "parent_id", dependent: :destroy
+  has_many :tasks, dependent: :nullify
 
   has_one_attached :avatar
 
@@ -21,6 +22,23 @@ class Team < ApplicationRecord
     base.split(/\s+/).map { |part| part[0] }.join[0, 2].upcase
   end
 
+  def full_hierarchical_name
+    # ancestorsが親、祖父母...の順で並んでいると想定（親 > 子 の順にするためにreverse）
+    names = ancestors.to_a.reverse.map(&:name)
+    names << name
+    names.join(" > ")
+  end
+
+  def ancestors
+    list = []
+    current = self.parent
+    while current
+      list << current
+      current = current.parent
+    end
+    list
+  end
+
   attr_accessor :remove_avatar
 
   def admin?(profile)
@@ -28,8 +46,7 @@ class Team < ApplicationRecord
   return true if team_memberships.exists?(profile: profile, role: "admin")
 
   # 2. 親チームが存在する場合、親チームの管理者かチェック（再帰的にトップまで遡る）
-  return parent.admin?(profile) if parent.present?
-  false
+  parent&.admin?(profile) || false
 end
 
   private

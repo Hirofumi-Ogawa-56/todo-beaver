@@ -36,40 +36,88 @@
               <div class="flex items-center gap-4">
                 <% if user_signed_in? && current_user.profiles.any? && current_profile %>
                   <!-- プロフィールアイコン＋名前（クリックでメニュー） -->
-                  <details class="relative">
-                    <summary class="list-none cursor-pointer">
-                      <%= profile_chip(
-                            current_profile,
-                            size: :sm,
-                            wrapper_class: "text-sm font-semibold"
-                          ) %>
-                    </summary>
+                    <div class="flex items-center">
+                      <% if user_signed_in? && current_user.profiles.any? && current_profile %>
+                        <details class="relative group" data-profile-dropdown>
+                          <summary class="list-none cursor-pointer">
+                            <div class="flex items-center gap-2">
+                              <%# アイコン部分 %>
+                              <div class="shrink-0">
+                                <%= profile_avatar(current_profile, size: :lg) %>
+                              </div>
 
-                    <!-- ドロップダウンメニュー -->
-                    <div class="absolute mt-2 left-0 w-40 bg-white border border-gray-300 rounded shadow text-sm z-50">
-                      <%= button_to t('layouts.application.menu.logout'),
-                        destroy_user_session_path,
-                        method: :delete,
-                        form: { data: { turbo_confirm: t('layouts.application.menu.confirm_logout') } }, 
-                        class: "block w-full text-left px-3 py-2 text-gray-700 hover:bg-gray-100 bg-transparent border-0" %>
+                              <%# テキスト部分（4段構成） %>
+                              <div class="flex flex-col items-start leading-[1.1]">
+                                <%# 所属（一番控えめ） %>
+                                <% if org_name = current_profile.organization_display_name %>
+                                  <span class="text-[10px] opacity-60 font-normal truncate max-w-[140px]">
+                                    <%= org_name %>
+                                  </span>
+                                <% end %>
+
+                                <%# 表示名（名前） %>
+                                <span class="text-[10px] opacity-60 font-normal truncate max-w-[140px]">
+                                  <%= current_profile.display_name %>
+                                </span>
+
+                                <%# ラベル（一番目立つ：役割） %>
+                                <span class="text-sm font-bold truncate max-w-[140px] text-gray-800">
+                                  <%= current_profile.label %>
+                                </span>
+
+                                <%# 操作ガイド %>
+                                <span class="text-[8px] text-blue-400 font-medium group-hover:underline mt-0.5">
+                                  プロフィール切替／ログアウト
+                                </span>
+                              </div>
+                            </div>
+                          </summary>
+
+                          <div class="absolute mt-2 left-0 w-56 bg-white border border-gray-200 rounded-lg shadow-xl z-50 overflow-hidden text-gray-700">
+                            <div class="px-3 py-2 bg-gray-50 border-b border-gray-100">
+                              <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">プロフィールを切り替える</span>
+                            </div>
+
+                            <%# 他のプロフィール一覧をリンクとして表示 %>
+                            <div class="max-h-60 overflow-y-auto">
+                              <% current_user.profiles.each do |p| %>
+                                <%= button_to switch_profiles_path(profile_id: p.id), 
+                                              method: :post, 
+                                              data: { turbo: false },
+                                              class: "w-full flex items-center gap-3 px-3 py-2 hover:bg-blue-50 transition-colors border-0 bg-transparent cursor-pointer" do %>
+                                  <%= profile_avatar(p, size: :xs) %>
+                                  <div class="flex flex-col items-start text-left">
+                                    <span class="text-xs font-bold <%= 'text-blue-600' if p == current_profile %>"><%= p.label %></span>
+                                    <span class="text-[9px] text-gray-400"><%= p.display_name %></span>
+                                  </div>
+                                  <% if p == current_profile %>
+                                    <div class="ml-auto text-blue-600">
+                                      <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                                        <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+                                      </svg>
+                                    </div>
+                                  <% end %>
+                                <% end %>
+                              <% end %>
+                            </div>
+
+                            <div class="border-t border-gray-100">
+                              <%= button_to destroy_user_session_path,
+                                method: :delete,
+                                form: { data: { turbo_confirm: t('layouts.application.menu.confirm_logout') } }, 
+                                class: "block w-full text-left px-4 py-3 text-sm text-red-600 hover:bg-red-50 font-bold bg-transparent border-0 cursor-pointer" do %>
+                                <div class="flex items-center gap-2">
+                                  <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                                  </svg>
+                                  <%= t('layouts.application.menu.logout') %>
+                                </div>
+                              <% end %>
+                            </div>
+                          </div>
+                        </details>
+                      <% end %>
                     </div>
-                  </details>
-
-                  <!-- プロフィール切り替えセレクト -->
-                  <div>
-                    <%= form_with url: switch_profiles_path, method: :post, local: true do |f| %>
-                      <%= f.select :profile_id,
-                                  options_from_collection_for_select(
-                                    current_user.profiles,
-                                    :id,
-                                    :label,
-                                    current_profile&.id
-                                  ),
-                                  {},
-                                  class: "border border-gray-300 rounded px-3 py-1 text-sm text-gray-700 bg-white",
-                                  onchange: "this.form.submit();" %>
-                    <% end %>
-                  </div>
                 <% end %>
               </div>
 
@@ -79,7 +127,7 @@
                   <!-- タスク -->
                   <%= link_to root_path,
                               class: "text-lg font-semibold px-3 py-1 rounded hover:bg-white/10 flex items-center gap-1" do %>
-                    <%= image_tag "beaver_icon.png",
+                    <%#= image_tag "beaver_icon.png",
                                   alt: "Task",
                                   class: "block",
                                   style: "height: 25px; width: auto;" %>
@@ -87,9 +135,9 @@
                   <% end %>
 
                   <!-- ワークス -->
-                  <%= link_to root_path,
+                  <%= link_to works_path,
                               class: "text-lg font-semibold px-3 py-1 rounded hover:bg-white/10 flex items-center gap-1" do %>
-                    <%= image_tag "owl_icon.png",
+                    <%#= image_tag "owl_icon.png",
                                   alt: "Works",
                                   class: "block",
                                   style: "height: 25px; width: auto;" %>
@@ -97,9 +145,9 @@
                   <% end %>
 
                   <!-- チャット -->
-                  <%= link_to root_path,
+                  <%= link_to chat_rooms_path,
                               class: "text-lg font-semibold px-3 py-1 rounded hover:bg-white/10 flex items-center gap-1" do %>
-                    <%= image_tag "wolf_icon.png",
+                    <%#= image_tag "wolf_icon.png",
                                   alt: "Chat",
                                   class: "block",
                                   style: "height: 27px; width: auto;" %>
@@ -107,9 +155,9 @@
                   <% end %>
 
                   <!-- ソーシャル -->
-                  <%= link_to root_path,
+                  <%= link_to posts_path,
                               class: "text-lg font-semibold px-3 py-1 rounded hover:bg-white/10 flex items-center gap-1" do %>
-                    <%= image_tag "rabbit_icon.png",
+                    <%#= image_tag "rabbit_icon.png",
                                   alt: "Social",
                                   class: "block",
                                   style: "height: 25px; width: auto;" %>
@@ -119,7 +167,7 @@
                   <!-- プロフィール -->
                   <%= link_to edit_profile_path(current_profile),
                               class: "text-lg font-semibold px-3 py-1 rounded hover:bg-white/10 flex items-center gap-1" do %>
-                    <%= image_tag "butterfly_icon.png",
+                    <%#= image_tag "butterfly_icon.png",
                                   alt: "Profile",
                                   class: "block",
                                   style: "height: 25px; width: auto;" %>
@@ -129,7 +177,7 @@
                   <!-- チーム -->
                   <%= link_to teams_path,
                               class: "text-lg font-semibold px-3 py-1 rounded hover:bg-white/10 flex items-center gap-1" do %>
-                    <%= image_tag "elephant_icon.png",
+                    <%#= image_tag "elephant_icon.png",
                                   alt: "Team",
                                   class: "block",
                                   style: "height: 32px; width: auto;" %>
@@ -226,3 +274,17 @@
   </body>
 </html>
 
+<script>
+  document.addEventListener('turbo:load', () => { // Railsの画面遷移に対応
+    const closeDropdown = (e) => {
+      const dropdown = document.querySelector('[data-profile-dropdown]');
+      if (dropdown && !dropdown.contains(e.target)) {
+        dropdown.removeAttribute('open');
+      }
+    };
+
+    // 一度削除してから登録することで二重登録を防止
+    document.removeEventListener('click', closeDropdown);
+    document.addEventListener('click', closeDropdown);
+  });
+</script>

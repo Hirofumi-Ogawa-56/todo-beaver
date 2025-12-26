@@ -1,9 +1,9 @@
 # app/models/reaction.rb
 class Reaction < ApplicationRecord
-  belongs_to :comment
+  belongs_to :reactable, polymorphic: true
   belongs_to :profile
 
-  KINDS = %w[heart].freeze  # 将来ここに "smile", "thumbs_up" など足せる
+  KINDS = %w[heart].freeze
 
   validates :kind,
             presence: true,

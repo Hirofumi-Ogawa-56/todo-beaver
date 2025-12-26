@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2025_12_21_123526) do
+ActiveRecord::Schema[7.2].define(version: 2025_12_25_155618) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -42,6 +42,27 @@ ActiveRecord::Schema[7.2].define(version: 2025_12_21_123526) do
     t.index ["blob_id", "variation_digest"], name: "index_active_storage_variant_records_uniqueness", unique: true
   end
 
+  create_table "chat_members", force: :cascade do |t|
+    t.bigint "chat_room_id", null: false
+    t.bigint "profile_id", null: false
+    t.string "room_display_name"
+    t.integer "unread_count", default: 0, null: false
+    t.datetime "last_read_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["chat_room_id"], name: "index_chat_members_on_chat_room_id"
+    t.index ["profile_id"], name: "index_chat_members_on_profile_id"
+  end
+
+  create_table "chat_rooms", force: :cascade do |t|
+    t.string "name"
+    t.text "description"
+    t.bigint "creator_profile_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["creator_profile_id"], name: "index_chat_rooms_on_creator_profile_id"
+  end
+
   create_table "comments", force: :cascade do |t|
     t.bigint "task_id", null: false
     t.bigint "author_profile_id", null: false
@@ -71,6 +92,40 @@ ActiveRecord::Schema[7.2].define(version: 2025_12_21_123526) do
     t.index ["team_id"], name: "index_membership_requests_on_team_id"
   end
 
+  create_table "messages", force: :cascade do |t|
+    t.bigint "chat_room_id", null: false
+    t.bigint "author_profile_id", null: false
+    t.text "body"
+    t.boolean "pinned", default: false
+    t.datetime "edited_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.integer "parent_message_id"
+    t.index ["author_profile_id"], name: "index_messages_on_author_profile_id"
+    t.index ["chat_room_id"], name: "index_messages_on_chat_room_id"
+    t.index ["parent_message_id"], name: "index_messages_on_parent_message_id"
+  end
+
+  create_table "post_comments", force: :cascade do |t|
+    t.bigint "post_id", null: false
+    t.bigint "author_profile_id", null: false
+    t.text "body"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["author_profile_id"], name: "index_post_comments_on_author_profile_id"
+    t.index ["post_id"], name: "index_post_comments_on_post_id"
+  end
+
+  create_table "posts", force: :cascade do |t|
+    t.bigint "profile_id", null: false
+    t.integer "post_type"
+    t.text "body"
+    t.jsonb "metadata"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["profile_id"], name: "index_posts_on_profile_id"
+  end
+
   create_table "profiles", force: :cascade do |t|
     t.bigint "user_id", null: false
     t.string "label"
@@ -80,18 +135,29 @@ ActiveRecord::Schema[7.2].define(version: 2025_12_21_123526) do
     t.string "display_name"
     t.string "join_token"
     t.string "locale"
+    t.integer "primary_team_id"
     t.index ["join_token"], name: "index_profiles_on_join_token", unique: true
     t.index ["user_id"], name: "index_profiles_on_user_id"
   end
 
   create_table "reactions", force: :cascade do |t|
-    t.bigint "comment_id", null: false
     t.bigint "profile_id", null: false
     t.string "kind"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.index ["comment_id"], name: "index_reactions_on_comment_id"
+    t.string "reactable_type"
+    t.bigint "reactable_id"
     t.index ["profile_id"], name: "index_reactions_on_profile_id"
+    t.index ["reactable_type", "reactable_id"], name: "index_reactions_on_reactable"
+  end
+
+  create_table "reposts", force: :cascade do |t|
+    t.bigint "profile_id", null: false
+    t.bigint "post_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["post_id"], name: "index_reposts_on_post_id"
+    t.index ["profile_id"], name: "index_reposts_on_profile_id"
   end
 
   create_table "tags", force: :cascade do |t|
@@ -174,16 +240,38 @@ ActiveRecord::Schema[7.2].define(version: 2025_12_21_123526) do
     t.index ["reset_password_token"], name: "index_users_on_reset_password_token", unique: true
   end
 
+  create_table "works", force: :cascade do |t|
+    t.bigint "profile_id", null: false
+    t.bigint "team_id"
+    t.string "title"
+    t.text "body"
+    t.string "work_type"
+    t.integer "status"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["profile_id"], name: "index_works_on_profile_id"
+    t.index ["team_id"], name: "index_works_on_team_id"
+  end
+
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
+  add_foreign_key "chat_members", "chat_rooms"
+  add_foreign_key "chat_members", "profiles"
+  add_foreign_key "chat_rooms", "profiles", column: "creator_profile_id"
   add_foreign_key "comments", "profiles", column: "author_profile_id"
   add_foreign_key "comments", "tasks"
   add_foreign_key "membership_requests", "profiles", column: "requester_profile_id"
   add_foreign_key "membership_requests", "profiles", column: "target_profile_id"
   add_foreign_key "membership_requests", "teams"
+  add_foreign_key "messages", "chat_rooms"
+  add_foreign_key "messages", "profiles", column: "author_profile_id"
+  add_foreign_key "post_comments", "posts"
+  add_foreign_key "post_comments", "profiles", column: "author_profile_id"
+  add_foreign_key "posts", "profiles"
   add_foreign_key "profiles", "users"
-  add_foreign_key "reactions", "comments"
   add_foreign_key "reactions", "profiles"
+  add_foreign_key "reposts", "posts"
+  add_foreign_key "reposts", "profiles"
   add_foreign_key "task_assignments", "profiles"
   add_foreign_key "task_assignments", "tasks"
   add_foreign_key "task_tags", "tags"
@@ -194,4 +282,6 @@ ActiveRecord::Schema[7.2].define(version: 2025_12_21_123526) do
   add_foreign_key "team_memberships", "profiles"
   add_foreign_key "team_memberships", "teams"
   add_foreign_key "teams", "teams", column: "parent_id"
+  add_foreign_key "works", "profiles"
+  add_foreign_key "works", "teams"
 end

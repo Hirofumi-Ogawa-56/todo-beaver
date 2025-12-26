@@ -68,3 +68,5 @@ group :development do
 end
 
 gem "devise-i18n"
+
+gem "redcarpet"

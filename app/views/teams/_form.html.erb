@@ -23,11 +23,10 @@
   <div class="mb-6">
     <%= f.label :avatar, class: "block text-sm font-medium mb-1" %>
 
-    <% if @team.avatar.attached? %>
-      <div class="mb-3">
-        <%= team_avatar(@team, size: :md) %>
-      </div>
-    <% end %>
+    <%# 1. プレビュー用コンテナを追加 %>
+    <div id="team-avatar-preview-container" class="mb-3">
+      <%= team_avatar(@team, size: :md) %>
+    </div>
 
     <div class="flex items-center gap-3">
       <%= f.label :avatar,
@@ -39,10 +38,11 @@
         <%= t('profiles.form.no_file_selected') %>
       </span>
 
+      <%# 2. onchangeでJS関数を呼び出す %>
       <%= f.file_field :avatar,
                        accept: "image/*",
                        class: "hidden",
-                       onchange: "document.getElementById('team-avatar-filename').textContent = this.files[0]?.name || '#{t('profiles.form.no_file_selected')}';" %>
+                       onchange: "previewTeamAvatar(this);" %>
     </div>
 
     <% if @team.avatar.attached? %>
@@ -53,25 +53,58 @@
     <% end %>
   </div>
 
-    <% if @team.persisted? && @team.join_token.present? %>
-      <div class="mb-6 max-w-md">
-        <label class="block text-xs mb-1 text-gray-500">
-          チームID
-        </label>
+  <% if @team.persisted? && @team.join_token.present? %>
+    <div class="mb-6 max-w-md">
+      <label class="block text-xs mb-1 text-gray-500">
+        チームID
+      </label>
 
-        <input type="text"
-              value="<%= @team.join_token %>"
-              readonly
-              class="border border-gray-300 rounded px-3 py-2 w-full bg-gray-50 text-gray-600 font-mono text-sm" />
+      <input type="text"
+            value="<%= @team.join_token %>"
+            readonly
+            class="border border-gray-300 rounded px-3 py-2 w-full bg-gray-50 text-gray-600 font-mono text-sm" />
 
-        <p class="text-[11px] text-gray-400 mt-1">
-          このIDは変更はできません。
-        </p>
-      </div>
-    <% end %>
+      <p class="text-[11px] text-gray-400 mt-1">
+        このIDは変更はできません。
+      </p>
+    </div>
+  <% end %>
     
   <div class="pt-2">
     <%= f.submit t("helpers.submit.#{@team.new_record? ? 'create' : 'update'}", model: t('activerecord.models.team')),
                  class: "px-6 py-2 bg-blue-600 text-white text-sm font-medium rounded shadow-sm hover:bg-blue-700 transition cursor-pointer" %>
   </div>
 <% end %>
+
+<%# 3. チーム用のプレビューJS %>
+<script>
+function previewTeamAvatar(input) {
+  const filenameDisplay = document.getElementById('team-avatar-filename');
+  const previewContainer = document.getElementById('team-avatar-preview-container');
+  
+  if (input.files && input.files[0]) {
+    const file = input.files[0];
+    filenameDisplay.textContent = file.name;
+
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      // 既存のimgタグまたは代替のdiv（イニシャル表示用など）を取得
+      // team_avatarヘルパーが生成する構造に合わせてimgを探す
+      let img = previewContainer.querySelector('img');
+      
+      if (!img) {
+        // 画像がない状態（イニシャル表示のdivなど）の場合はimgを新しく作る
+        img = document.createElement('img');
+        // team_avatar(size: :md) のスタイルに合わせる
+        img.className = "rounded-lg object-cover w-16 h-16 border border-gray-200 shadow-sm";
+        previewContainer.innerHTML = '';
+        previewContainer.appendChild(img);
+      }
+      img.src = e.target.result;
+    }
+    reader.readAsDataURL(file);
+  } else {
+    filenameDisplay.textContent = "<%= t('profiles.form.no_file_selected') %>";
+  }
+}
+</script>

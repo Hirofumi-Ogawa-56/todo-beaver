@@ -84,22 +84,16 @@ class TeamsController < ApplicationController
   end
 
   def manage
-    # メンバー管理専用のデータ取得
+    @team = Team.find(params[:id])
     @memberships = @team.team_memberships.includes(:profile)
 
-    # プロフィール（個人）からの参加申請
-    @incoming_join_requests = @team.membership_requests
-                                  .profile_to_team
-                                  .pending
-                                  .includes(:requester_profile)
+    # 1. チームに参加したい！と個人から届いている申請
+    @incoming_join_requests = @team.membership_requests.profile_to_team.pending
 
-    # [招待用] プロフィール検索
-    @profile_invite_token = params[:profile_invite_token].to_s.strip.upcase
-    if @profile_invite_token.present?
-      @found_profile = Profile.where(join_token: @profile_invite_token)
-                              .where.not(id: @memberships.pluck(:profile_id))
-                              .first
-    end
+    # 2. チームから「入って！」と個人に送った招待（これを追加）
+    @outgoing_invitations = @team.membership_requests.team_to_profile.pending
+
+    # 招待検索ロジックなどはそのまま...
   end
 
   private

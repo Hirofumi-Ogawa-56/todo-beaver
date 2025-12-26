@@ -1,0 +1,22 @@
+<!-- app/views/chat_rooms/search_profile.turbo_stream.erb -->
+
+<%= turbo_stream.replace "search-result-area" do %>
+  <div id="search-result-area">
+    <% if @profile %>
+      <div class="p-3 bg-blue-50 border border-blue-200 rounded-lg flex items-center justify-between animate-in fade-in duration-300">
+        <div class="flex items-center gap-3">
+          <%= profile_chip(@profile, size: :xs) %>
+          <span class="text-xs text-gray-600">さんでよろしいですか？</span>
+        </div>
+        <%# addProfileToSelection は JS で定義する関数 %>
+        <button type="button" 
+                onclick="addProfileToSelection(<%= @profile.id %>, '<%= j @profile.display_name %>', '<%= j profile_avatar(@profile, size: :xs) %>')"
+                class="px-3 py-1 bg-blue-600 text-white text-xs font-bold rounded hover:bg-blue-700">
+          追加する
+        </button>
+      </div>
+    <% else %>
+      <p class="text-xs text-red-500 italic p-2">ユーザーが見つかりませんでした。</p>
+    <% end %>
+  </div>
+<% end %>
