@@ -165,4 +165,33 @@ module ApplicationHelper
       )
     end
   end
+
+ def markdown(text)
+    return "" if text.blank?
+
+    options = {
+      filter_html: true,
+      hard_wrap: true,
+      link_attributes: { rel: "nofollow", target: "_blank" },
+      space_after_headers: true,
+      fenced_code_blocks: true
+    }
+
+    extensions = {
+      autolink: true,
+      tables: true,
+      strikethrough: true,
+      fenced_code_blocks: true,
+      space_after_headers: true
+    }
+
+    renderer = Redcarpet::Render::HTML.new(options)
+    markdown = Redcarpet::Markdown.new(renderer, extensions)
+
+    # 1. MarkdownをHTMLに変換
+    html_content = markdown.render(text)
+
+    # 2. 危険なタグをサニタイズ（Brakeman対策）しつつ、安全とマーク
+    sanitize(html_content).html_safe
+  end
 end

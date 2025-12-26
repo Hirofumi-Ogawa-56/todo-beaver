@@ -7,6 +7,8 @@ require "devise/test/integration_helpers"
 class ActiveSupport::TestCase
   parallelize(workers: :number_of_processors)
   fixtures :all
+
+  include Devise::Test::IntegrationHelpers
 end
 
 class ActionDispatch::IntegrationTest
